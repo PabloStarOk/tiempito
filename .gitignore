@@ -4,6 +4,10 @@ obj/
 riderModule.iml
 /_ReSharper.Caches/
 
+### Personal TODO
+
+TODO.md
+
 ### VisualStudioCode template
 .vscode/*
 !.vscode/settings.json
