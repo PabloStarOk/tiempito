@@ -2,7 +2,7 @@ namespace Tiempitod.NET.Session;
 
 // TODO: Introduce configuration.
 /// <summary>
-/// Manages sessions.
+/// A concrete class to manage sessions.
 /// </summary>
 public sealed class SessionManager : ISessionManager
 {
@@ -15,10 +15,7 @@ public sealed class SessionManager : ISessionManager
         _logger = logger;
         _progress = progress;
     }
-
-    /// <summary>
-    /// Starts a session based on the configuration.
-    /// </summary>
+    
     public async Task StartSessionAsync(CancellationToken stoppingToken)
     {
         _session = new Session(TimeType.Focus, TimeSpan.Zero, TimeSpan.Zero);
@@ -36,7 +33,7 @@ public sealed class SessionManager : ISessionManager
         if (stoppingToken.IsCancellationRequested)
         {
             _logger.LogWarning("Canceling session at {time}", DateTimeOffset.Now);
-            _session.Status = SessionStatus.Stopped;
+            _session.Status = SessionStatus.Cancelled;
             return;
         }
         
@@ -59,6 +56,7 @@ public sealed class SessionManager : ISessionManager
     /// <summary>
     /// Starts a cycle that executes one focus time and one break time.
     /// </summary>
+    /// <param name="stoppingToken">Token to stop the operation.</param>
     private async Task StartCycleAsync(CancellationToken stoppingToken)
     {
         if (!stoppingToken.IsCancellationRequested)
@@ -71,6 +69,12 @@ public sealed class SessionManager : ISessionManager
             _session.CurrentCycle += 1;
     }
     
+    /// <summary>
+    /// Starts a focus or break time.
+    /// </summary>
+    /// <param name="timeType">Current type of time (focus or break) of the session.</param>
+    /// <param name="duration">Duration of the current time</param>
+    /// <param name="stoppingToken">Token to stop the operation.</param>
     private async Task StartTimeAsync(TimeType timeType, TimeSpan duration, CancellationToken stoppingToken)
     {
         _session.CurrentTimeType = timeType;

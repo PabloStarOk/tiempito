@@ -2,6 +2,9 @@ using Tiempitod.NET.Session;
 
 namespace Tiempitod.NET;
 
+/// <summary>
+/// Background service of "Tiempito". ⏳
+/// </summary>
 public class DaemonWorker : BackgroundService
 {
     private readonly ILogger<DaemonWorker> _logger;

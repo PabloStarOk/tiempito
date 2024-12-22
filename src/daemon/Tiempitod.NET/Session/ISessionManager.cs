@@ -1,5 +1,8 @@
 namespace Tiempitod.NET.Session;
 
+/// <summary>
+/// Defines a manager of sessions.
+/// </summary>
 public interface ISessionManager
 {
     /// <summary>
