@@ -35,7 +35,7 @@ public sealed class SessionManager : ISessionManager
         
         if (stoppingToken.IsCancellationRequested)
         {
-            _logger.LogWarning("Stopping session at {time}", DateTimeOffset.Now);
+            _logger.LogWarning("Canceling session at {time}", DateTimeOffset.Now);
             _sessionProgress.Status = SessionStatus.Stopped;
             return;
         }
@@ -61,19 +61,14 @@ public sealed class SessionManager : ISessionManager
     /// </summary>
     private async Task StartCycleAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation("Starting a cycle at {time}", DateTimeOffset.Now);
-        
         if (!stoppingToken.IsCancellationRequested)
             await StartTimeAsync(TimeType.Focus, TimeSpan.FromSeconds(30), stoppingToken);
         
         if (!stoppingToken.IsCancellationRequested)
             await StartTimeAsync(TimeType.Break, TimeSpan.FromSeconds(30), stoppingToken);
         
-        if (stoppingToken.IsCancellationRequested)
-            return;
-        
-        _logger.LogInformation("A cycle was completed at {time}", DateTimeOffset.Now);
-        _sessionProgress.CurrentCycle += 1;
+        if (!stoppingToken.IsCancellationRequested)
+            _sessionProgress.CurrentCycle += 1;
     }
     
     private async Task StartTimeAsync(TimeType timeType, TimeSpan duration, CancellationToken stoppingToken)
@@ -82,8 +77,6 @@ public sealed class SessionManager : ISessionManager
         _sessionProgress.Duration = duration;
         _sessionProgress.Elapsed = TimeSpan.Zero;
         TimeSpan interval = TimeSpan.FromSeconds(1);
-        
-        _logger.LogInformation("Starting {timeType} time at {time}", timeType, DateTimeOffset.Now);
 
         while (_sessionProgress.Elapsed < duration)
         {
@@ -99,13 +92,5 @@ public sealed class SessionManager : ISessionManager
             _progress.Report(_sessionProgress);
             _logger.LogInformation("Time is {elapsed}", _sessionProgress.Elapsed);
         }
-        
-        if (stoppingToken.IsCancellationRequested)
-        {
-            _logger.LogWarning("Stopping {timeType} time at {time}", timeType, DateTimeOffset.Now);
-            return;
-        }
-        
-        _logger.LogInformation("A {timeType} time finished at {time}", timeType, DateTimeOffset.Now);
     }
 }
