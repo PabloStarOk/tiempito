@@ -7,10 +7,10 @@ namespace Tiempitod.NET.Session;
 public sealed class SessionManager : ISessionManager
 {
     private readonly ILogger<SessionManager> _logger;
-    private readonly IProgress<SessionProgress> _progress;
-    private SessionProgress _sessionProgress;
+    private readonly IProgress<Session> _progress;
+    private Session _session;
     
-    public SessionManager(ILogger<SessionManager> logger, IProgress<SessionProgress> progress) 
+    public SessionManager(ILogger<SessionManager> logger, IProgress<Session> progress) 
     {
         _logger = logger;
         _progress = progress;
@@ -21,7 +21,7 @@ public sealed class SessionManager : ISessionManager
     /// </summary>
     public async Task StartSessionAsync(CancellationToken stoppingToken)
     {
-        _sessionProgress = new SessionProgress(TimeType.Focus, TimeSpan.Zero, TimeSpan.Zero);
+        _session = new Session(TimeType.Focus, TimeSpan.Zero, TimeSpan.Zero);
         
         _logger.LogInformation("Starting session at {time}", DateTimeOffset.Now);
         
@@ -36,23 +36,23 @@ public sealed class SessionManager : ISessionManager
         if (stoppingToken.IsCancellationRequested)
         {
             _logger.LogWarning("Canceling session at {time}", DateTimeOffset.Now);
-            _sessionProgress.Status = SessionStatus.Stopped;
+            _session.Status = SessionStatus.Stopped;
             return;
         }
         
-        _sessionProgress.Status = SessionStatus.Finished;
+        _session.Status = SessionStatus.Finished;
         _logger.LogInformation("Finishing session at {time}", DateTimeOffset.Now);
     }
 
     public void PauseSession()
     {
-        _sessionProgress.Status = SessionStatus.Paused;
+        _session.Status = SessionStatus.Paused;
         _logger.LogWarning("Pausing session at time {time}", DateTimeOffset.Now);
     }
 
     public void ContinueSession()
     {
-        _sessionProgress.Status = SessionStatus.Executing;
+        _session.Status = SessionStatus.Executing;
         _logger.LogWarning("Continuing session at time {time}", DateTimeOffset.Now);
     }
     
@@ -68,29 +68,29 @@ public sealed class SessionManager : ISessionManager
             await StartTimeAsync(TimeType.Break, TimeSpan.FromSeconds(30), stoppingToken);
         
         if (!stoppingToken.IsCancellationRequested)
-            _sessionProgress.CurrentCycle += 1;
+            _session.CurrentCycle += 1;
     }
     
     private async Task StartTimeAsync(TimeType timeType, TimeSpan duration, CancellationToken stoppingToken)
     {
-        _sessionProgress.TimeType = timeType;
-        _sessionProgress.Duration = duration;
-        _sessionProgress.Elapsed = TimeSpan.Zero;
+        _session.CurrentTimeType = timeType;
+        _session.Duration = duration;
+        _session.Elapsed = TimeSpan.Zero;
         TimeSpan interval = TimeSpan.FromSeconds(1);
 
-        while (_sessionProgress.Elapsed < duration)
+        while (_session.Elapsed < duration)
         {
             if (stoppingToken.IsCancellationRequested)
                 break;
             
-            if (_sessionProgress.Status is SessionStatus.Paused)
+            if (_session.Status is SessionStatus.Paused)
                 continue;
             
             await Task.Delay(interval, stoppingToken);
             
-            _sessionProgress.Elapsed += interval; 
-            _progress.Report(_sessionProgress);
-            _logger.LogInformation("Time is {elapsed}", _sessionProgress.Elapsed);
+            _session.Elapsed += interval; 
+            _progress.Report(_session);
+            _logger.LogInformation("Time is {elapsed}", _session.Elapsed);
         }
     }
 }
