@@ -85,8 +85,15 @@ public sealed class SessionManager : ISessionManager
             
             if (_session.Status is SessionStatus.Paused)
                 continue;
-            
-            await Task.Delay(interval, stoppingToken);
+
+            try
+            {
+                await Task.Delay(interval, stoppingToken);
+            }
+            catch
+            {
+                break;
+            }
             
             _session.Elapsed += interval; 
             _progress.Report(_session);
