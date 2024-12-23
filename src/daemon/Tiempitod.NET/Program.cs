@@ -1,4 +1,3 @@
-using System.IO.Pipes;
 using System.Text;
 using Tiempitod.NET;
 using Tiempitod.NET.Commands;

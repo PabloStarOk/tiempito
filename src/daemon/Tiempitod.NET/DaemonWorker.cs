@@ -1,4 +1,3 @@
-using Tiempitod.NET.Session;
 using Tiempitod.NET.Commands;
 
 namespace Tiempitod.NET;
