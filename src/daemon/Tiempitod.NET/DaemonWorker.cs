@@ -1,8 +1,8 @@
 using Tiempitod.NET.Session;
+using Tiempitod.NET.Commands;
+using Tiempitod.NET.Commands.Session;
 
 namespace Tiempitod.NET;
-
-using Commands;
 
 /// <summary>
 /// Background service of "Tiempito". ⏳
@@ -45,12 +45,13 @@ public class DaemonWorker : BackgroundService
     }
     
     // TODO: Temp function to execute commands.
-    private async Task ExecuteSessionCommand(CancellationToken stoppingToken, string command, int secondsDelay = 0)
+    private async Task ExecuteSessionCommand(CancellationToken stoppingToken, string commandString, int secondsDelay = 0)
     {
+        ICommand command;
         int millisecondsDelay = secondsDelay * 1000;
         await Task.Delay(millisecondsDelay, stoppingToken);
         
-        switch (command)
+        switch (commandString)
         {
             case "start":
                 if (_sessionTokenSource.IsCancellationRequested && !_sessionTokenSource.TryReset())
@@ -59,24 +60,26 @@ public class DaemonWorker : BackgroundService
                     _sessionTokenSource = new CancellationTokenSource();
                 }
                 _sessionTokenSource.Token.ThrowIfCancellationRequested();
-                await _sessionManager.StartSessionAsync(_sessionTokenSource.Token);
+                command = new StartSessionCommand(_sessionManager);
                 break;
             
            case "pause":
-               _sessionManager.PauseSession();
+               command = new PauseSessionCommand(_sessionManager);
                break;
            
            case "continue":
-               _sessionManager.ContinueSession();
+               command = new ContinueSessionCommand(_sessionManager);
                break;
            
            case "cancel":
-                await _sessionTokenSource.CancelAsync();
+                command = new CancelSessionCommand(_sessionTokenSource);
                 break;
            
            default:
-                _logger.LogError("Unknown command '{givenCommand}'", command);
-                break;
+                _logger.LogError("Unknown command '{givenCommand}'", commandString);
+                return;
         }
+
+        await command.ExecuteAsync(_sessionTokenSource.Token);
     }
 }
