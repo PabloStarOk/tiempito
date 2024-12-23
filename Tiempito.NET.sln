@@ -1,8 +1,16 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tiempitod.NET", "src\daemon\Tiempitod.NET\Tiempitod.NET.csproj", "{C00A0339-2ED8-464E-BA68-AA473956CD67}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C00A0339-2ED8-464E-BA68-AA473956CD67}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C00A0339-2ED8-464E-BA68-AA473956CD67}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C00A0339-2ED8-464E-BA68-AA473956CD67}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C00A0339-2ED8-464E-BA68-AA473956CD67}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
