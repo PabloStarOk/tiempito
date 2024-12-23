@@ -3,11 +3,11 @@ using System.Text;
 
 namespace Tiempitod.NET.Commands;
 
-public class CommandServer : ICommandServer
+public class CommandListener : ICommandListener
 {
     private readonly NamedPipeServerStream _pipeServer;
     private readonly Encoding _streamEncoding;
-    private readonly ILogger<CommandServer> _logger;
+    private readonly ILogger<CommandListener> _logger;
     private CancellationTokenSource _serverTokenSource;
     private readonly int _maxRestartAttempts = 3;
     private int _currentRestartAttempts;
@@ -16,7 +16,7 @@ public class CommandServer : ICommandServer
 
     public event EventHandler<string> CommandReceived;
     
-    public CommandServer(ILogger<CommandServer> logger, Encoding streamEncoding)
+    public CommandListener(ILogger<CommandListener> logger, Encoding streamEncoding)
     {
         // TODO: Use dependency injection to instantiate pipe.
         _pipeServer = new NamedPipeServerStream("tiempito-pipe", PipeDirection.In, 1);
@@ -34,7 +34,7 @@ public class CommandServer : ICommandServer
         }
         
         _executePipeAsync = HandleRequestsAsync(_serverTokenSource.Token);
-        _logger.LogInformation("Command server started.");
+        _logger.LogInformation("Command listener started.");
     }
 
     public void Restart()
@@ -48,14 +48,14 @@ public class CommandServer : ICommandServer
             _pipeServer.Disconnect();
         
         Start();
-        _logger.LogInformation("Command server restarted.");
+        _logger.LogInformation("Command listener restarted.");
     }
     
     public async Task StopAsync()
     {
         await _serverTokenSource.CancelAsync();
         await _pipeServer.DisposeAsync();
-        _logger.LogInformation("Command server stopped.");
+        _logger.LogInformation("Command listener stopped.");
         Dispose();
     }
     
@@ -69,7 +69,7 @@ public class CommandServer : ICommandServer
                 if (!_pipeServer.IsConnected)
                 {
                     await _pipeServer.WaitForConnectionAsync(stoppingToken);
-                    _logger.LogInformation("Command server connected to client.");
+                    _logger.LogInformation("Command listener connected to client.");
                 }
                 
                 // Read length of the buffer. (Sender must append length of the buffer in the first two bytes)
@@ -79,7 +79,7 @@ public class CommandServer : ICommandServer
                 if (length < 0)
                 {
                     _pipeServer.Disconnect();
-                    _logger.LogInformation("Command server disconnected from client.");
+                    _logger.LogInformation("Command listener disconnected from client.");
                     continue;
                 }
                 
@@ -126,7 +126,7 @@ public class CommandServer : ICommandServer
         _isDisposed = true;
     }
 
-    ~CommandServer()
+    ~CommandListener()
     {
         Dispose(disposing: false);
     }

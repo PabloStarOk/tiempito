@@ -8,13 +8,13 @@ namespace Tiempitod.NET;
 public class DaemonWorker : BackgroundService
 {
     private readonly ILogger<DaemonWorker> _logger;
-    private readonly ICommandServer _commandServer;
+    private readonly ICommandListener _commandListener;
     private readonly ICommandHandler _commandHandler;
 
-    public DaemonWorker(ILogger<DaemonWorker> logger, ICommandServer commandServer, ICommandHandler commandHandler)
+    public DaemonWorker(ILogger<DaemonWorker> logger, ICommandListener commandListener, ICommandHandler commandHandler)
     {
         _logger = logger;
-        _commandServer = commandServer;
+        _commandListener = commandListener;
         _commandHandler = commandHandler;
     }
 
@@ -23,15 +23,15 @@ public class DaemonWorker : BackgroundService
         if (_logger.IsEnabled(LogLevel.Information))
             _logger.LogInformation("tiempitod running at: {time}", DateTimeOffset.Now);
         
-        _commandServer.CommandReceived += async (_, command) => await _commandHandler.HandleCommandAsync(command, stoppingToken);
-        _commandServer.Start();
+        _commandListener.CommandReceived += async (_, command) => await _commandHandler.HandleCommandAsync(command, stoppingToken);
+        _commandListener.Start();
         
         while (!stoppingToken.IsCancellationRequested)
         {
             
         }
         
-        await _commandServer.StopAsync();
+        await _commandListener.StopAsync();
         _commandHandler.Dispose();
         
         if (_logger.IsEnabled(LogLevel.Information))
