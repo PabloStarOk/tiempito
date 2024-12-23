@@ -1,4 +1,4 @@
-using Tiempitod.NET.Session;
+using Tiempitod.NET.Commands;
 
 namespace Tiempitod.NET;
 
@@ -8,63 +8,33 @@ namespace Tiempitod.NET;
 public class DaemonWorker : BackgroundService
 {
     private readonly ILogger<DaemonWorker> _logger;
-    private readonly ISessionManager _sessionManager;
+    private readonly ICommandListener _commandListener;
+    private readonly ICommandHandler _commandHandler;
 
-    public DaemonWorker(ILogger<DaemonWorker> logger, ISessionManager sessionManager)
+    public DaemonWorker(ILogger<DaemonWorker> logger, ICommandListener commandListener, ICommandHandler commandHandler)
     {
         _logger = logger;
-        _sessionManager = sessionManager;
+        _commandListener = commandListener;
+        _commandHandler = commandHandler;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         if (_logger.IsEnabled(LogLevel.Information))
             _logger.LogInformation("tiempitod running at: {time}", DateTimeOffset.Now);
-
-        using var cancellationTokenSource = new CancellationTokenSource();
         
-        Task sessionTask =  ExecuteSessionCommand(cancellationTokenSource, "start");
+        _commandListener.CommandReceived += async (_, command) => await _commandHandler.HandleCommandAsync(command, stoppingToken);
+        _commandListener.Start();
         
         while (!stoppingToken.IsCancellationRequested)
         {
-            if (sessionTask.IsCompleted)
-                sessionTask.Dispose();
+            
         }
-
-        await cancellationTokenSource.CancelAsync();
+        
+        await _commandListener.StopAsync();
+        _commandHandler.Dispose();
         
         if (_logger.IsEnabled(LogLevel.Information))
             _logger.LogInformation("tiempitod stopping at: {time}", DateTimeOffset.Now);
-    }
-    
-    // TODO: Temp function to execute commands.
-    private async Task ExecuteSessionCommand(CancellationTokenSource tokenSource, string command, int secondsDelay = 0)
-    {
-        int millisecondsDelay = secondsDelay * 1000;
-        await Task.Delay(millisecondsDelay, tokenSource.Token);
-        
-        switch (command)
-        {
-            case "start":
-                tokenSource.Token.ThrowIfCancellationRequested();
-                await _sessionManager.StartSessionAsync(tokenSource.Token);
-                break;
-            
-           case "pause":
-               _sessionManager.PauseSession();
-               break;
-           
-           case "continue":
-               _sessionManager.ContinueSession();
-               break;
-           
-           case "cancel":
-                await tokenSource.CancelAsync();
-                break;
-           
-           default:
-                _logger.LogError("Unknown command '{givenCommand}'", command);
-                break;
-        }
     }
 }
