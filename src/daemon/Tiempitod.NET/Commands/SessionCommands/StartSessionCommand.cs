@@ -1,6 +1,6 @@
 using Tiempitod.NET.Session;
 
-namespace Tiempitod.NET.Commands.Session;
+namespace Tiempitod.NET.Commands.SessionCommands;
 
 /// <summary>
 /// Command that starts a session.
@@ -14,9 +14,8 @@ public class StartSessionCommand : ICommand
         _sessionManager = sessionManager;
     }
     
-    public Task ExecuteAsync(CancellationToken cancellationToken = default)
+    public Task<OperationResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
-        _sessionManager.StartSession(cancellationToken);
-        return Task.CompletedTask;
+        return Task.FromResult(_sessionManager.StartSession(cancellationToken));
     }
 }

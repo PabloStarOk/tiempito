@@ -1,4 +1,4 @@
-namespace Tiempitod.NET.Commands;
+namespace Tiempitod.NET.Commands.Handler;
 
 public interface ICommandHandler
 {

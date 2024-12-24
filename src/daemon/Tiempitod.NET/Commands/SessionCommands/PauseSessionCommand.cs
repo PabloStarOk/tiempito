@@ -1,6 +1,6 @@
 using Tiempitod.NET.Session;
 
-namespace Tiempitod.NET.Commands.Session;
+namespace Tiempitod.NET.Commands.SessionCommands;
 
 /// <summary>
 /// Command that pauses the current executing session.
@@ -14,8 +14,8 @@ public class PauseSessionCommand : ICommand
       _sessionManager = sessionManager;
    }
    
-   public async Task ExecuteAsync(CancellationToken cancellationToken = default)
+   public async Task<OperationResult> ExecuteAsync(CancellationToken cancellationToken = default)
    {
-      await _sessionManager.PauseSessionAsync();
+      return await _sessionManager.PauseSessionAsync();
    }
 }

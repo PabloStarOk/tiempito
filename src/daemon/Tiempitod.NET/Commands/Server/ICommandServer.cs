@@ -1,9 +1,9 @@
-namespace Tiempitod.NET.Commands;
+namespace Tiempitod.NET.Commands.Server;
 
 /// <summary>
 /// Defines a server to receive and handle commands. 
 /// </summary>
-public interface ICommandListener
+public interface ICommandServer
 {
     public event EventHandler<string> CommandReceived;
     
@@ -22,4 +22,10 @@ public interface ICommandListener
     /// </summary>
     /// <returns>Returns a Task representing the operation.</returns>
     public Task StopAsync();
+
+    /// <summary>
+    /// Sends a response to the current connected client.
+    /// </summary>
+    /// <returns>A Task representing the operation.</returns>
+    public Task SendResponseAsync(DaemonResponse response);
 }

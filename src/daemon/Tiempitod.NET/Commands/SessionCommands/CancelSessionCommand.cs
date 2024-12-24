@@ -1,6 +1,6 @@
 using Tiempitod.NET.Session;
 
-namespace Tiempitod.NET.Commands.Session;
+namespace Tiempitod.NET.Commands.SessionCommands;
 
 /// <summary>
 /// Command that cancels the current active session.
@@ -14,8 +14,8 @@ public class CancelSessionCommand : ICommand
         _sessionManager = sessionManager;
     }
    
-    public async Task ExecuteAsync(CancellationToken cancellationToken = default)
+    public async Task<OperationResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
-        await _sessionManager.CancelSessionAsync();
+        return await _sessionManager.CancelSessionAsync();
     }
 }

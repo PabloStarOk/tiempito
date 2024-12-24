@@ -9,21 +9,24 @@ public interface ISessionManager
     /// Starts a session of focus and break times.
     /// </summary>
     /// <param name="stoppingToken">Token to stop the operation.</param>
-    /// <returns>A task representing the async operation.</returns>
-    public void StartSession(CancellationToken stoppingToken);
+    /// <returns>An <see cref="OperationResult"/> to know if the session was started successfully.</returns>
+    public OperationResult StartSession(CancellationToken stoppingToken);
 
     /// <summary>
     /// Pauses a session that is currently executing.
     /// </summary>
-    public Task PauseSessionAsync();
+    /// <returns>An <see cref="OperationResult"/> to know if the session was paused successfully.</returns>
+    public Task<OperationResult> PauseSessionAsync();
     
     /// <summary>
     /// Continues a session that is currently paused.
     /// </summary>
-    public void ResumeSession();
+    /// <returns>An <see cref="OperationResult"/> to know if the session was resumed successfully.</returns>
+    public OperationResult ResumeSession();
 
     /// <summary>
     /// Cancels the current session.
     /// </summary>
-    public Task CancelSessionAsync();
+    /// <returns>An <see cref="OperationResult"/> to know if the session was cancelled successfully.</returns>
+    public Task<OperationResult> CancelSessionAsync();
 }

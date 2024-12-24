@@ -1,6 +1,6 @@
 using Tiempitod.NET.Session;
 
-namespace Tiempitod.NET.Commands.Session;
+namespace Tiempitod.NET.Commands.SessionCommands;
 
 /// <summary>
 /// Command that continues a paused session.
@@ -14,9 +14,8 @@ public class ResumeSessionCommand : ICommand
         _sessionManager = sessionManager;
     }
    
-    public Task ExecuteAsync(CancellationToken cancellationToken = default)
+    public Task<OperationResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
-        _sessionManager.ResumeSession();
-        return Task.CompletedTask;
+        return Task.FromResult(_sessionManager.ResumeSession());
     }
 }
