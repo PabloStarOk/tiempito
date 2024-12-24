@@ -8,6 +8,7 @@ var builder = Host.CreateApplicationBuilder(args);
 
 builder.Services.AddTransient<Encoding, UTF8Encoding>();
 builder.Services.AddTransient<IProgress<Session>, Progress<Session>>();
+builder.Services.AddTransient<IAsyncMessageHandler, PipeMessageHandler>();
 
 builder.Services.AddSingleton<CommandServer>();
 builder.Services.AddSingleton<CommandHandler>();

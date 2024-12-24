@@ -1,73 +1,74 @@
 using System.IO.Pipes;
-using System.Text;
-using System.Text.Json;
 
 namespace Tiempitod.NET.Commands.Server;
 
 public class CommandServer : DaemonService, ICommandServer
 {
     private readonly NamedPipeServerStream _pipeServer;
-    private readonly Encoding _streamEncoding;
-    private CancellationTokenSource _serverTokenSource;
+    private readonly IAsyncMessageHandler _asyncMessageHandler;
+    private CancellationTokenSource _sendMessageTokenSource;
+    private CancellationTokenSource _readMessageTokenSource;
     private readonly int _maxRestartAttempts = 3;
     private int _currentRestartAttempts;
 
     public event EventHandler<string> CommandReceived;
-    
-    public CommandServer(ILogger<CommandServer> logger, Encoding streamEncoding) : base (logger)
+
+    public CommandServer(ILogger<CommandServer> logger, IAsyncMessageHandler asyncMessageHandler) : base(logger)
     {
         // TODO: Use dependency injection to instantiate pipe.
         _pipeServer = new NamedPipeServerStream("tiempito-pipe", PipeDirection.InOut, 1);
-        _streamEncoding = streamEncoding;
-        _serverTokenSource = new CancellationTokenSource();
+        _asyncMessageHandler = asyncMessageHandler;
+        _sendMessageTokenSource = new CancellationTokenSource();
+        _readMessageTokenSource = new CancellationTokenSource();
     }
 
     protected override void OnStartService()
     {
         Start();
+        Logger.LogInformation("Command server started.");
     }
 
     protected override void OnStopService()
     {
         StopAsync().GetAwaiter().GetResult();
+        Logger.LogInformation("Command server restarted.");
     }
 
     public void Start()
     {
-        if (_serverTokenSource.IsCancellationRequested && !_serverTokenSource.TryReset())
-        {
-            _serverTokenSource.Dispose();
-            _serverTokenSource = new CancellationTokenSource();
-        }
-        
-        HandleRequestsAsync(_serverTokenSource.Token).Forget();
-        Logger.LogInformation("Command server started.");
+        RegenerateToken(ref _readMessageTokenSource);
+        RegenerateToken(ref _sendMessageTokenSource);
+        HandleRequestsAsync().Forget();
     }
 
     public void Restart()
     {
         if (_maxRestartAttempts > 0 && _currentRestartAttempts > _maxRestartAttempts)
+        {
+            Logger.LogError("Maximum restart attempts reached, command server will not restart.");
             return;
-        
+        }
         _currentRestartAttempts++;
-            
+        
         if (_pipeServer.IsConnected)
             _pipeServer.Disconnect();
         
         Start();
-        Logger.LogInformation("Command server restarted.");
+        Logger.LogWarning("Command server restarted.");
     }
     
     public async Task StopAsync()
     {
-        await _serverTokenSource.CancelAsync();
+        await _readMessageTokenSource.CancelAsync();
+        await _sendMessageTokenSource.CancelAsync();
+        
+        _sendMessageTokenSource.Dispose();
+        _readMessageTokenSource.Dispose();
         
         if (_pipeServer.IsConnected)
             _pipeServer.Disconnect();
         
         await _pipeServer.DisposeAsync();
-        
-        Logger.LogInformation("Command server stopped.");
     }
 
     public async Task SendResponseAsync(DaemonResponse response)
@@ -83,24 +84,20 @@ public class CommandServer : DaemonService, ICommandServer
             Logger.LogError("Named pipe stream doesn't support write operations.");
             return;
         }
-            
-        byte[] responseBytes = JsonSerializer.SerializeToUtf8Bytes(response);
-        byte[] buffer = [(byte) (responseBytes.Length / 256), (byte) (responseBytes.Length & 255), ..responseBytes];
-            
-        await _pipeServer.WriteAsync(buffer);
-        await _pipeServer.FlushAsync();
+        
+        await _asyncMessageHandler.SendMessageAsync(_pipeServer, response, _sendMessageTokenSource.Token);
     }
     
-    private async Task HandleRequestsAsync(CancellationToken stoppingToken)
+    private async Task HandleRequestsAsync()
     {
         try
         {
-            while (!stoppingToken.IsCancellationRequested)
+            while (!_readMessageTokenSource.IsCancellationRequested)
             {
                 // Connect or reconnect the server to a client.
                 if (!_pipeServer.IsConnected)
                 {
-                    await _pipeServer.WaitForConnectionAsync(stoppingToken);
+                    await _pipeServer.WaitForConnectionAsync(_readMessageTokenSource.Token);
                     Logger.LogInformation("Command server connected to client.");
                 }
                 
@@ -110,36 +107,37 @@ public class CommandServer : DaemonService, ICommandServer
                     return;
                 }
                 
-                // Read length of the buffer. (Sender must append length of the buffer in the first two bytes)
-                int length = _pipeServer.ReadByte() * 256;
-                length += _pipeServer.ReadByte();
+                string receivedCommand = await _asyncMessageHandler.ReadMessageAsync(_pipeServer, _readMessageTokenSource.Token);
                 
-                if (length < 0)
+                // String empty means client has closed its connection.
+                if (receivedCommand == string.Empty)
                 {
                     _pipeServer.Disconnect();
                     Logger.LogInformation("Command server disconnected from client.");
-                    continue;
+                    continue;   
                 }
                 
-                // Read command request.
-                var dataBuffer = new Memory<byte>(new byte[length]);
-                
-                if (await _pipeServer.ReadAsync(dataBuffer, stoppingToken) <= 0)
-                    continue;
-                
-                string receivedCommand = _streamEncoding.GetString(dataBuffer.ToArray());
                 CommandReceived?.Invoke(this, receivedCommand);
             }
         }
         catch (Exception ex)
         {
-            if (!stoppingToken.IsCancellationRequested)
+            if (!_readMessageTokenSource.IsCancellationRequested)
                 Logger.LogCritical("Error while handling command requests at {time}: {error}", DateTimeOffset.Now, ex.Message);
         }
         finally
         {
-            if (!stoppingToken.IsCancellationRequested)
+            if (!_readMessageTokenSource.IsCancellationRequested)
                 Restart();
         }
+    }
+
+    private void RegenerateToken(ref CancellationTokenSource tokenSource)
+    {
+        if (tokenSource.TryReset())
+            return;
+
+        tokenSource.Dispose();
+        tokenSource = new CancellationTokenSource();
     }
 }
