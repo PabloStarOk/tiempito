@@ -3,7 +3,7 @@ namespace Tiempitod.NET.Commands;
 /// <summary>
 /// Defines a server to receive and handle commands. 
 /// </summary>
-public interface ICommandListener
+public interface ICommandServer
 {
     public event EventHandler<string> CommandReceived;
     

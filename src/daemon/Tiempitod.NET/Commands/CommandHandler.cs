@@ -5,25 +5,25 @@ namespace Tiempitod.NET.Commands;
 
 public class CommandHandler : DaemonService, ICommandHandler
 {
-    private readonly ICommandListener _commandListener;
+    private readonly ICommandServer _commandServer;
     private readonly ISessionManager _sessionManager;
     private CancellationTokenSource _sessionTokenSource;
 
-    public CommandHandler(ILogger<CommandHandler> logger, ICommandListener commandListener, ISessionManager sessionManager) : base(logger)
+    public CommandHandler(ILogger<CommandHandler> logger, ICommandServer commandServer, ISessionManager sessionManager) : base(logger)
     {
-        _commandListener = commandListener;
+        _commandServer = commandServer;
         _sessionManager = sessionManager;
         _sessionTokenSource = new CancellationTokenSource();
     }
 
     protected override void OnStartService()
     {
-        _commandListener.CommandReceived += ReceiveCommand;
+        _commandServer.CommandReceived += ReceiveCommand;
     }
 
     protected override void OnStopService()
     {
-        _commandListener.CommandReceived -= ReceiveCommand;
+        _commandServer.CommandReceived -= ReceiveCommand;
 
         if (!_sessionTokenSource.IsCancellationRequested)
             _sessionTokenSource.Cancel();

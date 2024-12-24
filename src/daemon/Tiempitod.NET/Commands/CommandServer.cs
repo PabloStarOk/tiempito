@@ -3,7 +3,7 @@ using System.Text;
 
 namespace Tiempitod.NET.Commands;
 
-public class CommandListener : DaemonService, ICommandListener
+public class CommandServer : DaemonService, ICommandServer
 {
     private readonly NamedPipeServerStream _pipeServer;
     private readonly Encoding _streamEncoding;
@@ -13,7 +13,7 @@ public class CommandListener : DaemonService, ICommandListener
 
     public event EventHandler<string> CommandReceived;
     
-    public CommandListener(ILogger<CommandListener> logger, Encoding streamEncoding) : base (logger)
+    public CommandServer(ILogger<CommandServer> logger, Encoding streamEncoding) : base (logger)
     {
         // TODO: Use dependency injection to instantiate pipe.
         _pipeServer = new NamedPipeServerStream("tiempito-pipe", PipeDirection.In, 1);
