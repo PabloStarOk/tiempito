@@ -41,7 +41,7 @@ public class CommandServer : DaemonService, ICommandServer
         }
         
         HandleRequestsAsync(_serverTokenSource.Token).Forget();
-        Logger.LogInformation("Command listener started.");
+        Logger.LogInformation("Command server started.");
     }
 
     public void Restart()
@@ -55,7 +55,7 @@ public class CommandServer : DaemonService, ICommandServer
             _pipeServer.Disconnect();
         
         Start();
-        Logger.LogInformation("Command listener restarted.");
+        Logger.LogInformation("Command server restarted.");
     }
     
     public async Task StopAsync()
@@ -67,7 +67,7 @@ public class CommandServer : DaemonService, ICommandServer
         
         await _pipeServer.DisposeAsync();
         
-        Logger.LogInformation("Command listener stopped.");
+        Logger.LogInformation("Command server stopped.");
     }
 
     public async Task SendResponseAsync(DaemonResponse response)
@@ -79,7 +79,10 @@ public class CommandServer : DaemonService, ICommandServer
         }
         
         if (!_pipeServer.CanWrite)
+        {
             Logger.LogError("Named pipe stream doesn't support write operations.");
+            return;
+        }
             
         byte[] responseBytes = JsonSerializer.SerializeToUtf8Bytes(response);
         byte[] buffer = [(byte) (responseBytes.Length / 256), (byte) (responseBytes.Length & 255), ..responseBytes];
@@ -98,7 +101,13 @@ public class CommandServer : DaemonService, ICommandServer
                 if (!_pipeServer.IsConnected)
                 {
                     await _pipeServer.WaitForConnectionAsync(stoppingToken);
-                    Logger.LogInformation("Command listener connected to client.");
+                    Logger.LogInformation("Command server connected to client.");
+                }
+                
+                if (!_pipeServer.CanRead)
+                {
+                    Logger.LogError("Named pipe stream doesn't support read operations.");
+                    return;
                 }
                 
                 // Read length of the buffer. (Sender must append length of the buffer in the first two bytes)
@@ -108,7 +117,7 @@ public class CommandServer : DaemonService, ICommandServer
                 if (length < 0)
                 {
                     _pipeServer.Disconnect();
-                    Logger.LogInformation("Command listener disconnected from client.");
+                    Logger.LogInformation("Command server disconnected from client.");
                     continue;
                 }
                 
