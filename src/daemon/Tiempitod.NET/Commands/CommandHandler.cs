@@ -34,6 +34,7 @@ public class CommandHandler : DaemonService, ICommandHandler
     public async Task HandleCommandAsync(string commandString)
     {
         ICommand command;
+        OperationResult operationResult;
         
         switch (commandString)
         {
@@ -60,15 +61,40 @@ public class CommandHandler : DaemonService, ICommandHandler
                 break;
            
             default:
-                Logger.LogError("Unknown command '{givenCommand}'", commandString);
+                operationResult = new OperationResult
+                (
+                    Success: false,
+                    Message: $"Unknown command '{commandString}'"
+                );
+                await SendResponseAsync(operationResult);
                 return;
         }
 
-        OperationResult operationResult = await command.ExecuteAsync(_sessionTokenSource.Token);
+        operationResult = await command.ExecuteAsync(_sessionTokenSource.Token);
+        await SendResponseAsync(operationResult);
     }
 
     private void ReceiveCommand(object? _, string command)
     {
         HandleCommandAsync(command).GetAwaiter();
+    }
+
+    private async Task SendResponseAsync(OperationResult operationResult)
+    {
+        DaemonResponse daemonResponse;
+
+        try
+        {
+            daemonResponse = operationResult.Success 
+                ? DaemonResponse.Ok(operationResult.Message) 
+                : DaemonResponse.BadRequest(operationResult.Message);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogCritical("Exception captured at {time}, error: {error}", DateTimeOffset.Now, ex.Message);
+            daemonResponse = DaemonResponse.InternalError($"An internal error occurred: {ex.Message}");
+        }
+        
+        await _commandServer.SendResponseAsync(daemonResponse);
     }
 }

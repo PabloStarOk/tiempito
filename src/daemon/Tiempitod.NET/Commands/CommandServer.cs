@@ -1,5 +1,6 @@
 using System.IO.Pipes;
 using System.Text;
+using System.Text.Json;
 
 namespace Tiempitod.NET.Commands;
 
@@ -16,7 +17,7 @@ public class CommandServer : DaemonService, ICommandServer
     public CommandServer(ILogger<CommandServer> logger, Encoding streamEncoding) : base (logger)
     {
         // TODO: Use dependency injection to instantiate pipe.
-        _pipeServer = new NamedPipeServerStream("tiempito-pipe", PipeDirection.In, 1);
+        _pipeServer = new NamedPipeServerStream("tiempito-pipe", PipeDirection.InOut, 1);
         _streamEncoding = streamEncoding;
         _serverTokenSource = new CancellationTokenSource();
     }
@@ -67,6 +68,24 @@ public class CommandServer : DaemonService, ICommandServer
         await _pipeServer.DisposeAsync();
         
         Logger.LogInformation("Command listener stopped.");
+    }
+
+    public async Task SendResponseAsync(DaemonResponse response)
+    {
+        if (!_pipeServer.IsConnected)
+        {
+            Logger.LogError("Could not send a response to the client, it is disconnected.");
+            return;
+        }
+        
+        if (!_pipeServer.CanWrite)
+            Logger.LogError("Named pipe stream doesn't support write operations.");
+            
+        byte[] responseBytes = JsonSerializer.SerializeToUtf8Bytes(response);
+        byte[] buffer = [(byte) (responseBytes.Length / 256), (byte) (responseBytes.Length & 255), ..responseBytes];
+            
+        await _pipeServer.WriteAsync(buffer);
+        await _pipeServer.FlushAsync();
     }
     
     private async Task HandleRequestsAsync(CancellationToken stoppingToken)

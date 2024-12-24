@@ -16,7 +16,7 @@ public struct Session(TimeType timeType, TimeSpan elapsed, TimeSpan focusDuratio
     public TimeSpan BreakDuration { get; } = breakDuration;
     
     // Dynamic data.
-    public SessionStatus Status { get; set; }
+    public SessionStatus Status { get; set; } = SessionStatus.None;
     public int CurrentCycle { get; set; }
     public TimeType CurrentTimeType { get; set; } = timeType;
     public TimeSpan Elapsed { get; set; } = elapsed;

@@ -102,6 +102,7 @@ public sealed class SessionManager : DaemonService, ISessionManager
     private async Task RunTimerAsync(CancellationToken stoppingToken)
     {
         Logger.LogInformation("Starting session at {time}", DateTimeOffset.Now);
+        _session.Status = SessionStatus.Executing;
         
         while (_session.CurrentCycle < _session.TargetCycles && !stoppingToken.IsCancellationRequested)
         {

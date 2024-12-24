@@ -22,4 +22,10 @@ public interface ICommandServer
     /// </summary>
     /// <returns>Returns a Task representing the operation.</returns>
     public Task StopAsync();
+
+    /// <summary>
+    /// Sends a response to the current connected client.
+    /// </summary>
+    /// <returns>A Task representing the operation.</returns>
+    public Task SendResponseAsync(DaemonResponse response);
 }
