@@ -8,6 +8,8 @@ public class CommandServer : DaemonService, ICommandServer
     private readonly IAsyncMessageHandler _asyncMessageHandler;
     private CancellationTokenSource _sendMessageTokenSource;
     private CancellationTokenSource _readMessageTokenSource;
+    
+    private string _currentConnectedUser = string.Empty;
     private readonly int _maxRestartAttempts = 3;
     private int _currentRestartAttempts;
 
@@ -98,7 +100,8 @@ public class CommandServer : DaemonService, ICommandServer
                 if (!_pipeServer.IsConnected)
                 {
                     await _pipeServer.WaitForConnectionAsync(_readMessageTokenSource.Token);
-                    Logger.LogInformation("Command server connected to client.");
+                    _currentConnectedUser = _pipeServer.GetImpersonationUserName();
+                    Logger.LogInformation("Command server connected to client {user}", _currentConnectedUser);
                 }
                 
                 if (!_pipeServer.CanRead)
@@ -113,7 +116,8 @@ public class CommandServer : DaemonService, ICommandServer
                 if (receivedCommand == string.Empty)
                 {
                     _pipeServer.Disconnect();
-                    Logger.LogInformation("Command server disconnected from client.");
+                    Logger.LogInformation("Command server disconnected from client {user}", _currentConnectedUser);
+                    _currentConnectedUser = string.Empty;
                     continue;   
                 }
                 
