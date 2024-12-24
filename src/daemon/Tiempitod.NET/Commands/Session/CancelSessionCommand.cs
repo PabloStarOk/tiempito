@@ -1,3 +1,5 @@
+using Tiempitod.NET.Session;
+
 namespace Tiempitod.NET.Commands.Session;
 
 /// <summary>
@@ -5,15 +7,15 @@ namespace Tiempitod.NET.Commands.Session;
 /// </summary>
 public class CancelSessionCommand : ICommand
 {
-    private readonly CancellationTokenSource _cancellationTokenSource;
+    private readonly ISessionManager _sessionManager;
    
-    public CancelSessionCommand(CancellationTokenSource cancellationTokenSource)
+    public CancelSessionCommand(ISessionManager sessionManager)
     {
-        _cancellationTokenSource = cancellationTokenSource;
+        _sessionManager = sessionManager;
     }
    
     public async Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
-        await _cancellationTokenSource.CancelAsync();
+        await _sessionManager.CancelSessionAsync();
     }
 }

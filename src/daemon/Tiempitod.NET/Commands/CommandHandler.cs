@@ -41,7 +41,7 @@ public class CommandHandler : ICommandHandler
                 break;
            
             case "cancel":
-                command = new CancelSessionCommand(_sessionTokenSource);
+                command = new CancelSessionCommand(_sessionManager);
                 break;
            
             default:

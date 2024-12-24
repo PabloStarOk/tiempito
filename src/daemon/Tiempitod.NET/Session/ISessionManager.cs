@@ -10,15 +10,20 @@ public interface ISessionManager
     /// </summary>
     /// <param name="stoppingToken">Token to stop the operation.</param>
     /// <returns>A task representing the async operation.</returns>
-    public Task StartSessionAsync(CancellationToken stoppingToken);
+    public void StartSession(CancellationToken stoppingToken);
 
     /// <summary>
     /// Pauses a session that is currently executing.
     /// </summary>
-    public void PauseSession();
+    public Task PauseSessionAsync();
     
     /// <summary>
     /// Continues a session that is currently paused.
     /// </summary>
-    public void ContinueSession();
+    public void ResumeSession();
+
+    /// <summary>
+    /// Cancels the current session.
+    /// </summary>
+    public Task CancelSessionAsync();
 }

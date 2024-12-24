@@ -8,100 +8,129 @@ public sealed class SessionManager : ISessionManager
 {
     private readonly ILogger<SessionManager> _logger;
     private readonly IProgress<Session> _progress;
+    private readonly TimeSpan _interval;
+    
     private Session _session;
+    private CancellationTokenSource _timerTokenSource;
     
     public SessionManager(ILogger<SessionManager> logger, IProgress<Session> progress) 
     {
         _logger = logger;
         _progress = progress;
+        _interval = TimeSpan.FromSeconds(1);
+        _timerTokenSource = new CancellationTokenSource();
     }
     
-    public async Task StartSessionAsync(CancellationToken stoppingToken)
+    public void StartSession(CancellationToken daemonStoppingToken)
     {
-        _session = new Session(TimeType.Focus, TimeSpan.Zero, TimeSpan.Zero);
-        
-        _logger.LogInformation("Starting session at {time}", DateTimeOffset.Now);
-        
-        for (var i = 0; i < 5; i++)
-        {
-            if (stoppingToken.IsCancellationRequested)
-                break;
-            
-            await StartCycleAsync(stoppingToken);
-        }
-        
-        if (stoppingToken.IsCancellationRequested)
-        {
-            _logger.LogWarning("Canceling session at {time}", DateTimeOffset.Now);
-            _session.Status = SessionStatus.Cancelled;
-            return;
-        }
-        
-        _session.Status = SessionStatus.Finished;
-        _logger.LogInformation("Finishing session at {time}", DateTimeOffset.Now);
+        _session = new Session(
+            TimeType.Focus,
+            TimeSpan.Zero,
+            TimeSpan.FromSeconds(30),
+            TimeSpan.FromSeconds(30),
+            5);
+
+        RegenerateCancellationToken();
+        RunTimerAsync(_timerTokenSource.Token).Forget();
     }
 
-    public void PauseSession()
+    public async Task PauseSessionAsync()
     {
+        await _timerTokenSource.CancelAsync();
         _session.Status = SessionStatus.Paused;
-        _logger.LogWarning("Pausing session at time {time}", DateTimeOffset.Now);
+        _logger.LogWarning("Session paused at time {time}", DateTimeOffset.Now);
     }
 
-    public void ContinueSession()
+    public void ResumeSession()
     {
+        RegenerateCancellationToken();
         _session.Status = SessionStatus.Executing;
+        RunTimerAsync(_timerTokenSource.Token).Forget();
         _logger.LogWarning("Continuing session at time {time}", DateTimeOffset.Now);
+    }
+
+    public async Task CancelSessionAsync()
+    {
+        await _timerTokenSource.CancelAsync();
+        _session = new Session
+        {
+            Status = SessionStatus.Cancelled
+        };
+        _logger.LogWarning("Session cancelled at {time}", DateTimeOffset.Now);
+    }
+
+    private void RegenerateCancellationToken()
+    {
+        if (_timerTokenSource.TryReset())
+            return;
+        
+        _timerTokenSource.Dispose();
+        _timerTokenSource = new CancellationTokenSource();
     }
     
     /// <summary>
-    /// Starts a cycle that executes one focus time and one break time.
+    /// Starts the timer of the session.
     /// </summary>
-    /// <param name="stoppingToken">Token to stop the operation.</param>
-    private async Task StartCycleAsync(CancellationToken stoppingToken)
+    /// <param name="stoppingToken">Cancel the timer.</param>
+    private async Task RunTimerAsync(CancellationToken stoppingToken)
     {
-        if (!stoppingToken.IsCancellationRequested)
-            await StartTimeAsync(TimeType.Focus, TimeSpan.FromSeconds(30), stoppingToken);
+        _logger.LogInformation("Starting session at {time}", DateTimeOffset.Now);
         
-        if (!stoppingToken.IsCancellationRequested)
-            await StartTimeAsync(TimeType.Break, TimeSpan.FromSeconds(30), stoppingToken);
-        
-        if (!stoppingToken.IsCancellationRequested)
-            _session.CurrentCycle += 1;
+        while (_session.CurrentCycle < _session.TargetCycles && !stoppingToken.IsCancellationRequested)
+        {
+            await StartTimeAsync(stoppingToken);
+            await StartTimeAsync(stoppingToken);
+
+            if (stoppingToken.IsCancellationRequested)
+                return;
+            
+            _session.CurrentCycle++;
+        }
+
+        if (stoppingToken.IsCancellationRequested)
+            return;
+
+        _session.Status = SessionStatus.Finished;
+        _logger.LogInformation("Finishing session at {time}", DateTimeOffset.Now);
     }
     
     /// <summary>
     /// Starts a focus or break time.
     /// </summary>
-    /// <param name="timeType">Current type of time (focus or break) of the session.</param>
-    /// <param name="duration">Duration of the current time</param>
     /// <param name="stoppingToken">Token to stop the operation.</param>
-    private async Task StartTimeAsync(TimeType timeType, TimeSpan duration, CancellationToken stoppingToken)
+    private async Task StartTimeAsync(CancellationToken stoppingToken)
     {
-        _session.CurrentTimeType = timeType;
-        _session.Duration = duration;
-        _session.Elapsed = TimeSpan.Zero;
-        TimeSpan interval = TimeSpan.FromSeconds(1);
+        TimeSpan duration = _session.CurrentTimeType is TimeType.Focus 
+            ? _session.FocusDuration 
+            : _session.BreakDuration;
 
-        while (_session.Elapsed < duration)
+        while (_session.Elapsed < duration && !stoppingToken.IsCancellationRequested)
         {
-            if (stoppingToken.IsCancellationRequested)
-                break;
-            
-            if (_session.Status is SessionStatus.Paused)
-                continue;
-
             try
             {
-                await Task.Delay(interval, stoppingToken);
+                await Task.Delay(_interval, stoppingToken);
             }
             catch
             {
-                break;
+                return;
             }
-            
-            _session.Elapsed += interval; 
+
+
+            if (stoppingToken.IsCancellationRequested)
+                return;
+
+            _session.Elapsed += _interval;
             _progress.Report(_session);
             _logger.LogInformation("Time is {elapsed}", _session.Elapsed);
         }
+
+        if (stoppingToken.IsCancellationRequested)
+            return;
+
+        _session.CurrentTimeType = _session.CurrentTimeType is TimeType.Focus 
+            ? TimeType.Break 
+            : TimeType.Focus;
+        
+        _session.Elapsed = TimeSpan.Zero;
     }
 }
