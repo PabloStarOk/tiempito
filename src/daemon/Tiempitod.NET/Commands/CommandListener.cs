@@ -3,28 +3,35 @@ using System.Text;
 
 namespace Tiempitod.NET.Commands;
 
-public class CommandListener : ICommandListener
+public class CommandListener : DaemonService, ICommandListener
 {
     private readonly NamedPipeServerStream _pipeServer;
     private readonly Encoding _streamEncoding;
-    private readonly ILogger<CommandListener> _logger;
     private CancellationTokenSource _serverTokenSource;
     private readonly int _maxRestartAttempts = 3;
     private int _currentRestartAttempts;
     private Task? _executePipeAsync;
-    private bool _isDisposed = false;
 
     public event EventHandler<string> CommandReceived;
     
-    public CommandListener(ILogger<CommandListener> logger, Encoding streamEncoding)
+    public CommandListener(ILogger<CommandListener> logger, Encoding streamEncoding) : base (logger)
     {
         // TODO: Use dependency injection to instantiate pipe.
         _pipeServer = new NamedPipeServerStream("tiempito-pipe", PipeDirection.In, 1);
-        _logger = logger;
         _streamEncoding = streamEncoding;
         _serverTokenSource = new CancellationTokenSource();
     }
-    
+
+    protected override void OnStartService()
+    {
+        Start();
+    }
+
+    protected override void OnStopService()
+    {
+        StopAsync().GetAwaiter().GetResult();
+    }
+
     public void Start()
     {
         if (_serverTokenSource.IsCancellationRequested && !_serverTokenSource.TryReset())
@@ -34,7 +41,7 @@ public class CommandListener : ICommandListener
         }
         
         _executePipeAsync = HandleRequestsAsync(_serverTokenSource.Token);
-        _logger.LogInformation("Command listener started.");
+        Logger.LogInformation("Command listener started.");
     }
 
     public void Restart()
@@ -48,15 +55,19 @@ public class CommandListener : ICommandListener
             _pipeServer.Disconnect();
         
         Start();
-        _logger.LogInformation("Command listener restarted.");
+        Logger.LogInformation("Command listener restarted.");
     }
     
     public async Task StopAsync()
     {
         await _serverTokenSource.CancelAsync();
+        
+        if (_pipeServer.IsConnected)
+            _pipeServer.Disconnect();
+        
         await _pipeServer.DisposeAsync();
-        _logger.LogInformation("Command listener stopped.");
-        Dispose();
+        
+        Logger.LogInformation("Command listener stopped.");
     }
     
     private async Task HandleRequestsAsync(CancellationToken stoppingToken)
@@ -69,7 +80,7 @@ public class CommandListener : ICommandListener
                 if (!_pipeServer.IsConnected)
                 {
                     await _pipeServer.WaitForConnectionAsync(stoppingToken);
-                    _logger.LogInformation("Command listener connected to client.");
+                    Logger.LogInformation("Command listener connected to client.");
                 }
                 
                 // Read length of the buffer. (Sender must append length of the buffer in the first two bytes)
@@ -79,7 +90,7 @@ public class CommandListener : ICommandListener
                 if (length < 0)
                 {
                     _pipeServer.Disconnect();
-                    _logger.LogInformation("Command listener disconnected from client.");
+                    Logger.LogInformation("Command listener disconnected from client.");
                     continue;
                 }
                 
@@ -96,38 +107,12 @@ public class CommandListener : ICommandListener
         catch (Exception ex)
         {
             if (!stoppingToken.IsCancellationRequested)
-                _logger.LogCritical("Error while handling command requests at {time}: {error}", DateTimeOffset.Now, ex.Message);
+                Logger.LogCritical("Error while handling command requests at {time}: {error}", DateTimeOffset.Now, ex.Message);
         }
         finally
         {
             if (!stoppingToken.IsCancellationRequested)
                 Restart();
         }
-    }
-
-    public void Dispose()
-    {
-        Dispose(disposing: true);
-        GC.SuppressFinalize(this);
-    }
-
-    private void Dispose(bool disposing)
-    {
-        if (_isDisposed)
-            return;
-        
-        if (disposing) {
-            if (_pipeServer.IsConnected)
-                _pipeServer.Disconnect();
-            
-            _pipeServer.Dispose();
-        }
-
-        _isDisposed = true;
-    }
-
-    ~CommandListener()
-    {
-        Dispose(disposing: false);
     }
 }

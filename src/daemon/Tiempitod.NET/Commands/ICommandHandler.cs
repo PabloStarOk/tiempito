@@ -1,6 +1,6 @@
 namespace Tiempitod.NET.Commands;
 
-public interface ICommandHandler: IDisposable
+public interface ICommandHandler
 {
-    public Task HandleCommandAsync(string commandString, CancellationToken stoppingToken);
+    public Task HandleCommandAsync(string commandString);
 }

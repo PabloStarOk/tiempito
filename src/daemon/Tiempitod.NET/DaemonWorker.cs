@@ -1,5 +1,3 @@
-using Tiempitod.NET.Commands;
-
 namespace Tiempitod.NET;
 
 /// <summary>
@@ -8,33 +6,34 @@ namespace Tiempitod.NET;
 public class DaemonWorker : BackgroundService
 {
     private readonly ILogger<DaemonWorker> _logger;
-    private readonly ICommandListener _commandListener;
-    private readonly ICommandHandler _commandHandler;
+    private readonly IEnumerable<DaemonService> _daemonServices;
+    private bool _startedSuccessfully;
 
-    public DaemonWorker(ILogger<DaemonWorker> logger, ICommandListener commandListener, ICommandHandler commandHandler)
+    public DaemonWorker(ILogger<DaemonWorker> logger, IEnumerable<DaemonService> daemonServices)
     {
         _logger = logger;
-        _commandListener = commandListener;
-        _commandHandler = commandHandler;
+        _daemonServices = daemonServices;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         if (_logger.IsEnabled(LogLevel.Information))
             _logger.LogInformation("tiempitod running at: {time}", DateTimeOffset.Now);
+
+        _startedSuccessfully = true;
         
-        _commandListener.CommandReceived += async (_, command) => await _commandHandler.HandleCommandAsync(command, stoppingToken);
-        _commandListener.Start();
-        
-        while (!stoppingToken.IsCancellationRequested)
+        foreach (DaemonService service in _daemonServices)
         {
-            
+            if (!service.StartService())
+                _startedSuccessfully = false;
         }
         
-        await _commandListener.StopAsync();
-        _commandHandler.Dispose();
+        while (!stoppingToken.IsCancellationRequested && _startedSuccessfully) ;
+        
+        foreach (DaemonService service in _daemonServices)
+            service.StopService();
         
         if (_logger.IsEnabled(LogLevel.Information))
-            _logger.LogInformation("tiempitod stopping at: {time}", DateTimeOffset.Now);
+            _logger.LogInformation("tiempitod stopped at: {time}", DateTimeOffset.Now);
     }
 }

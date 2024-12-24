@@ -3,20 +3,35 @@ using Tiempitod.NET.Session;
 
 namespace Tiempitod.NET.Commands;
 
-public class CommandHandler : ICommandHandler
+public class CommandHandler : DaemonService, ICommandHandler
 {
-    private readonly ILogger<CommandHandler> _logger;
+    private readonly ICommandListener _commandListener;
     private readonly ISessionManager _sessionManager;
     private CancellationTokenSource _sessionTokenSource;
 
-    public CommandHandler(ILogger<CommandHandler> logger, ISessionManager sessionManager)
+    public CommandHandler(ILogger<CommandHandler> logger, ICommandListener commandListener, ISessionManager sessionManager) : base(logger)
     {
-        _logger = logger;
+        _commandListener = commandListener;
         _sessionManager = sessionManager;
         _sessionTokenSource = new CancellationTokenSource();
     }
+
+    protected override void OnStartService()
+    {
+        _commandListener.CommandReceived += ReceiveCommand;
+    }
+
+    protected override void OnStopService()
+    {
+        _commandListener.CommandReceived -= ReceiveCommand;
+
+        if (!_sessionTokenSource.IsCancellationRequested)
+            _sessionTokenSource.Cancel();
+
+        _sessionTokenSource.Dispose();
+    }
     
-    public async Task HandleCommandAsync(string commandString, CancellationToken stoppingToken)
+    public async Task HandleCommandAsync(string commandString)
     {
         ICommand command;
         
@@ -45,32 +60,15 @@ public class CommandHandler : ICommandHandler
                 break;
            
             default:
-                _logger.LogError("Unknown command '{givenCommand}'", commandString);
+                Logger.LogError("Unknown command '{givenCommand}'", commandString);
                 return;
         }
 
         await command.ExecuteAsync(_sessionTokenSource.Token);
     }
 
-    public void Dispose()
-    {   
-        Dispose(disposing: true);
-        GC.SuppressFinalize(this);
-    }
-
-    private void Dispose(bool disposing)
+    private void ReceiveCommand(object? _, string command)
     {
-        if (disposing)
-            return;
-        
-        if (!_sessionTokenSource.IsCancellationRequested)
-            _sessionTokenSource.Cancel();
-            
-        _sessionTokenSource.Dispose();
-    }
-
-    ~CommandHandler()
-    {
-        Dispose(disposing: false);
+        HandleCommandAsync(command).GetAwaiter();
     }
 }
