@@ -36,8 +36,8 @@ public class CommandHandler : ICommandHandler
                 command = new PauseSessionCommand(_sessionManager);
                 break;
            
-            case "continue":
-                command = new ContinueSessionCommand(_sessionManager);
+            case "resume":
+                command = new ResumeSessionCommand(_sessionManager);
                 break;
            
             case "cancel":

@@ -5,11 +5,11 @@ namespace Tiempitod.NET.Commands.Session;
 /// <summary>
 /// Command that continues a paused session.
 /// </summary>
-public class ContinueSessionCommand : ICommand
+public class ResumeSessionCommand : ICommand
 {
     private readonly ISessionManager _sessionManager;
    
-    public ContinueSessionCommand(ISessionManager sessionManager)
+    public ResumeSessionCommand(ISessionManager sessionManager)
     {
         _sessionManager = sessionManager;
     }
