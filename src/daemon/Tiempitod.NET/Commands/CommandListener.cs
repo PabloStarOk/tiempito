@@ -10,7 +10,6 @@ public class CommandListener : DaemonService, ICommandListener
     private CancellationTokenSource _serverTokenSource;
     private readonly int _maxRestartAttempts = 3;
     private int _currentRestartAttempts;
-    private Task? _executePipeAsync;
 
     public event EventHandler<string> CommandReceived;
     
@@ -40,7 +39,7 @@ public class CommandListener : DaemonService, ICommandListener
             _serverTokenSource = new CancellationTokenSource();
         }
         
-        _executePipeAsync = HandleRequestsAsync(_serverTokenSource.Token);
+        HandleRequestsAsync(_serverTokenSource.Token).Forget();
         Logger.LogInformation("Command listener started.");
     }
 
