@@ -64,7 +64,7 @@ public class CommandHandler : DaemonService, ICommandHandler
                 return;
         }
 
-        await command.ExecuteAsync(_sessionTokenSource.Token);
+        OperationResult operationResult = await command.ExecuteAsync(_sessionTokenSource.Token);
     }
 
     private void ReceiveCommand(object? _, string command)

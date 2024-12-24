@@ -14,9 +14,8 @@ public class ResumeSessionCommand : ICommand
         _sessionManager = sessionManager;
     }
    
-    public Task ExecuteAsync(CancellationToken cancellationToken = default)
+    public Task<OperationResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
-        _sessionManager.ResumeSession();
-        return Task.CompletedTask;
+        return new Task<OperationResult>(() => _sessionManager.ResumeSession());
     }
 }

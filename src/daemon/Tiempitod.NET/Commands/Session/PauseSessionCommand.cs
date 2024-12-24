@@ -14,8 +14,8 @@ public class PauseSessionCommand : ICommand
       _sessionManager = sessionManager;
    }
    
-   public async Task ExecuteAsync(CancellationToken cancellationToken = default)
+   public async Task<OperationResult> ExecuteAsync(CancellationToken cancellationToken = default)
    {
-      await _sessionManager.PauseSessionAsync();
+      return await _sessionManager.PauseSessionAsync();
    }
 }
