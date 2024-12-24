@@ -26,42 +26,64 @@ public sealed class SessionManager : DaemonService, ISessionManager
         _timerTokenSource.Dispose();
     }
     
-    public void StartSession(CancellationToken daemonStoppingToken)
+    public OperationResult StartSession(CancellationToken daemonStoppingToken)
     {
+        if (_session.Status is SessionStatus.Executing)
+            return new OperationResult(Success: false, Message: "There is already an executed session.");
+        
+        if (_session.Status is SessionStatus.Paused)
+            return new OperationResult(Success: false, Message: "There is already an active paused session.");
+
         _session = new Session(
             TimeType.Focus,
-            TimeSpan.Zero,
-            TimeSpan.FromSeconds(30),
-            TimeSpan.FromSeconds(30),
-            5);
+            elapsed: TimeSpan.Zero,
+            focusDuration: TimeSpan.FromSeconds(30),
+            breakDuration: TimeSpan.FromSeconds(30),
+            targetCycles: 5);
 
         RegenerateCancellationToken();
         RunTimerAsync(_timerTokenSource.Token).Forget();
+        
+        return new OperationResult(Success: true, Message: "Session started.");
     }
 
-    public async Task PauseSessionAsync()
+    public async Task<OperationResult> PauseSessionAsync()
     {
+        if (_session.Status is not SessionStatus.Executing)
+            return new OperationResult(Success: false, Message: "There are no running sessions.");
+        
         await _timerTokenSource.CancelAsync();
         _session.Status = SessionStatus.Paused;
         Logger.LogWarning("Session paused at time {time}", DateTimeOffset.Now);
+        
+        return new OperationResult(Success: true, Message: "Session paused.");
     }
 
-    public void ResumeSession()
+    public OperationResult ResumeSession()
     {
+        if (_session.Status is not SessionStatus.Paused)
+            return new OperationResult(Success: false, Message: "There are no paused sessions to resume.");
+        
         RegenerateCancellationToken();
         _session.Status = SessionStatus.Executing;
         RunTimerAsync(_timerTokenSource.Token).Forget();
         Logger.LogWarning("Continuing session at time {time}", DateTimeOffset.Now);
+        
+        return new OperationResult(Success: true, Message: "Session resumed.");
     }
 
-    public async Task CancelSessionAsync()
+    public async Task<OperationResult> CancelSessionAsync()
     {
+        if (_session.Status is SessionStatus.Cancelled or SessionStatus.Finished)
+            return new OperationResult(Success: false, Message: "There are no active sessions to cancel.");
+        
         await _timerTokenSource.CancelAsync();
         _session = new Session
         {
             Status = SessionStatus.Cancelled
         };
         Logger.LogWarning("Session cancelled at {time}", DateTimeOffset.Now);
+        return new OperationResult(Success: true, Message: "Session cancelled.");
     }
 
     private void RegenerateCancellationToken()
