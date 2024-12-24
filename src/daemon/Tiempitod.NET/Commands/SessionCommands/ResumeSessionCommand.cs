@@ -1,6 +1,6 @@
 using Tiempitod.NET.Session;
 
-namespace Tiempitod.NET.Commands.Session;
+namespace Tiempitod.NET.Commands.SessionCommands;
 
 /// <summary>
 /// Command that continues a paused session.

@@ -1,6 +1,7 @@
 using System.Text;
 using Tiempitod.NET;
-using Tiempitod.NET.Commands;
+using Tiempitod.NET.Commands.Handler;
+using Tiempitod.NET.Commands.Server;
 using Tiempitod.NET.Session;
 
 var builder = Host.CreateApplicationBuilder(args);

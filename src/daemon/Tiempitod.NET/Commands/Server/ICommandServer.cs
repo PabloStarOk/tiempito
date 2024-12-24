@@ -1,4 +1,4 @@
-namespace Tiempitod.NET.Commands;
+namespace Tiempitod.NET.Commands.Server;
 
 /// <summary>
 /// Defines a server to receive and handle commands. 

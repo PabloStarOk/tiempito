@@ -2,7 +2,7 @@ using System.IO.Pipes;
 using System.Text;
 using System.Text.Json;
 
-namespace Tiempitod.NET.Commands;
+namespace Tiempitod.NET.Commands.Server;
 
 public class CommandServer : DaemonService, ICommandServer
 {

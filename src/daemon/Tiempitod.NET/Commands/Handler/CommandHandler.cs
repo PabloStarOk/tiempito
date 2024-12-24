@@ -1,7 +1,8 @@
-using Tiempitod.NET.Commands.Session;
+using Tiempitod.NET.Commands.Server;
+using Tiempitod.NET.Commands.SessionCommands;
 using Tiempitod.NET.Session;
 
-namespace Tiempitod.NET.Commands;
+namespace Tiempitod.NET.Commands.Handler;
 
 public class CommandHandler : DaemonService, ICommandHandler
 {
