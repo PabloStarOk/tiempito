@@ -18,9 +18,11 @@ builder.Services.AddTransient<IAsyncMessageHandler, PipeMessageHandler>();
 
 // Add notification manager
 #if LINUX
-builder.Services.AddTransient<INotificationHandler, LinuxNotificationHandler>();
+if (OperatingSystem.IsLinux())
+    builder.Services.AddTransient<INotificationHandler, LinuxNotificationHandler>();
 #elif WINDOWS10_0_17763_0_OR_GREATER
-builder.Services.AddTransient<INotificationHandler, WindowsNotificationHandler>();
+if (OperatingSystem.IsWindowsVersionAtLeast(10,0,10240))
+    builder.Services.AddTransient<INotificationHandler, WindowsNotificationHandler>();
 #endif
 
 builder.Services.AddSingleton<CommandServer>();
