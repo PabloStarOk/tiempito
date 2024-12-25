@@ -1,3 +1,5 @@
+using Tiempitod.NET.Notifications;
+
 namespace Tiempitod.NET.Session;
 
 // TODO: Introduce configuration.
@@ -7,13 +9,15 @@ namespace Tiempitod.NET.Session;
 public sealed class SessionManager : DaemonService, ISessionManager
 {
     private readonly IProgress<Session> _progress;
+    private readonly INotificationManager _notificationManager;
     private readonly TimeSpan _interval;
     private Session _session;
     private CancellationTokenSource _timerTokenSource;
     
-    public SessionManager(ILogger<SessionManager> logger, IProgress<Session> progress) : base(logger)
+    public SessionManager(ILogger<SessionManager> logger, INotificationManager notificationManager, IProgress<Session> progress) : base(logger)
     {
         _progress = progress;
+        _notificationManager = notificationManager;
         _interval = TimeSpan.FromSeconds(1);
         _timerTokenSource = new CancellationTokenSource();
     }
@@ -103,6 +107,10 @@ public sealed class SessionManager : DaemonService, ISessionManager
     {
         Logger.LogInformation("Starting session at {time}", DateTimeOffset.Now);
         _session.Status = SessionStatus.Executing;
+        await _notificationManager.CloseLastNotificationAsync();
+        await _notificationManager.NotifyAsync(
+            summary: "Session started",
+            body: "A new Tiempito session started.");
         
         while (_session.CurrentCycle < _session.TargetCycles && !stoppingToken.IsCancellationRequested)
         {
@@ -118,6 +126,10 @@ public sealed class SessionManager : DaemonService, ISessionManager
         if (stoppingToken.IsCancellationRequested)
             return;
 
+        await _notificationManager.CloseLastNotificationAsync();
+        await _notificationManager.NotifyAsync(
+            summary: "Session finished",
+            body: "Tiempito session finished.");
         _session.Status = SessionStatus.Finished;
         Logger.LogInformation("Finishing session at {time}", DateTimeOffset.Now);
     }
@@ -155,9 +167,15 @@ public sealed class SessionManager : DaemonService, ISessionManager
         if (stoppingToken.IsCancellationRequested)
             return;
 
-        _session.CurrentTimeType = _session.CurrentTimeType is TimeType.Focus 
-            ? TimeType.Break 
-            : TimeType.Focus;
+        await _notificationManager.CloseLastNotificationAsync();
+        var summary = $"{_session.CurrentTimeType.ToString()} completed";
+        var body = $"A {_session.CurrentTimeType.ToString().ToLower()} time was completed.";
+        await _notificationManager.NotifyAsync(summary, body);
+        
+        if (_session.CurrentTimeType is TimeType.Focus)
+            _session.CurrentTimeType = TimeType.Break;
+        else
+            _session.CurrentTimeType = TimeType.Focus;
         
         _session.Elapsed = TimeSpan.Zero;
     }
