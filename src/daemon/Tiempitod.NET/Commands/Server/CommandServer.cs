@@ -100,8 +100,8 @@ public class CommandServer : DaemonService, ICommandServer
                 if (!_pipeServer.IsConnected)
                 {
                     await _pipeServer.WaitForConnectionAsync(_readMessageTokenSource.Token);
-                    _currentConnectedUser = _pipeServer.GetImpersonationUserName();
-                    Logger.LogInformation("Command server connected to client {user}", _currentConnectedUser);
+                    //_currentConnectedUser = _pipeServer.GetImpersonationUserName();
+                    Logger.LogInformation("Command server connected to client");
                 }
                 
                 if (!_pipeServer.CanRead)
@@ -116,7 +116,7 @@ public class CommandServer : DaemonService, ICommandServer
                 if (receivedCommand == string.Empty)
                 {
                     _pipeServer.Disconnect();
-                    Logger.LogInformation("Command server disconnected from client {user}", _currentConnectedUser);
+                    Logger.LogInformation("Command server disconnected from client");
                     _currentConnectedUser = string.Empty;
                     continue;   
                 }

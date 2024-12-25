@@ -6,6 +6,12 @@ namespace Tiempitod.NET.Notifications;
 public interface INotificationManager
 {
     /// <summary>
+    /// Closes the last notification displayed.
+    /// </summary>
+    /// <returns>A task representing the operation.</returns>
+    public Task CloseLastNotificationAsync();
+    
+    /// <summary>
     /// Notifies that a session was started.
     /// </summary>
     /// <returns>A task representing the operation.</returns>
@@ -28,4 +34,5 @@ public interface INotificationManager
     /// </summary>
     /// <returns>A task representing the operation.</returns>
     public Task NotifyBreakTimeCompletedAsync();
+
 }

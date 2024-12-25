@@ -3,8 +3,13 @@ namespace Tiempitod.NET.Notifications;
 /// <summary>
 /// Defines a handler to show and close notifications.
 /// </summary>
-public interface INotificationHandler : IDisposable
+public interface INotificationHandler
 {
+    /// <summary>
+    /// Allows to clean up the managed and unmanaged resources of the handler if needed.
+    /// </summary>
+    public void CleanUp() { }
+    
     /// <summary>
     /// Creates a notification in the desktop environment
     /// </summary>

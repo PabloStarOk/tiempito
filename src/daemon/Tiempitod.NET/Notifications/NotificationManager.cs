@@ -24,9 +24,14 @@ public class NotificationManager : DaemonService, INotificationManager
 
     protected override void OnStopService()
     {
-        _notificationHandler.Dispose();
+        _notificationHandler.CleanUp();
     }
 
+    public async Task CloseLastNotificationAsync()
+    {
+        await _notificationHandler.CloseNotificationAsync();
+    }
+    
     public async Task NotifySessionStartedAsync()
     {
         _baseNotification.Summary = "Session started \u23f3";

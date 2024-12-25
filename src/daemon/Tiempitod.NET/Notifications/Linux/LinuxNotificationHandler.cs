@@ -1,3 +1,4 @@
+#if LINUX
 using System.Runtime.Versioning;
 using Tmds.DBus;
 
@@ -7,7 +8,7 @@ namespace Tiempitod.NET.Notifications.Linux;
 /// Notification handler for Linux-based operating systems
 /// </summary>
 [SupportedOSPlatform("Linux")]
-public class LinuxNotificationHandler : INotificationHandler
+public class LinuxNotificationHandler : INotificationHandler, IDisposable
 {
     private readonly Connection _connection;
     private readonly IDBusLinuxNotification _dbusInterface;
@@ -21,6 +22,11 @@ public class LinuxNotificationHandler : INotificationHandler
             serviceName: "org.freedesktop.Notifications",
             path: "/org/freedesktop/Notifications"
         );
+    }
+
+    public void CleanUp()
+    {
+        Dispose();
     }
 
     /// <summary>
@@ -69,3 +75,4 @@ public class LinuxNotificationHandler : INotificationHandler
         Dispose(isDisposing: false);
     }
 }
+#endif

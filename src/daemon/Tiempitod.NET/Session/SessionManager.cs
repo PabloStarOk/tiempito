@@ -107,6 +107,7 @@ public sealed class SessionManager : DaemonService, ISessionManager
     {
         Logger.LogInformation("Starting session at {time}", DateTimeOffset.Now);
         _session.Status = SessionStatus.Executing;
+        await _notificationManager.CloseLastNotificationAsync();
         await _notificationManager.NotifySessionStartedAsync();
         
         while (_session.CurrentCycle < _session.TargetCycles && !stoppingToken.IsCancellationRequested)
@@ -123,6 +124,7 @@ public sealed class SessionManager : DaemonService, ISessionManager
         if (stoppingToken.IsCancellationRequested)
             return;
 
+        await _notificationManager.CloseLastNotificationAsync();
         await _notificationManager.NotifySessionFinishedAsync();
         _session.Status = SessionStatus.Finished;
         Logger.LogInformation("Finishing session at {time}", DateTimeOffset.Now);
@@ -161,6 +163,7 @@ public sealed class SessionManager : DaemonService, ISessionManager
         if (stoppingToken.IsCancellationRequested)
             return;
 
+        await _notificationManager.CloseLastNotificationAsync();
         if (_session.CurrentTimeType is TimeType.Focus)
         {
             await _notificationManager.NotifyFocusTimeCompletedAsync();

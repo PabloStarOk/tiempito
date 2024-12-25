@@ -3,7 +3,11 @@ using Tiempitod.NET;
 using Tiempitod.NET.Commands.Handler;
 using Tiempitod.NET.Commands.Server;
 using Tiempitod.NET.Notifications;
+#if LINUX
 using Tiempitod.NET.Notifications.Linux;
+#elif WINDOWS10_0_17763_0_OR_GREATER
+using Tiempitod.NET.Notifications.Windows;
+#endif
 using Tiempitod.NET.Session;
 
 var builder = Host.CreateApplicationBuilder(args);
@@ -11,7 +15,13 @@ var builder = Host.CreateApplicationBuilder(args);
 builder.Services.AddTransient<Encoding, UTF8Encoding>();
 builder.Services.AddTransient<IProgress<Session>, Progress<Session>>();
 builder.Services.AddTransient<IAsyncMessageHandler, PipeMessageHandler>();
+
+// Add notification manager
+#if LINUX
 builder.Services.AddTransient<INotificationHandler, LinuxNotificationHandler>();
+#elif WINDOWS10_0_17763_0_OR_GREATER
+builder.Services.AddTransient<INotificationHandler, WindowsNotificationHandler>();
+#endif
 
 builder.Services.AddSingleton<CommandServer>();
 builder.Services.AddSingleton<CommandHandler>();
