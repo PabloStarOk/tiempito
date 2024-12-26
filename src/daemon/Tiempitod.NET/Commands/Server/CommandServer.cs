@@ -6,7 +6,7 @@ namespace Tiempitod.NET.Commands.Server;
 
 public class CommandServer : DaemonService, ICommandServer
 {
-    private readonly IOptions<PipeConfig> _daemonConfigOptions;
+    private readonly PipeConfig _pipeConfig;
     private readonly NamedPipeServerStream _pipeServer;
     private readonly IAsyncMessageHandler _asyncMessageHandler;
     private CancellationTokenSource _sendMessageTokenSource;
@@ -24,7 +24,7 @@ public class CommandServer : DaemonService, ICommandServer
         NamedPipeServerStream pipeServer,
         IAsyncMessageHandler asyncMessageHandler) : base(logger)
     {
-        _daemonConfigOptions = daemonConfigOptions;
+        _pipeConfig = daemonConfigOptions.Value;
         _pipeServer = pipeServer;
         _asyncMessageHandler = asyncMessageHandler;
         _maxRestartAttempts = daemonConfigOptions.Value.MaxRestartAttempts;
@@ -113,7 +113,7 @@ public class CommandServer : DaemonService, ICommandServer
 
                     try
                     {
-                        if (_daemonConfigOptions.Value.DisplayImpersonationUser)
+                        if (_pipeConfig.DisplayImpersonationUser)
                             _currentConnectedUser = _pipeServer.GetImpersonationUserName();
                     }
                     catch (Exception ex)
