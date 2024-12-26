@@ -7,12 +7,12 @@ public class PipeConfig
 {
     public const string Pipe = "Pipe";
 
-    public string PipeName { get; set; } = "tiempito-pipe";
-    public PipeDirection PipeDirection { get; set; } = PipeDirection.InOut;
-    public int PipeMaxInstances { get; set; } = 1;
-    public string PipeEncoding { get; set; } = "utf8";
-    public int MaxRestartAttempts { get; set; } = 3;
-    public bool DisplayImpersonationUser { get; set; } = true;
+    public string PipeName { get; init; } = "tiempito-pipe";
+    public PipeDirection PipeDirection { get; init; } = PipeDirection.InOut;
+    public int PipeMaxInstances { get; init; } = 1;
+    public string PipeEncoding { get; init; } = "utf8";
+    public int MaxRestartAttempts { get; init; } = 3;
+    public bool DisplayImpersonationUser { get; init; } = true;
 
     public Type GetEncodingType()
     {
