@@ -1,7 +1,10 @@
+using Microsoft.Extensions.Options;
+using System.IO.Pipes;
 using System.Text;
 using Tiempitod.NET;
 using Tiempitod.NET.Commands.Handler;
 using Tiempitod.NET.Commands.Server;
+using Tiempitod.NET.Configuration;
 using Tiempitod.NET.Notifications;
 #if LINUX
 using Tiempitod.NET.Notifications.Linux;
@@ -12,11 +15,24 @@ using Tiempitod.NET.Session;
 
 var builder = Host.CreateApplicationBuilder(args);
 
-builder.Services.AddTransient<Encoding, UTF8Encoding>();
+// Load daemon config
+builder.Configuration.AddIniFile(path: "tiempitod.conf", optional: false, reloadOnChange: true);
+builder.Services.Configure<PipeConfig>(builder.Configuration.GetRequiredSection(key: PipeConfig.Pipe));
+builder.Services.Configure<NotificationConfig>(builder.Configuration.GetSection(key: NotificationConfig.Notification));
+
+PipeConfig pipeConfig = builder.Services.BuildServiceProvider().GetService<IOptions<PipeConfig>>()?.Value!;
+
+// Add configuration dependencies.
+builder.Services.AddTransient<Encoding>(_ => Activator.CreateInstance(pipeConfig.GetEncodingType()) as Encoding ?? Encoding.UTF8);
+builder.Services.AddSingleton(new NamedPipeServerStream(
+    pipeConfig.PipeName,
+    pipeConfig.PipeDirection,
+    pipeConfig.PipeMaxInstances));
+
 builder.Services.AddTransient<IProgress<Session>, Progress<Session>>();
 builder.Services.AddTransient<IAsyncMessageHandler, PipeMessageHandler>();
 
-// Add notification manager
+// Add system notification
 #if LINUX
 if (OperatingSystem.IsLinux())
     builder.Services.AddTransient<INotificationHandler, LinuxNotificationHandler>();

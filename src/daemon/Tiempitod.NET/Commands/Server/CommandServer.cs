@@ -1,25 +1,34 @@
+using Microsoft.Extensions.Options;
 using System.IO.Pipes;
+using Tiempitod.NET.Configuration;
 
 namespace Tiempitod.NET.Commands.Server;
 
 public class CommandServer : DaemonService, ICommandServer
 {
+    private readonly IOptions<PipeConfig> _daemonConfigOptions;
     private readonly NamedPipeServerStream _pipeServer;
     private readonly IAsyncMessageHandler _asyncMessageHandler;
     private CancellationTokenSource _sendMessageTokenSource;
     private CancellationTokenSource _readMessageTokenSource;
+    private readonly int _maxRestartAttempts;
     
-    private string _currentConnectedUser = string.Empty;
-    private readonly int _maxRestartAttempts = 3;
-    private int _currentRestartAttempts;
-
     public event EventHandler<string> CommandReceived;
 
-    public CommandServer(ILogger<CommandServer> logger, IAsyncMessageHandler asyncMessageHandler) : base(logger)
+    private string _currentConnectedUser = string.Empty;
+    private int _currentRestartAttempts;
+
+    public CommandServer(
+        ILogger<CommandServer> logger,
+        IOptions<PipeConfig> daemonConfigOptions,
+        NamedPipeServerStream pipeServer,
+        IAsyncMessageHandler asyncMessageHandler) : base(logger)
     {
-        // TODO: Use dependency injection to instantiate pipe.
-        _pipeServer = new NamedPipeServerStream("tiempito-pipe", PipeDirection.InOut, 1);
+        _daemonConfigOptions = daemonConfigOptions;
+        _pipeServer = pipeServer;
         _asyncMessageHandler = asyncMessageHandler;
+        _maxRestartAttempts = daemonConfigOptions.Value.MaxRestartAttempts;
+        
         _sendMessageTokenSource = new CancellationTokenSource();
         _readMessageTokenSource = new CancellationTokenSource();
     }
@@ -90,6 +99,7 @@ public class CommandServer : DaemonService, ICommandServer
         await _asyncMessageHandler.SendMessageAsync(_pipeServer, response, _sendMessageTokenSource.Token);
     }
     
+    // TODO: Refactor method
     private async Task HandleRequestsAsync()
     {
         try
@@ -100,8 +110,18 @@ public class CommandServer : DaemonService, ICommandServer
                 if (!_pipeServer.IsConnected)
                 {
                     await _pipeServer.WaitForConnectionAsync(_readMessageTokenSource.Token);
-                    //_currentConnectedUser = _pipeServer.GetImpersonationUserName();
-                    Logger.LogInformation("Command server connected to client");
+
+                    try
+                    {
+                        if (_daemonConfigOptions.Value.DisplayImpersonationUser)
+                            _currentConnectedUser = _pipeServer.GetImpersonationUserName();
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.LogWarning("Error when trying to get connected client's username at {Time}, {Error}", DateTimeOffset.Now, ex);
+                    }
+                    
+                    Logger.LogInformation("Command server connected to client {User}", _currentConnectedUser);
                 }
                 
                 if (!_pipeServer.CanRead)
@@ -116,7 +136,7 @@ public class CommandServer : DaemonService, ICommandServer
                 if (receivedCommand == string.Empty)
                 {
                     _pipeServer.Disconnect();
-                    Logger.LogInformation("Command server disconnected from client");
+                    Logger.LogInformation("Command server disconnected from client {User}", _currentConnectedUser);
                     _currentConnectedUser = string.Empty;
                     continue;   
                 }
