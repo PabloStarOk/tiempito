@@ -5,6 +5,9 @@ namespace Tiempitod.NET.Configuration;
 /// </summary>
 public static class AppConfigConstants
 {
+    // Config dir names
+    public const string RootConfigDirName = "tiempito";
+    
     // Config file names
     public const string UserConfigFileName = "user.conf";
     

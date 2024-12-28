@@ -5,8 +5,8 @@ namespace Tiempitod.NET.Configuration.AppDirectory;
 /// </summary>
 public class AppDirectoryPathProvider : IAppDirectoryPathProvider
 {
-    public string AppConfigDirectoryPath { get; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "tiempito");
-    public string UserConfigDirectoryPath { get; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "tiempito");
+    public string AppConfigDirectoryPath { get; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), AppConfigConstants.RootConfigDirName);
+    public string UserConfigDirectoryPath { get; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), AppConfigConstants.RootConfigDirName);
     
     /// <summary>
     /// Instantiates a new <see cref="AppDirectoryPathProvider"/> and creates user's config directory if it doesn't exist.
