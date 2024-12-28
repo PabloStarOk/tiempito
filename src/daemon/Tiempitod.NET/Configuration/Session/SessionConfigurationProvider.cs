@@ -1,5 +1,4 @@
 using Microsoft.Extensions.FileProviders;
-using Tiempitod.NET.Configuration.AppDirectory;
 
 namespace Tiempitod.NET.Configuration.Session;
 
@@ -8,9 +7,6 @@ namespace Tiempitod.NET.Configuration.Session;
 /// </summary>
 public class SessionConfigurationProvider : DaemonService, ISessionConfigurationProvider
 {
-    private const string UserConfigFileName = "user.conf";
-    private const string SessionSectionPrefix = "Session.";
-    
     private readonly ISessionConfigReader _sessionConfigReader;
     private readonly ISessionConfigWriter _sessionConfigWriter;
     private readonly IFileProvider _userDirectoryFileProvider;
@@ -29,7 +25,7 @@ public class SessionConfigurationProvider : DaemonService, ISessionConfiguration
         ILogger<SessionConfigurationProvider> logger,
         ISessionConfigReader sessionConfigReader,
         ISessionConfigWriter sessionConfigWriter,
-        [FromKeyedServices(AppDirectoryPathProvider.UserConfigFileProviderKey)] IFileProvider userDirectoryFileProvider) : base(logger)
+        [FromKeyedServices(AppConfigConstants.UserConfigFileProviderKey)] IFileProvider userDirectoryFileProvider) : base(logger)
     {
         _sessionConfigReader = sessionConfigReader;
         _sessionConfigWriter = sessionConfigWriter;
@@ -38,7 +34,7 @@ public class SessionConfigurationProvider : DaemonService, ISessionConfiguration
 
     protected override void OnStartService()
     {
-        CreateUserConfigFile(UserConfigFileName);
+        CreateUserConfigFile(AppConfigConstants.UserConfigFileName);
         LoadSessionConfigs();
         SetDefaultUserSessionConfig();
     }
@@ -46,13 +42,13 @@ public class SessionConfigurationProvider : DaemonService, ISessionConfiguration
     // TODO: Make method asynchronous.
     public OperationResult SaveSessionConfig(SessionConfig sessionConfig)
     {
-        IFileInfo userConfigFileInfo = _userDirectoryFileProvider.GetFileInfo(UserConfigFileName);
+        IFileInfo userConfigFileInfo = _userDirectoryFileProvider.GetFileInfo(AppConfigConstants.UserConfigFileName);
         
         if (!userConfigFileInfo.Exists)
-            CreateUserConfigFile(UserConfigFileName);
+            CreateUserConfigFile(AppConfigConstants.UserConfigFileName);
         
         return  _sessionConfigWriter.Write
-            (SessionSectionPrefix, sessionConfig) ?
+            (AppConfigConstants.SessionSectionPrefix, sessionConfig) ?
             new OperationResult(true, "Session configuration was saved.") :
             new OperationResult(true, "Session configuration was not saved.");
     }
@@ -77,7 +73,7 @@ public class SessionConfigurationProvider : DaemonService, ISessionConfiguration
     /// </summary>
     private void LoadSessionConfigs()
     {
-        SessionConfigs = _sessionConfigReader.ReadSessions(SessionSectionPrefix);
+        SessionConfigs = _sessionConfigReader.ReadSessions(AppConfigConstants.SessionSectionPrefix);
     }
     
     /// <summary>

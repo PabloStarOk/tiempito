@@ -5,8 +5,6 @@ namespace Tiempitod.NET.Configuration.AppDirectory;
 /// </summary>
 public class AppDirectoryPathProvider : IAppDirectoryPathProvider
 {
-    public const string UserConfigFileProviderKey = "UserConfigFileProvider";
-    
     public string AppConfigDirectoryPath { get; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "tiempito");
     public string UserConfigDirectoryPath { get; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "tiempito");
     

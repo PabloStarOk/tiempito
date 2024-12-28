@@ -29,7 +29,7 @@ builder.Services.AddSingleton(appDirectoryPathProvider);
 
 IFileProvider userConfigFileProvider = new PhysicalFileProvider(appDirectoryPathProvider.UserConfigDirectoryPath);
 builder.Services.AddKeyedSingleton(
-    AppDirectoryPathProvider.UserConfigFileProviderKey,
+    AppConfigConstants.UserConfigFileProviderKey,
     userConfigFileProvider);
 builder.Services.AddKeyedSingleton(
     AppConfigConstants.UserConfigParserServiceKey,
