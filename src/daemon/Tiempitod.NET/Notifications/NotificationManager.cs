@@ -1,5 +1,5 @@
 using Microsoft.Extensions.Options;
-using Tiempitod.NET.Configuration;
+using Tiempitod.NET.Configuration.Notifications;
 using Tmds.DBus.Protocol;
 
 namespace Tiempitod.NET.Notifications;

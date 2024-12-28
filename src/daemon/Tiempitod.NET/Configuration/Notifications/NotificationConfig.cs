@@ -1,4 +1,4 @@
-namespace Tiempitod.NET.Configuration;
+namespace Tiempitod.NET.Configuration.Notifications;
 
 public class NotificationConfig
 {

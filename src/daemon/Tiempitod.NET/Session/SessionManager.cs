@@ -1,5 +1,5 @@
 using Microsoft.Extensions.Options;
-using Tiempitod.NET.Configuration;
+using Tiempitod.NET.Configuration.Notifications;
 using Tiempitod.NET.Notifications;
 
 namespace Tiempitod.NET.Session;

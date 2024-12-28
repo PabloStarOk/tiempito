@@ -1,7 +1,7 @@
 using System.IO.Pipes;
 using System.Text;
 
-namespace Tiempitod.NET.Configuration;
+namespace Tiempitod.NET.Configuration.Server;
 
 public class PipeConfig
 {
