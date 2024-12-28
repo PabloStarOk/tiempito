@@ -1,4 +1,4 @@
-namespace Tiempitod.NET;
+namespace Tiempitod.NET.Server.Messages;
 
 /// <summary>
 /// Represents a response from the daemon for the client.

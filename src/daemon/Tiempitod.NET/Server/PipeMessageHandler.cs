@@ -1,6 +1,7 @@
 using System.IO.Pipes;
 using System.Text;
 using System.Text.Json;
+using Tiempitod.NET.Server.Messages;
 
 namespace Tiempitod.NET.Server;
 

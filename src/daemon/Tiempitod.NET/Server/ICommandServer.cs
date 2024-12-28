@@ -1,3 +1,5 @@
+using Tiempitod.NET.Server.Messages;
+
 namespace Tiempitod.NET.Server;
 
 /// <summary>

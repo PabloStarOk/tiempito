@@ -1,5 +1,6 @@
 using Tiempitod.NET.Commands.SessionCommands;
 using Tiempitod.NET.Server;
+using Tiempitod.NET.Server.Messages;
 using Tiempitod.NET.Session;
 
 namespace Tiempitod.NET.Commands.Handler;

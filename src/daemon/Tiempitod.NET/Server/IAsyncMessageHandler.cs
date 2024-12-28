@@ -1,4 +1,5 @@
 using System.IO.Pipes;
+using Tiempitod.NET.Server.Messages;
 
 namespace Tiempitod.NET.Server;
 

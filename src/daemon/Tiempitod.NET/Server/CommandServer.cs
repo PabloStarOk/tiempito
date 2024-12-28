@@ -2,6 +2,7 @@ using Microsoft.Extensions.Options;
 using System.IO.Pipes;
 using Tiempitod.NET.Configuration.Server;
 using Tiempitod.NET.Extensions;
+using Tiempitod.NET.Server.Messages;
 
 namespace Tiempitod.NET.Server;
 
