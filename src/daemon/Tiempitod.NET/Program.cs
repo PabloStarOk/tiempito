@@ -25,10 +25,10 @@ var loggerProvider =  serviceProvider.GetService<ILoggerFactory>();
 ArgumentNullException.ThrowIfNull(loggerProvider);
 
 // Add configuration services
-IAppDirectoryPathProvider appDirectoryPathProvider = new AppDirectoryPathProvider(loggerProvider.CreateLogger<AppDirectoryPathProvider>());
-builder.Services.AddSingleton(appDirectoryPathProvider);
+IAppFilesystemPathProvider appFilesystemPathProvider = new AppFilesystemPathProvider(loggerProvider.CreateLogger<AppFilesystemPathProvider>());
+builder.Services.AddSingleton(appFilesystemPathProvider);
 
-IFileProvider userConfigFileProvider = new PhysicalFileProvider(appDirectoryPathProvider.UserConfigDirectoryPath);
+IFileProvider userConfigFileProvider = new PhysicalFileProvider(appFilesystemPathProvider.UserConfigDirectoryPath);
 builder.Services.AddKeyedSingleton(
     AppConfigConstants.UserConfigFileProviderKey,
     userConfigFileProvider);
@@ -49,8 +49,7 @@ builder.Services.AddSingleton<IUserConfigProvider>(sp => sp.GetService<UserConfi
 builder.Services.AddSingleton<ISessionConfigProvider>(sp => sp.GetService<SessionConfigProvider>()!);
 
 // Load daemon config
-// TODO: Replace path with the one served by IAppDirectoryService.
-builder.Configuration.AddIniFile(path: "tiempitod.conf", optional: false, reloadOnChange: true);
+builder.Configuration.AddIniFile(appFilesystemPathProvider.DaemonConfigFilePath, optional: false, reloadOnChange: true);
 builder.Services.Configure<PipeConfig>(builder.Configuration.GetRequiredSection(key: PipeConfig.Pipe));
 builder.Services.Configure<NotificationConfig>(builder.Configuration.GetSection(key: NotificationConfig.Notification));
 
