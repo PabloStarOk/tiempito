@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Options;
 using Tiempitod.NET.Configuration.Notifications;
+using Tiempitod.NET.Configuration.Session;
 using Tiempitod.NET.Notifications;
 
 namespace Tiempitod.NET.Session;
@@ -10,19 +11,22 @@ namespace Tiempitod.NET.Session;
 /// </summary>
 public sealed class SessionManager : DaemonService, ISessionManager
 {
+    private readonly ISessionConfigProvider _sessionConfigProvider;
     private readonly NotificationConfig _notificationConfig;
     private readonly IProgress<Session> _progress;
     private readonly INotificationManager _notificationManager;
     private readonly TimeSpan _interval;
-    private Session _session;
+    private Session _currentSession;
     private CancellationTokenSource _timerTokenSource;
     
     public SessionManager(
         ILogger<SessionManager> logger,
+        ISessionConfigProvider sessionConfigProvider,
         IOptions<NotificationConfig> notificationOptions,
         INotificationManager notificationManager,
         IProgress<Session> progress) : base(logger)
     {
+        _sessionConfigProvider = sessionConfigProvider;
         _notificationConfig = notificationOptions.Value;
         _progress = progress;
         _notificationManager = notificationManager;
@@ -30,6 +34,14 @@ public sealed class SessionManager : DaemonService, ISessionManager
         _timerTokenSource = new CancellationTokenSource();
     }
 
+    protected override void OnStartService()
+    {
+        _currentSession = new Session(
+            _sessionConfigProvider.DefaultSessionConfig.TargetCycles,
+            _sessionConfigProvider.DefaultSessionConfig.FocusDuration,
+            _sessionConfigProvider.DefaultSessionConfig.BreakDuration);
+    }
+    
     protected override void OnStopService()
     {
         if (!_timerTokenSource.IsCancellationRequested)
@@ -40,18 +52,16 @@ public sealed class SessionManager : DaemonService, ISessionManager
     
     public OperationResult StartSession(CancellationToken daemonStoppingToken)
     {
-        if (_session.Status is SessionStatus.Executing)
+        if (_currentSession.Status is SessionStatus.Executing)
             return new OperationResult(Success: false, Message: "There is already an executed session.");
         
-        if (_session.Status is SessionStatus.Paused)
+        if (_currentSession.Status is SessionStatus.Paused)
             return new OperationResult(Success: false, Message: "There is already an active paused session.");
 
-        _session = new Session(
-            TimeType.Focus,
-            elapsed: TimeSpan.Zero,
-            focusDuration: TimeSpan.FromSeconds(30),
-            breakDuration: TimeSpan.FromSeconds(30),
-            targetCycles: 5);
+        _currentSession = new Session(
+            _sessionConfigProvider.DefaultSessionConfig.TargetCycles,
+            _sessionConfigProvider.DefaultSessionConfig.FocusDuration,
+            _sessionConfigProvider.DefaultSessionConfig.BreakDuration);
 
         RegenerateCancellationToken();
         RunTimerAsync(_timerTokenSource.Token).Forget();
@@ -61,11 +71,11 @@ public sealed class SessionManager : DaemonService, ISessionManager
 
     public async Task<OperationResult> PauseSessionAsync()
     {
-        if (_session.Status is not SessionStatus.Executing)
+        if (_currentSession.Status is not SessionStatus.Executing)
             return new OperationResult(Success: false, Message: "There are no running sessions.");
         
         await _timerTokenSource.CancelAsync();
-        _session.Status = SessionStatus.Paused;
+        _currentSession.Status = SessionStatus.Paused;
         Logger.LogWarning("Session paused at time {time}", DateTimeOffset.Now);
         
         return new OperationResult(Success: true, Message: "Session paused.");
@@ -73,11 +83,11 @@ public sealed class SessionManager : DaemonService, ISessionManager
 
     public OperationResult ResumeSession()
     {
-        if (_session.Status is not SessionStatus.Paused)
+        if (_currentSession.Status is not SessionStatus.Paused)
             return new OperationResult(Success: false, Message: "There are no paused sessions to resume.");
         
         RegenerateCancellationToken();
-        _session.Status = SessionStatus.Executing;
+        _currentSession.Status = SessionStatus.Executing;
         RunTimerAsync(_timerTokenSource.Token).Forget();
         Logger.LogWarning("Continuing session at time {time}", DateTimeOffset.Now);
         
@@ -86,14 +96,16 @@ public sealed class SessionManager : DaemonService, ISessionManager
 
     public async Task<OperationResult> CancelSessionAsync()
     {
-        if (_session.Status is SessionStatus.Cancelled or SessionStatus.Finished)
+        if (_currentSession.Status is SessionStatus.Cancelled or SessionStatus.Finished)
             return new OperationResult(Success: false, Message: "There are no active sessions to cancel.");
         
         await _timerTokenSource.CancelAsync();
-        _session = new Session
-        {
-            Status = SessionStatus.Cancelled
-        };
+        
+        _currentSession = new Session(
+            _sessionConfigProvider.DefaultSessionConfig.TargetCycles,
+            _sessionConfigProvider.DefaultSessionConfig.FocusDuration,
+            _sessionConfigProvider.DefaultSessionConfig.BreakDuration);
+        
         Logger.LogWarning("Session cancelled at {time}", DateTimeOffset.Now);
         return new OperationResult(Success: true, Message: "Session cancelled.");
     }
@@ -114,13 +126,15 @@ public sealed class SessionManager : DaemonService, ISessionManager
     private async Task RunTimerAsync(CancellationToken stoppingToken)
     {
         Logger.LogInformation("Starting session at {time}", DateTimeOffset.Now);
-        _session.Status = SessionStatus.Executing;
+        _currentSession.Status = SessionStatus.Executing;
         await _notificationManager.CloseLastNotificationAsync();
         await _notificationManager.NotifyAsync(
             summary: _notificationConfig.SessionStartedSummary,
             body: _notificationConfig.SessionStartedBody);
         
-        while (_session.CurrentCycle < _session.TargetCycles && !stoppingToken.IsCancellationRequested)
+        while ((_currentSession.CurrentCycle < _currentSession.TargetCycles
+               || _currentSession.TargetCycles < 1)
+               && !stoppingToken.IsCancellationRequested)
         {
             await StartTimeAsync(stoppingToken);
             await StartTimeAsync(stoppingToken);
@@ -128,7 +142,7 @@ public sealed class SessionManager : DaemonService, ISessionManager
             if (stoppingToken.IsCancellationRequested)
                 return;
             
-            _session.CurrentCycle++;
+            _currentSession.CurrentCycle++;
         }
 
         if (stoppingToken.IsCancellationRequested)
@@ -138,7 +152,7 @@ public sealed class SessionManager : DaemonService, ISessionManager
         await _notificationManager.NotifyAsync(
             summary: _notificationConfig.SessionFinishedSummary,
             body: _notificationConfig.SessionFinishedBody);
-        _session.Status = SessionStatus.Finished;
+        _currentSession.Status = SessionStatus.Finished;
         Logger.LogInformation("Finishing session at {time}", DateTimeOffset.Now);
     }
     
@@ -148,11 +162,11 @@ public sealed class SessionManager : DaemonService, ISessionManager
     /// <param name="stoppingToken">Token to stop the operation.</param>
     private async Task StartTimeAsync(CancellationToken stoppingToken)
     {
-        TimeSpan duration = _session.CurrentTimeType is TimeType.Focus 
-            ? _session.FocusDuration 
-            : _session.BreakDuration;
+        TimeSpan duration = _currentSession.CurrentTimeType is TimeType.Focus 
+            ? _currentSession.FocusDuration 
+            : _currentSession.BreakDuration;
 
-        while (_session.Elapsed < duration && !stoppingToken.IsCancellationRequested)
+        while (_currentSession.Elapsed < duration && !stoppingToken.IsCancellationRequested)
         {
             try
             {
@@ -167,9 +181,9 @@ public sealed class SessionManager : DaemonService, ISessionManager
             if (stoppingToken.IsCancellationRequested)
                 return;
 
-            _session.Elapsed += _interval;
-            _progress.Report(_session);
-            Logger.LogInformation("Time is {elapsed}", _session.Elapsed);
+            _currentSession.Elapsed += _interval;
+            _progress.Report(_currentSession);
+            Logger.LogInformation("Time is {elapsed}", _currentSession.Elapsed);
         }
 
         if (stoppingToken.IsCancellationRequested)
@@ -178,20 +192,20 @@ public sealed class SessionManager : DaemonService, ISessionManager
         await _notificationManager.CloseLastNotificationAsync();
         string summary;
         string body;
-        if (_session.CurrentTimeType is TimeType.Focus)
+        if (_currentSession.CurrentTimeType is TimeType.Focus)
         {
             summary = _notificationConfig.FocusCompletedSummary;
             body = _notificationConfig.FocusCompletedBody;
-            _session.CurrentTimeType = TimeType.Break;
+            _currentSession.CurrentTimeType = TimeType.Break;
         }
         else
         {
             summary = _notificationConfig.BreakCompletedSummary;
             body = _notificationConfig.BreakCompletedBody;
-            _session.CurrentTimeType = TimeType.Focus;   
+            _currentSession.CurrentTimeType = TimeType.Focus;   
         }
         await _notificationManager.NotifyAsync(summary, body);
         
-        _session.Elapsed = TimeSpan.Zero;
+        _currentSession.Elapsed = TimeSpan.Zero;
     }
 }
