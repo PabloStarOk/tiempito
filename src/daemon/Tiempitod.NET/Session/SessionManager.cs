@@ -33,14 +33,6 @@ public sealed class SessionManager : DaemonService, ISessionManager
         _interval = TimeSpan.FromSeconds(1);
         _timerTokenSource = new CancellationTokenSource();
     }
-
-    protected override void OnStartService()
-    {
-        _currentSession = new Session(
-            _sessionConfigProvider.DefaultSessionConfig.TargetCycles,
-            _sessionConfigProvider.DefaultSessionConfig.FocusDuration,
-            _sessionConfigProvider.DefaultSessionConfig.BreakDuration);
-    }
     
     protected override void OnStopService()
     {
@@ -50,7 +42,7 @@ public sealed class SessionManager : DaemonService, ISessionManager
         _timerTokenSource.Dispose();
     }
     
-    public OperationResult StartSession(CancellationToken daemonStoppingToken)
+    public OperationResult StartSession(CancellationToken daemonStoppingToken, string sessionId = "")
     {
         if (_currentSession.Status is SessionStatus.Executing)
             return new OperationResult(Success: false, Message: "There is already an executed session.");
@@ -58,11 +50,22 @@ public sealed class SessionManager : DaemonService, ISessionManager
         if (_currentSession.Status is SessionStatus.Paused)
             return new OperationResult(Success: false, Message: "There is already an active paused session.");
 
-        _currentSession = new Session(
-            _sessionConfigProvider.DefaultSessionConfig.TargetCycles,
-            _sessionConfigProvider.DefaultSessionConfig.FocusDuration,
-            _sessionConfigProvider.DefaultSessionConfig.BreakDuration);
+        SessionConfig configSessionToUse;
 
+        if (string.IsNullOrWhiteSpace(sessionId))
+            configSessionToUse = _sessionConfigProvider.DefaultSessionConfig;
+        else if (_sessionConfigProvider.SessionConfigs.TryGetValue(sessionId, out SessionConfig foundSessionConfig))
+            configSessionToUse = foundSessionConfig;
+        else
+            return new OperationResult(Success: false, Message: $"Session with ID {sessionId} was not found");
+        
+        Logger.LogCritical("Session ID is: {Id}", configSessionToUse.Id);
+        
+        _currentSession = new Session(
+            configSessionToUse.TargetCycles,
+            configSessionToUse.FocusDuration,
+            configSessionToUse.BreakDuration);
+        
         RegenerateCancellationToken();
         RunTimerAsync(_timerTokenSource.Token).Forget();
         

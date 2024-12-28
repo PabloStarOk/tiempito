@@ -9,8 +9,9 @@ public interface ISessionManager
     /// Starts a session of focus and break times.
     /// </summary>
     /// <param name="stoppingToken">Token to stop the operation.</param>
+    /// <param name="sessionId">ID of the session to start.</param>
     /// <returns>An <see cref="OperationResult"/> to know if the session was started successfully.</returns>
-    public OperationResult StartSession(CancellationToken stoppingToken);
+    public OperationResult StartSession(CancellationToken stoppingToken, string sessionId = "");
 
     /// <summary>
     /// Pauses a session that is currently executing.
