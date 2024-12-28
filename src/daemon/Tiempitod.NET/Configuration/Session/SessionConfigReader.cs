@@ -37,14 +37,15 @@ public class SessionConfigReader : ISessionConfigReader
         {
             if (!configSection.SectionName.Contains(prefixSectionName))
                 continue;
-            
+
             SessionConfig? sessionConfigNullable = ReadConfigSection(configSection, prefixSectionName);
 
             if (sessionConfigNullable == null)
                 continue;
 
-            var sessionConfig = (SessionConfig) sessionConfigNullable;
-            dictionary.Add(sessionConfig.Id, sessionConfig);
+            var sessionConfig = (SessionConfig)sessionConfigNullable;
+
+            dictionary.TryAdd(sessionConfig.Id, sessionConfig);
         }
 
         return dictionary;

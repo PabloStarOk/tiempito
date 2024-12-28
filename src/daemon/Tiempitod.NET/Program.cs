@@ -34,7 +34,7 @@ builder.Services.AddKeyedSingleton(
     userConfigFileProvider);
 builder.Services.AddKeyedSingleton(
     AppConfigConstants.UserConfigParserServiceKey,
-    new ConfigParser(userConfigFileProvider.GetFileInfo(AppConfigConstants.UserConfigFileName).PhysicalPath));
+    new ConfigParser(userConfigFileProvider.GetFileInfo(AppConfigConstants.UserConfigFileName).PhysicalPath)); // BUG: If two section names are equals throws an exception.
 
 builder.Services.AddSingleton<UserConfigurationFileCreator>();
 builder.Services.AddSingleton<IUserConfigurationReader, UserConfigurationReader>();
