@@ -9,6 +9,10 @@ public class UserConfigurationReader : IUserConfigurationReader
 {
     private readonly ConfigParser _configParser;
     
+    /// <summary>
+    /// Instantiates a new <see cref="UserConfigurationReader"/> 
+    /// </summary>
+    /// <param name="configParser">Parser of the user's configuration file.</param>
     public UserConfigurationReader(
         [FromKeyedServices(AppConfigConstants.UserConfigParserServiceKey)] ConfigParser configParser)
     {

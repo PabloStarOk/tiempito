@@ -38,6 +38,7 @@ builder.Services.AddKeyedSingleton(
     new ConfigParser(userConfigFileProvider.GetFileInfo(AppConfigConstants.UserConfigFileName).PhysicalPath));
 
 builder.Services.AddSingleton<IUserConfigurationReader, UserConfigurationReader>();
+builder.Services.AddSingleton<IUserConfigurationWriter, UserConfigurationWriter>();
 builder.Services.AddSingleton<ISessionConfigReader, SessionConfigReader>();
 builder.Services.AddSingleton<ISessionConfigWriter, SessionConfigWriter>();
 
