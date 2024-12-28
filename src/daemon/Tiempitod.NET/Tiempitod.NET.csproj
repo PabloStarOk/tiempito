@@ -29,6 +29,5 @@
 
     <ItemGroup>
       <Folder Include="bin\Linux\net8.0\" />
-      <Folder Include="Configuration\User\" />
     </ItemGroup>
 </Project>

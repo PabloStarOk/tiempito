@@ -12,6 +12,7 @@ public static class AppConfigConstants
     public const string UserConfigFileName = "user.conf";
     
     // Parsing settings
+    public const string UserSectionName = "User";
     public const string SessionSectionPrefix = "Session.";
     
     // Keyed Configuration Services
