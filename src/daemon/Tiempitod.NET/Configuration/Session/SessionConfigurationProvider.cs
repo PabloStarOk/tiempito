@@ -1,4 +1,5 @@
 using Microsoft.Extensions.FileProviders;
+using Tiempitod.NET.Configuration.User;
 
 namespace Tiempitod.NET.Configuration.Session;
 
@@ -7,6 +8,7 @@ namespace Tiempitod.NET.Configuration.Session;
 /// </summary>
 public class SessionConfigurationProvider : DaemonService, ISessionConfigurationProvider
 {
+    private readonly IUserConfigurationProvider _userConfigurationProvider;
     private readonly ISessionConfigReader _sessionConfigReader;
     private readonly ISessionConfigWriter _sessionConfigWriter;
     private readonly IFileProvider _userDirectoryFileProvider;
@@ -18,15 +20,18 @@ public class SessionConfigurationProvider : DaemonService, ISessionConfiguration
     /// Instantiates a new <see cref="SessionConfigurationProvider"/>.
     /// </summary>
     /// <param name="logger">Logger to register special events.</param>
+    /// <param name="userConfigurationProvider">Provider of user's configuration.</param>
     /// <param name="sessionConfigReader">Reader of session configurations.</param>
     /// <param name="sessionConfigWriter">Writer of session configurations.</param>
     /// <param name="userDirectoryFileProvider">A provider of files in the user's config directory.</param>
     public SessionConfigurationProvider(
         ILogger<SessionConfigurationProvider> logger,
+        IUserConfigurationProvider userConfigurationProvider,
         ISessionConfigReader sessionConfigReader,
         ISessionConfigWriter sessionConfigWriter,
         [FromKeyedServices(AppConfigConstants.UserConfigFileProviderKey)] IFileProvider userDirectoryFileProvider) : base(logger)
     {
+        _userConfigurationProvider = userConfigurationProvider;
         _sessionConfigReader = sessionConfigReader;
         _sessionConfigWriter = sessionConfigWriter;
         _userDirectoryFileProvider = userDirectoryFileProvider;
@@ -52,7 +57,7 @@ public class SessionConfigurationProvider : DaemonService, ISessionConfiguration
             new OperationResult(true, "Session configuration was saved.") :
             new OperationResult(true, "Session configuration was not saved.");
     }
-
+    
     /// <summary>
     /// Creates a file in the user's config directory with the given name.
     /// </summary>
@@ -88,9 +93,10 @@ public class SessionConfigurationProvider : DaemonService, ISessionConfiguration
         {
             DefaultSessionConfig = SessionConfigs.Values.First();
             return;
-        }
-
-        if (SessionConfigs.TryGetValue("Default", out SessionConfig sessionConfig))
+        } 
+        
+        string userDefaultSession = _userConfigurationProvider.UserConfiguration.DefaultSessionId;
+        if (SessionConfigs.TryGetValue(userDefaultSession, out SessionConfig sessionConfig))
         {
             DefaultSessionConfig = sessionConfig;
             return;

@@ -25,7 +25,7 @@ public class UserConfigurationWriter : IUserConfigurationWriter
         return _configParser.SetValue(
                 AppConfigConstants.UserSectionName,
                 UserConfigurationKeyword.DefaultSession.ToString(),
-                userConfig.DefaultSession)
+                userConfig.DefaultSessionId)
             && _configParser.Save();
     }
 }

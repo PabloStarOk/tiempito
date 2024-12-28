@@ -29,7 +29,7 @@ public class UserConfigurationProvider : DaemonService, IUserConfigurationProvid
 
     public OperationResult SaveUserConfig(UserConfiguration userConfig)
     {
-        if (string.IsNullOrWhiteSpace(userConfig.DefaultSession))
+        if (string.IsNullOrWhiteSpace(userConfig.DefaultSessionId))
             return new OperationResult
             (
                 Success: false,

@@ -8,15 +8,15 @@ public struct UserConfiguration
     /// <summary>
     /// The id of the default session to start by the daemon.
     /// </summary>
-    public string DefaultSession { get; }
+    public string DefaultSessionId { get; }
 
     public UserConfiguration()
     {
-        DefaultSession = string.Empty;
+        DefaultSessionId = string.Empty;
     }
 
-    public UserConfiguration(string defaultSession)
+    public UserConfiguration(string defaultSessionId)
     {
-        DefaultSession = defaultSession;
+        DefaultSessionId = defaultSessionId.ToLower();
     }
 }
