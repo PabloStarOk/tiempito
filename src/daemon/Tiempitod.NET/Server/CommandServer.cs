@@ -3,7 +3,7 @@ using System.IO.Pipes;
 using Tiempitod.NET.Configuration.Server;
 using Tiempitod.NET.Extensions;
 
-namespace Tiempitod.NET.Commands.Server;
+namespace Tiempitod.NET.Server;
 
 public class CommandServer : DaemonService, ICommandServer
 {
@@ -116,8 +116,6 @@ public class CommandServer : DaemonService, ICommandServer
                 // Empty means disconnection.
                 if (string.IsNullOrEmpty(commandReceived))
                     Disconnect();
-                
-                Logger.LogInformation("Command receive {Command}", commandReceived);
                 
                 CommandReceived?.Invoke(this, commandReceived);
             }

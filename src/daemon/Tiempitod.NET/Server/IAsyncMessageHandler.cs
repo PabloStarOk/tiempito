@@ -1,6 +1,6 @@
 using System.IO.Pipes;
 
-namespace Tiempitod.NET.Commands.Server;
+namespace Tiempitod.NET.Server;
 
 /// <summary>
 /// Defines a handler to read and write messages in a named pipe.
