@@ -155,7 +155,7 @@ public class SessionConfigReader : ISessionConfigReader
             return true;
         }
 
-        if (!TryExtractTimeUnit(timeString, SessionDurationSymbol.Minute, out parsedTime))
+        if (!TryExtractTimeUnit(timeString, SessionDurationSymbol.Hour, out parsedTime))
             return false;
 
         duration = TimeSpan.FromHours(parsedTime);
