@@ -1,5 +1,8 @@
 namespace Tiempitod.NET.Configuration.Notifications;
 
+/// <summary>
+/// Represents the configuration of the notifications displayed by the daemon.
+/// </summary>
 public class NotificationConfig
 {
     public const string Notification = "Notification";

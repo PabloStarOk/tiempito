@@ -3,6 +3,9 @@ using System.Text;
 
 namespace Tiempitod.NET.Configuration.Server;
 
+/// <summary>
+/// Represents the configuration for the named pipes of the command server.
+/// </summary>
 public class PipeConfig
 {
     public const string Pipe = "Pipe";
@@ -14,6 +17,10 @@ public class PipeConfig
     public int MaxRestartAttempts { get; init; } = 3;
     public bool DisplayImpersonationUser { get; init; } = true;
 
+    /// <summary>
+    /// Gets the encoding type according based in the current configuration.
+    /// </summary>
+    /// <returns>An Encoding type.</returns>
     public Type GetEncodingType()
     {
         string formattedEncoding = PipeEncoding.ToLower().Replace("-", "");

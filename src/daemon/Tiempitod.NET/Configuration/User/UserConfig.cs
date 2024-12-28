@@ -10,11 +10,18 @@ public struct UserConfig
     /// </summary>
     public string DefaultSessionId { get; }
 
+    /// <summary>
+    /// Instantiates a new <see cref="UserConfig"/>.
+    /// </summary>
     public UserConfig()
     {
         DefaultSessionId = string.Empty;
     }
 
+    /// <summary>
+    /// Instantiates a new <see cref="UserConfig"/>.
+    /// </summary>
+    /// <param name="defaultSessionId">Id of the default session of the user.</param>
     public UserConfig(string defaultSessionId)
     {
         DefaultSessionId = defaultSessionId.ToLower();
