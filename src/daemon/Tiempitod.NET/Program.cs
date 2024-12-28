@@ -30,8 +30,8 @@ builder.Services.AddTransient<ISessionConfigReader, SessionConfigReader>();
 builder.Services.AddKeyedSingleton<IFileProvider>(
     AppDirectoryPathProvider.UserConfigFileProviderKey,
     new PhysicalFileProvider(appDirectoryPathProvider.UserConfigDirectoryPath));
-builder.Services.AddSingleton<UserConfigurationProvider>();
-builder.Services.AddSingleton<IUserConfigurationProvider>(sp => sp.GetService<UserConfigurationProvider>());
+builder.Services.AddSingleton<SessionConfigurationProvider>();
+builder.Services.AddSingleton<ISessionConfigurationProvider>(sp => sp.GetService<SessionConfigurationProvider>()!);
 
 // Load daemon config
 // TODO: Replace path with the one served by IAppDirectoryService.
@@ -69,12 +69,11 @@ builder.Services.AddSingleton<ICommandHandler>(sp => sp.GetService<CommandHandle
 builder.Services.AddSingleton<ISessionManager>(sp => sp.GetService<SessionManager>()!);
 builder.Services.AddSingleton<INotificationManager>(sp => sp.GetService<NotificationManager>()!);
 
-builder.Services.AddSingleton<DaemonService>(sp => sp.GetService<UserConfigurationProvider>()!);
+builder.Services.AddSingleton<DaemonService>(sp => sp.GetService<SessionConfigurationProvider>()!);
 builder.Services.AddSingleton<DaemonService>(sp => sp.GetService<CommandServer>()!);
 builder.Services.AddSingleton<DaemonService>(sp => sp.GetService<CommandHandler>()!);
 builder.Services.AddSingleton<DaemonService>(sp => sp.GetService<SessionManager>()!);
 builder.Services.AddSingleton<DaemonService>(sp => sp.GetService<NotificationManager>()!);
-
 
 builder.Services.AddHostedService<DaemonWorker>();
 

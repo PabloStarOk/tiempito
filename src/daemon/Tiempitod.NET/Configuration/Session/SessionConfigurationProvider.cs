@@ -1,13 +1,12 @@
 using Microsoft.Extensions.FileProviders;
 using Tiempitod.NET.Configuration.AppDirectory;
-using Tiempitod.NET.Configuration.Session;
 
-namespace Tiempitod.NET.Configuration.User;
+namespace Tiempitod.NET.Configuration.Session;
 
 /// <summary>
 /// Provides access to user's configuration and custom defined session configurations.
 /// </summary>
-public class UserConfigurationProvider : DaemonService, IUserConfigurationProvider
+public class SessionConfigurationProvider : DaemonService, ISessionConfigurationProvider
 {
     private const string UserConfigFileName = "user.conf";
     private const string SessionSectionPrefix = "Session.";
@@ -20,14 +19,14 @@ public class UserConfigurationProvider : DaemonService, IUserConfigurationProvid
     public SessionConfig DefaultSessionConfig { get; private set; }
     
     /// <summary>
-    /// Instantiates a new <see cref="UserConfigurationProvider"/>.
+    /// Instantiates a new <see cref="SessionConfigurationProvider"/>.
     /// </summary>
     /// <param name="logger">Logger to register special events.</param>
     /// <param name="appDirectoryPathProvider">Provider of directory paths.</param>
     /// <param name="sessionConfigReader">Reader of session configurations.</param>
     /// <param name="fileProvider">A provider of files in the user's config directory.</param>
-    public UserConfigurationProvider(
-        ILogger<UserConfigurationProvider> logger,
+    public SessionConfigurationProvider(
+        ILogger<SessionConfigurationProvider> logger,
         IAppDirectoryPathProvider appDirectoryPathProvider,
         ISessionConfigReader sessionConfigReader,
         [FromKeyedServices(AppDirectoryPathProvider.UserConfigFileProviderKey)] IFileProvider fileProvider) : base(logger)
