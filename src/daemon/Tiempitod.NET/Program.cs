@@ -7,7 +7,7 @@ using Tiempitod.NET;
 using Tiempitod.NET.Commands.Handler;
 using Tiempitod.NET.Commands.Server;
 using Tiempitod.NET.Configuration;
-using Tiempitod.NET.Configuration.AppDirectory;
+using Tiempitod.NET.Configuration.AppFilesystem;
 using Tiempitod.NET.Configuration.Session;
 using Tiempitod.NET.Configuration.User;
 using Tiempitod.NET.Notifications;
@@ -29,7 +29,6 @@ IAppDirectoryPathProvider appDirectoryPathProvider = new AppDirectoryPathProvide
 builder.Services.AddSingleton(appDirectoryPathProvider);
 
 IFileProvider userConfigFileProvider = new PhysicalFileProvider(appDirectoryPathProvider.UserConfigDirectoryPath);
-
 builder.Services.AddKeyedSingleton(
     AppConfigConstants.UserConfigFileProviderKey,
     userConfigFileProvider);
@@ -37,6 +36,7 @@ builder.Services.AddKeyedSingleton(
     AppConfigConstants.UserConfigParserServiceKey,
     new ConfigParser(userConfigFileProvider.GetFileInfo(AppConfigConstants.UserConfigFileName).PhysicalPath));
 
+builder.Services.AddSingleton<UserConfigurationFileCreator>();
 builder.Services.AddSingleton<IUserConfigurationReader, UserConfigurationReader>();
 builder.Services.AddSingleton<IUserConfigurationWriter, UserConfigurationWriter>();
 builder.Services.AddSingleton<ISessionConfigReader, SessionConfigReader>();
@@ -84,6 +84,7 @@ builder.Services.AddSingleton<ICommandHandler>(sp => sp.GetService<CommandHandle
 builder.Services.AddSingleton<ISessionManager>(sp => sp.GetService<SessionManager>()!);
 builder.Services.AddSingleton<INotificationManager>(sp => sp.GetService<NotificationManager>()!);
 
+builder.Services.AddSingleton<DaemonService>(sp => sp.GetService<UserConfigurationFileCreator>()!);
 builder.Services.AddSingleton<DaemonService>(sp => sp.GetService<UserConfigurationProvider>()!);
 builder.Services.AddSingleton<DaemonService>(sp => sp.GetService<SessionConfigurationProvider>()!);
 builder.Services.AddSingleton<DaemonService>(sp => sp.GetService<CommandServer>()!);

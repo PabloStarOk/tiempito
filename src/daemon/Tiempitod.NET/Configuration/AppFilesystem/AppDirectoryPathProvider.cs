@@ -1,4 +1,4 @@
-namespace Tiempitod.NET.Configuration.AppDirectory;
+namespace Tiempitod.NET.Configuration.AppFilesystem;
 
 /// <summary>
 /// Provides access to application's config directory and user's config directory paths and creates user's config directory if it doesn't exist.

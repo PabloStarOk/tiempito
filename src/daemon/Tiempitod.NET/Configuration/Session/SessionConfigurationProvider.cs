@@ -1,4 +1,3 @@
-using Microsoft.Extensions.FileProviders;
 using Tiempitod.NET.Configuration.User;
 
 namespace Tiempitod.NET.Configuration.Session;
@@ -11,7 +10,6 @@ public class SessionConfigurationProvider : DaemonService, ISessionConfiguration
     private readonly IUserConfigurationProvider _userConfigurationProvider;
     private readonly ISessionConfigReader _sessionConfigReader;
     private readonly ISessionConfigWriter _sessionConfigWriter;
-    private readonly IFileProvider _userDirectoryFileProvider;
 
     public IDictionary<string, SessionConfig> SessionConfigs { get; private set; } = new Dictionary<string, SessionConfig>();
     public SessionConfig DefaultSessionConfig { get; private set; }
@@ -23,23 +21,19 @@ public class SessionConfigurationProvider : DaemonService, ISessionConfiguration
     /// <param name="userConfigurationProvider">Provider of user's configuration.</param>
     /// <param name="sessionConfigReader">Reader of session configurations.</param>
     /// <param name="sessionConfigWriter">Writer of session configurations.</param>
-    /// <param name="userDirectoryFileProvider">A provider of files in the user's config directory.</param>
     public SessionConfigurationProvider(
         ILogger<SessionConfigurationProvider> logger,
         IUserConfigurationProvider userConfigurationProvider,
         ISessionConfigReader sessionConfigReader,
-        ISessionConfigWriter sessionConfigWriter,
-        [FromKeyedServices(AppConfigConstants.UserConfigFileProviderKey)] IFileProvider userDirectoryFileProvider) : base(logger)
+        ISessionConfigWriter sessionConfigWriter) : base(logger)
     {
         _userConfigurationProvider = userConfigurationProvider;
         _sessionConfigReader = sessionConfigReader;
         _sessionConfigWriter = sessionConfigWriter;
-        _userDirectoryFileProvider = userDirectoryFileProvider;
     }
 
     protected override void OnStartService()
     {
-        CreateUserConfigFile(AppConfigConstants.UserConfigFileName);
         LoadSessionConfigs();
         SetDefaultUserSessionConfig();
     }
@@ -47,30 +41,10 @@ public class SessionConfigurationProvider : DaemonService, ISessionConfiguration
     // TODO: Make method asynchronous.
     public OperationResult SaveSessionConfig(SessionConfig sessionConfig)
     {
-        IFileInfo userConfigFileInfo = _userDirectoryFileProvider.GetFileInfo(AppConfigConstants.UserConfigFileName);
-        
-        if (!userConfigFileInfo.Exists)
-            CreateUserConfigFile(AppConfigConstants.UserConfigFileName);
-        
         return  _sessionConfigWriter.Write
             (AppConfigConstants.SessionSectionPrefix, sessionConfig) ?
             new OperationResult(true, "Session configuration was saved.") :
             new OperationResult(true, "Session configuration was not saved.");
-    }
-    
-    /// <summary>
-    /// Creates a file in the user's config directory with the given name.
-    /// </summary>
-    /// <param name="fileName">Name of the file to create.</param>
-    private void CreateUserConfigFile(string fileName)
-    {
-        IFileInfo fileInfo = _userDirectoryFileProvider.GetFileInfo(fileName);
-        
-        if (fileInfo.Exists)
-            return;
-        
-        File.Create(fileInfo.PhysicalPath);
-        Logger.LogInformation("User config filed was created at {Path}", fileInfo.PhysicalPath);
     }
 
     /// <summary>
