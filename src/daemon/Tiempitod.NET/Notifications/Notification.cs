@@ -13,8 +13,8 @@ public struct Notification
     public int ExpirationTimeout { get; set; }
 
     public Notification(string applicationName,
-        string summary,
-        string body,
+        string summary = "",
+        string body = "",
         uint replacesId = 0,
         string icon = "",
         string[]? actions = default,

@@ -54,7 +54,7 @@ public class WindowsNotificationHandler : INotificationHandler
                     if (OperatingSystem.IsWindowsVersionAtLeast(10,0,10240))
                     {
                         toast.Tag = _lastNotificationTag.ToString();
-                        toast.ExpirationTime = DateTimeOffset.Now.AddMinutes(2);
+                        toast.ExpirationTime = DateTimeOffset.Now.AddMilliseconds(notification.ExpirationTimeout);
                     }
                 }
             );

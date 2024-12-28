@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Options;
+using Tiempitod.NET.Configuration.Notifications;
 using Tiempitod.NET.Notifications;
 
 namespace Tiempitod.NET.Session;
@@ -8,14 +10,20 @@ namespace Tiempitod.NET.Session;
 /// </summary>
 public sealed class SessionManager : DaemonService, ISessionManager
 {
+    private readonly NotificationConfig _notificationConfig;
     private readonly IProgress<Session> _progress;
     private readonly INotificationManager _notificationManager;
     private readonly TimeSpan _interval;
     private Session _session;
     private CancellationTokenSource _timerTokenSource;
     
-    public SessionManager(ILogger<SessionManager> logger, INotificationManager notificationManager, IProgress<Session> progress) : base(logger)
+    public SessionManager(
+        ILogger<SessionManager> logger,
+        IOptions<NotificationConfig> notificationOptions,
+        INotificationManager notificationManager,
+        IProgress<Session> progress) : base(logger)
     {
+        _notificationConfig = notificationOptions.Value;
         _progress = progress;
         _notificationManager = notificationManager;
         _interval = TimeSpan.FromSeconds(1);
@@ -109,8 +117,8 @@ public sealed class SessionManager : DaemonService, ISessionManager
         _session.Status = SessionStatus.Executing;
         await _notificationManager.CloseLastNotificationAsync();
         await _notificationManager.NotifyAsync(
-            summary: "Session started",
-            body: "A new Tiempito session started.");
+            summary: _notificationConfig.SessionStartedSummary,
+            body: _notificationConfig.SessionStartedBody);
         
         while (_session.CurrentCycle < _session.TargetCycles && !stoppingToken.IsCancellationRequested)
         {
@@ -128,8 +136,8 @@ public sealed class SessionManager : DaemonService, ISessionManager
 
         await _notificationManager.CloseLastNotificationAsync();
         await _notificationManager.NotifyAsync(
-            summary: "Session finished",
-            body: "Tiempito session finished.");
+            summary: _notificationConfig.SessionFinishedSummary,
+            body: _notificationConfig.SessionFinishedBody);
         _session.Status = SessionStatus.Finished;
         Logger.LogInformation("Finishing session at {time}", DateTimeOffset.Now);
     }
@@ -168,14 +176,21 @@ public sealed class SessionManager : DaemonService, ISessionManager
             return;
 
         await _notificationManager.CloseLastNotificationAsync();
-        var summary = $"{_session.CurrentTimeType.ToString()} completed";
-        var body = $"A {_session.CurrentTimeType.ToString().ToLower()} time was completed.";
-        await _notificationManager.NotifyAsync(summary, body);
-        
+        string summary;
+        string body;
         if (_session.CurrentTimeType is TimeType.Focus)
+        {
+            summary = _notificationConfig.FocusCompletedSummary;
+            body = _notificationConfig.FocusCompletedBody;
             _session.CurrentTimeType = TimeType.Break;
+        }
         else
-            _session.CurrentTimeType = TimeType.Focus;
+        {
+            summary = _notificationConfig.BreakCompletedSummary;
+            body = _notificationConfig.BreakCompletedBody;
+            _session.CurrentTimeType = TimeType.Focus;   
+        }
+        await _notificationManager.NotifyAsync(summary, body);
         
         _session.Elapsed = TimeSpan.Zero;
     }

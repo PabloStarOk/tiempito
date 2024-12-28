@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Options;
+using Tiempitod.NET.Configuration.Notifications;
 using Tmds.DBus.Protocol;
 
 namespace Tiempitod.NET.Notifications;
@@ -8,11 +10,17 @@ namespace Tiempitod.NET.Notifications;
 public class NotificationManager : DaemonService, INotificationManager
 {
     private readonly INotificationHandler _notificationHandler;
-    // TODO: Replace with configuration.
-    private Notification _baseNotification = new("Tiempito", string.Empty, string.Empty, expirationTimeout: 10000);
+    private Notification _baseNotification;
 
-    public NotificationManager(ILogger<NotificationManager> logger, INotificationHandler notificationHandler) : base(logger)
+    public NotificationManager(
+        ILogger<NotificationManager> logger,
+        IOptions<NotificationConfig> notificationConfigOptions,
+        INotificationHandler notificationHandler) : base(logger)
     {
+        _baseNotification = new Notification(
+            notificationConfigOptions.Value.AppName,
+            icon: notificationConfigOptions.Value.IconPath,
+            expirationTimeout: notificationConfigOptions.Value.ExpirationTimeoutMs);
         _notificationHandler = notificationHandler;
     }
 
