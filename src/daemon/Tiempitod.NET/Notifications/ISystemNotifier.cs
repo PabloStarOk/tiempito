@@ -1,12 +1,12 @@
 namespace Tiempitod.NET.Notifications;
 
 /// <summary>
-/// Defines a handler to show and close notifications.
+/// Defines a notifier to display popup notifications in an operating system.
 /// </summary>
-public interface INotificationHandler
+public interface ISystemNotifier
 {
     /// <summary>
-    /// Allows to clean up the managed and unmanaged resources of the handler if needed.
+    /// Allows to clean up the managed and unmanaged resources of the notifier if needed.
     /// </summary>
     public void CleanUp() { }
     

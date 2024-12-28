@@ -69,10 +69,10 @@ builder.Services.AddTransient<IAsyncMessageHandler, PipeMessageHandler>();
 // Add system notification
 #if LINUX
 if (OperatingSystem.IsLinux())
-    builder.Services.AddTransient<INotificationHandler, LinuxNotificationHandler>();
+    builder.Services.AddTransient<ISystemNotifier, LinuxNotifier>();
 #elif WINDOWS10_0_17763_0_OR_GREATER
 if (OperatingSystem.IsWindowsVersionAtLeast(10,0,10240))
-    builder.Services.AddTransient<INotificationHandler, WindowsNotificationHandler>();
+    builder.Services.AddTransient<ISystemNotifier, WindowsNotifier>();
 #endif
 
 builder.Services.AddSingleton<CommandServer>();

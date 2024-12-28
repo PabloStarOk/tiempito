@@ -5,12 +5,12 @@ using System.Runtime.Versioning;
 namespace Tiempitod.NET.Notifications.Windows;
 
 [SupportedOSPlatform("Windows")]
-public class WindowsNotificationHandler : INotificationHandler
+public class WindowsNotifier : ISystemNotifier
 {
-    private readonly ILogger<WindowsNotificationHandler> _logger;
+    private readonly ILogger<WindowsNotifier> _logger;
     private Guid _lastNotificationTag = Guid.Empty;
     
-    public WindowsNotificationHandler(ILogger<WindowsNotificationHandler> logger)
+    public WindowsNotifier(ILogger<WindowsNotifier> logger)
     {
         _logger = logger;
     }

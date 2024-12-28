@@ -8,13 +8,13 @@ namespace Tiempitod.NET.Notifications.Linux;
 /// Notification handler for Linux-based operating systems
 /// </summary>
 [SupportedOSPlatform("Linux")]
-public class LinuxNotificationHandler : INotificationHandler, IDisposable
+public class LinuxNotifier : ISystemNotifier, IDisposable
 {
     private readonly Connection _connection;
     private readonly IDBusLinuxNotification _dbusInterface;
     private uint _lastNotificationId;
 
-    public LinuxNotificationHandler()
+    public LinuxNotifier()
     {
         _connection = Connection.Session;
         _dbusInterface = _connection.CreateProxy<IDBusLinuxNotification>
@@ -70,7 +70,7 @@ public class LinuxNotificationHandler : INotificationHandler, IDisposable
         _connection.Dispose();
     }
 
-    ~LinuxNotificationHandler()
+    ~LinuxNotifier()
     {
         Dispose(isDisposing: false);
     }

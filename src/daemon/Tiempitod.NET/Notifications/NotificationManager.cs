@@ -9,19 +9,19 @@ namespace Tiempitod.NET.Notifications;
 /// </summary>
 public class NotificationManager : DaemonService, INotificationManager
 {
-    private readonly INotificationHandler _notificationHandler;
+    private readonly ISystemNotifier _systemNotifier;
     private Notification _baseNotification;
 
     public NotificationManager(
         ILogger<NotificationManager> logger,
         IOptions<NotificationConfig> notificationConfigOptions,
-        INotificationHandler notificationHandler) : base(logger)
+        ISystemNotifier systemNotifier) : base(logger)
     {
         _baseNotification = new Notification(
             notificationConfigOptions.Value.AppName,
             icon: notificationConfigOptions.Value.IconPath,
             expirationTimeout: notificationConfigOptions.Value.ExpirationTimeoutMs);
-        _notificationHandler = notificationHandler;
+        _systemNotifier = systemNotifier;
     }
 
     protected override void OnStartService()
@@ -32,18 +32,18 @@ public class NotificationManager : DaemonService, INotificationManager
 
     protected override void OnStopService()
     {
-        _notificationHandler.CleanUp();
+        _systemNotifier.CleanUp();
     }
 
     public async Task NotifyAsync(string summary, string body)
     {
         _baseNotification.Summary = summary;
         _baseNotification.Body = body;
-        await _notificationHandler.NotifyAsync(_baseNotification);
+        await _systemNotifier.NotifyAsync(_baseNotification);
     }
 
     public async Task CloseLastNotificationAsync()
     {
-        await _notificationHandler.CloseNotificationAsync();
+        await _systemNotifier.CloseNotificationAsync();
     }
 }
