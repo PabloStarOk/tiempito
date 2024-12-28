@@ -13,7 +13,7 @@ public class SessionConfigurationProvider : DaemonService, ISessionConfiguration
     
     private readonly ISessionConfigReader _sessionConfigReader;
     private readonly ISessionConfigWriter _sessionConfigWriter;
-    private readonly IFileProvider _fileProvider;
+    private readonly IFileProvider _userDirectoryFileProvider;
 
     public IDictionary<string, SessionConfig> SessionConfigs { get; private set; } = new Dictionary<string, SessionConfig>();
     public SessionConfig DefaultSessionConfig { get; private set; }
@@ -24,16 +24,16 @@ public class SessionConfigurationProvider : DaemonService, ISessionConfiguration
     /// <param name="logger">Logger to register special events.</param>
     /// <param name="sessionConfigReader">Reader of session configurations.</param>
     /// <param name="sessionConfigWriter">Writer of session configurations.</param>
-    /// <param name="fileProvider">A provider of files in the user's config directory.</param>
+    /// <param name="userDirectoryFileProvider">A provider of files in the user's config directory.</param>
     public SessionConfigurationProvider(
         ILogger<SessionConfigurationProvider> logger,
         ISessionConfigReader sessionConfigReader,
         ISessionConfigWriter sessionConfigWriter,
-        [FromKeyedServices(AppDirectoryPathProvider.UserConfigFileProviderKey)] IFileProvider fileProvider) : base(logger)
+        [FromKeyedServices(AppDirectoryPathProvider.UserConfigFileProviderKey)] IFileProvider userDirectoryFileProvider) : base(logger)
     {
         _sessionConfigReader = sessionConfigReader;
         _sessionConfigWriter = sessionConfigWriter;
-        _fileProvider = fileProvider;
+        _userDirectoryFileProvider = userDirectoryFileProvider;
     }
 
     protected override void OnStartService()
@@ -46,7 +46,7 @@ public class SessionConfigurationProvider : DaemonService, ISessionConfiguration
     // TODO: Make method asynchronous.
     public OperationResult SaveSessionConfig(SessionConfig sessionConfig)
     {
-        IFileInfo userConfigFileInfo = _fileProvider.GetFileInfo(UserConfigFileName);
+        IFileInfo userConfigFileInfo = _userDirectoryFileProvider.GetFileInfo(UserConfigFileName);
         
         if (!userConfigFileInfo.Exists)
             CreateUserConfigFile(UserConfigFileName);
@@ -63,7 +63,7 @@ public class SessionConfigurationProvider : DaemonService, ISessionConfiguration
     /// <param name="fileName">Name of the file to create.</param>
     private void CreateUserConfigFile(string fileName)
     {
-        IFileInfo fileInfo = _fileProvider.GetFileInfo(fileName);
+        IFileInfo fileInfo = _userDirectoryFileProvider.GetFileInfo(fileName);
         
         if (fileInfo.Exists)
             return;
