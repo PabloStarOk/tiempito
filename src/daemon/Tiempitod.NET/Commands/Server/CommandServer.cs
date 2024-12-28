@@ -119,7 +119,7 @@ public class CommandServer : DaemonService, ICommandServer
                     }
                     catch (Exception ex)
                     {
-                        Logger.LogWarning("Error when trying to get connected client's username at {Time}, {Error}", DateTimeOffset.Now, ex);
+                        Logger.LogWarning(ex, "Error when trying to get connected client's username at {Time}", DateTimeOffset.Now);
                     }
                     
                     Logger.LogInformation("Command server connected to client {User}", _currentConnectedUser);
@@ -148,7 +148,7 @@ public class CommandServer : DaemonService, ICommandServer
         catch (Exception ex)
         {
             if (!_readMessageTokenSource.IsCancellationRequested)
-                Logger.LogCritical("Error while handling command requests at {time}: {error}", DateTimeOffset.Now, ex.Message);
+                Logger.LogCritical(ex,"Error while handling command requests at {Time}", DateTimeOffset.Now);
         }
         finally
         {

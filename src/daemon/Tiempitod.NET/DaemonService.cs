@@ -19,7 +19,7 @@ public abstract class DaemonService(ILogger<DaemonService> logger)
         }
         catch (Exception ex)
         {
-            Logger.LogCritical("Exception occurred while starting {service} at {time}, Error: {error}", this, DateTimeOffset.Now, ex.Message);
+            Logger.LogCritical(ex, "Exception occurred while starting {Service} daemon service at {Time}", this, DateTimeOffset.Now);
             return false;
         }
         
@@ -38,7 +38,7 @@ public abstract class DaemonService(ILogger<DaemonService> logger)
         }
         catch (Exception ex)
         {
-            Logger.LogCritical("Exception occurred while stopping {service} at {time}, Error: {error}", this, DateTimeOffset.Now, ex.Message);
+            Logger.LogCritical(ex, "Exception occurred while stopping {Service} at {Time}", this, DateTimeOffset.Now);
             return false;
         }
         

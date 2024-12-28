@@ -92,7 +92,7 @@ public class CommandHandler : DaemonService, ICommandHandler
         }
         catch (Exception ex)
         {
-            Logger.LogCritical("Exception captured at {time}, error: {error}", DateTimeOffset.Now, ex.Message);
+            Logger.LogCritical(ex, "Exception captured at {Time}", DateTimeOffset.Now);
             daemonResponse = DaemonResponse.InternalError($"An internal error occurred: {ex.Message}");
         }
         

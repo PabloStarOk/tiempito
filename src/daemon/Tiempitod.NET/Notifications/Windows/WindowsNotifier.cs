@@ -61,7 +61,7 @@ public class WindowsNotifier : ISystemNotifier
         }
         catch (Exception ex)
         {
-            _logger.LogError("Error when trying to raise a Windows notification at {Time}, error: {Error}", DateTimeOffset.Now, ex);
+            _logger.LogError(ex, "Error when trying to raise a Windows notification at {Time}", DateTimeOffset.Now);
         }
         
         return Task.CompletedTask;
