@@ -1,10 +1,9 @@
-using Microsoft.Extensions.FileProviders;
 using Salaros.Configuration;
 
 namespace Tiempitod.NET.Configuration.Session;
 
 /// <summary>
-/// Provides read and write operations for session configurations.
+/// Provides read operations to load <see cref="SessionConfig"/> from user's config file.
 /// </summary>
 public class SessionConfigReader : ISessionConfigReader
 {
@@ -18,18 +17,23 @@ public class SessionConfigReader : ISessionConfigReader
         { SessionDurationSymbol.Minute, "m" },
         { SessionDurationSymbol.Hour, "h" }
     };
+    private readonly ConfigParser _configParser;
+
+    /// <summary>
+    /// Instantiates a new <see cref="SessionConfigReader"/>.
+    /// </summary>
+    /// <param name="configParser">Parser of the user's configuration file.</param>
+    public SessionConfigReader([FromKeyedServices(AppConfigConstants.UserConfigParserServiceKey)] ConfigParser configParser)
+    {
+        _configParser = configParser;
+    }
     
     // TODO: Make method asynchronous.
-    public IDictionary<string, SessionConfig> ReadSessions(string prefixSectionName, IFileInfo fileInfo)
+    public IDictionary<string, SessionConfig> ReadSessions(string prefixSectionName)
     {
         var dictionary = new Dictionary<string, SessionConfig>();
 
-        if (!fileInfo.Exists)
-            return dictionary;
-        
-        var configParser = new ConfigParser(fileInfo.PhysicalPath);
-
-        foreach (ConfigSection configSection in configParser.Sections)
+        foreach (ConfigSection configSection in _configParser.Sections)
         {
             if (!configSection.SectionName.Contains(prefixSectionName))
                 continue;
@@ -39,7 +43,7 @@ public class SessionConfigReader : ISessionConfigReader
             if (sessionConfigNullable == null)
                 continue;
 
-            SessionConfig sessionConfig = (SessionConfig) sessionConfigNullable;
+            var sessionConfig = (SessionConfig) sessionConfigNullable;
             dictionary.Add(sessionConfig.Id, sessionConfig);
         }
 

@@ -11,8 +11,8 @@ public class SessionConfigurationProvider : DaemonService, ISessionConfiguration
     private const string UserConfigFileName = "user.conf";
     private const string SessionSectionPrefix = "Session.";
     
-    private readonly IAppDirectoryPathProvider _appDirectoryPathProvider;
     private readonly ISessionConfigReader _sessionConfigReader;
+    private readonly ISessionConfigWriter _sessionConfigWriter;
     private readonly IFileProvider _fileProvider;
 
     public IDictionary<string, SessionConfig> SessionConfigs { get; private set; } = new Dictionary<string, SessionConfig>();
@@ -22,17 +22,17 @@ public class SessionConfigurationProvider : DaemonService, ISessionConfiguration
     /// Instantiates a new <see cref="SessionConfigurationProvider"/>.
     /// </summary>
     /// <param name="logger">Logger to register special events.</param>
-    /// <param name="appDirectoryPathProvider">Provider of directory paths.</param>
     /// <param name="sessionConfigReader">Reader of session configurations.</param>
+    /// <param name="sessionConfigWriter">Writer of session configurations.</param>
     /// <param name="fileProvider">A provider of files in the user's config directory.</param>
     public SessionConfigurationProvider(
         ILogger<SessionConfigurationProvider> logger,
-        IAppDirectoryPathProvider appDirectoryPathProvider,
         ISessionConfigReader sessionConfigReader,
+        ISessionConfigWriter sessionConfigWriter,
         [FromKeyedServices(AppDirectoryPathProvider.UserConfigFileProviderKey)] IFileProvider fileProvider) : base(logger)
     {
-        _appDirectoryPathProvider = appDirectoryPathProvider;
         _sessionConfigReader = sessionConfigReader;
+        _sessionConfigWriter = sessionConfigWriter;
         _fileProvider = fileProvider;
     }
 
@@ -42,21 +42,33 @@ public class SessionConfigurationProvider : DaemonService, ISessionConfiguration
         LoadSessionConfigs();
         SetDefaultUserSessionConfig();
     }
-    
+
+    // TODO: Make method asynchronous.
+    public OperationResult SaveSessionConfig(SessionConfig sessionConfig)
+    {
+        IFileInfo userConfigFileInfo = _fileProvider.GetFileInfo(UserConfigFileName);
+        
+        if (!userConfigFileInfo.Exists)
+            CreateUserConfigFile(UserConfigFileName);
+        
+        return  _sessionConfigWriter.Write
+            (SessionSectionPrefix, sessionConfig) ?
+            new OperationResult(true, "Session configuration was saved.") :
+            new OperationResult(true, "Session configuration was not saved.");
+    }
+
     /// <summary>
     /// Creates a file in the user's config directory with the given name.
     /// </summary>
     /// <param name="fileName">Name of the file to create.</param>
     private void CreateUserConfigFile(string fileName)
     {
-        string path = Path.Combine(_appDirectoryPathProvider.UserConfigDirectoryPath, fileName);
-
-        IFileInfo fileInfo = _fileProvider.GetFileInfo(path);
+        IFileInfo fileInfo = _fileProvider.GetFileInfo(fileName);
         
         if (fileInfo.Exists)
             return;
         
-        File.Create(path);
+        File.Create(fileInfo.PhysicalPath);
         Logger.LogInformation("User config filed was created at {Path}", fileInfo.PhysicalPath);
     }
 
@@ -65,8 +77,7 @@ public class SessionConfigurationProvider : DaemonService, ISessionConfiguration
     /// </summary>
     private void LoadSessionConfigs()
     {
-        IFileInfo userConfigFileInfo = _fileProvider.GetFileInfo(UserConfigFileName);
-        SessionConfigs = _sessionConfigReader.ReadSessions(SessionSectionPrefix, userConfigFileInfo);
+        SessionConfigs = _sessionConfigReader.ReadSessions(SessionSectionPrefix);
     }
     
     /// <summary>

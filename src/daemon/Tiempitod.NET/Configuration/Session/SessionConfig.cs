@@ -15,7 +15,7 @@ public struct SessionConfig
         BreakDuration = TimeSpan.FromMinutes(5);
     }
     
-    public SessionConfig(string id, int targetCycles, TimeSpan focusDuration, TimeSpan breakDuration, bool isDefault = false)
+    public SessionConfig(string id, int targetCycles, TimeSpan focusDuration, TimeSpan breakDuration)
     {
         Id = id;
         TargetCycles = targetCycles;

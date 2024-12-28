@@ -1,5 +1,6 @@
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
+using Salaros.Configuration;
 using System.IO.Pipes;
 using System.Text;
 using Tiempitod.NET;
@@ -8,7 +9,6 @@ using Tiempitod.NET.Commands.Server;
 using Tiempitod.NET.Configuration;
 using Tiempitod.NET.Configuration.AppDirectory;
 using Tiempitod.NET.Configuration.Session;
-using Tiempitod.NET.Configuration.User;
 using Tiempitod.NET.Notifications;
 #if LINUX
 using Tiempitod.NET.Notifications.Linux;
@@ -26,10 +26,16 @@ ArgumentNullException.ThrowIfNull(loggerProvider);
 // Add configuration services
 IAppDirectoryPathProvider appDirectoryPathProvider = new AppDirectoryPathProvider(loggerProvider.CreateLogger<AppDirectoryPathProvider>());
 builder.Services.AddSingleton(appDirectoryPathProvider);
-builder.Services.AddTransient<ISessionConfigReader, SessionConfigReader>();
-builder.Services.AddKeyedSingleton<IFileProvider>(
+
+IFileProvider userConfigFileProvider = new PhysicalFileProvider(appDirectoryPathProvider.UserConfigDirectoryPath);
+builder.Services.AddKeyedSingleton(
     AppDirectoryPathProvider.UserConfigFileProviderKey,
-    new PhysicalFileProvider(appDirectoryPathProvider.UserConfigDirectoryPath));
+    userConfigFileProvider);
+builder.Services.AddKeyedSingleton(
+    AppConfigConstants.UserConfigParserServiceKey,
+    new ConfigParser(userConfigFileProvider.GetFileInfo(AppConfigConstants.UserConfigFileName).PhysicalPath));
+builder.Services.AddSingleton<ISessionConfigReader, SessionConfigReader>();
+builder.Services.AddSingleton<ISessionConfigWriter, SessionConfigWriter>();
 builder.Services.AddSingleton<SessionConfigurationProvider>();
 builder.Services.AddSingleton<ISessionConfigurationProvider>(sp => sp.GetService<SessionConfigurationProvider>()!);
 

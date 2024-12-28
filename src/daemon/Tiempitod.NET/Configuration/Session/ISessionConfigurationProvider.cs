@@ -14,4 +14,11 @@ public interface ISessionConfigurationProvider
     /// Default session defined by default or by the user.
     /// </summary>
     public SessionConfig DefaultSessionConfig { get; }
+
+    /// <summary>
+    /// Saves the given session in the user's config file.
+    /// </summary>
+    /// <param name="sessionConfig">Session to save.</param>
+    /// <returns>An <see cref="OperationResult"/> representing the result of the operation.</returns>
+    public OperationResult SaveSessionConfig(SessionConfig sessionConfig);
 }
