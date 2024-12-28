@@ -42,7 +42,7 @@ public sealed class SessionManager : DaemonService, ISessionManager
         _timerTokenSource.Dispose();
     }
     
-    public OperationResult StartSession(CancellationToken daemonStoppingToken, string sessionId = "")
+    public OperationResult StartSession(string sessionId = "")
     {
         if (_currentSession.Status is SessionStatus.Executing)
             return new OperationResult(Success: false, Message: "There is already an executed session.");
@@ -58,8 +58,6 @@ public sealed class SessionManager : DaemonService, ISessionManager
             configSessionToUse = foundSessionConfig;
         else
             return new OperationResult(Success: false, Message: $"Session with ID {sessionId} was not found");
-        
-        Logger.LogCritical("Session ID is: {Id}", configSessionToUse.Id);
         
         _currentSession = new Session(
             configSessionToUse.TargetCycles,
