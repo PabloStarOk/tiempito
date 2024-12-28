@@ -36,17 +36,17 @@ builder.Services.AddKeyedSingleton(
     AppConfigConstants.UserConfigParserServiceKey,
     new ConfigParser(userConfigFileProvider.GetFileInfo(AppConfigConstants.UserConfigFileName).PhysicalPath)); // BUG: If two section names are equals throws an exception.
 
-builder.Services.AddSingleton<UserConfigurationFileCreator>();
-builder.Services.AddSingleton<IUserConfigurationReader, UserConfigurationReader>();
-builder.Services.AddSingleton<IUserConfigurationWriter, UserConfigurationWriter>();
+builder.Services.AddSingleton<UserConfigFileCreator>();
+builder.Services.AddSingleton<IUserConfigReader, UserConfigReader>();
+builder.Services.AddSingleton<IUserConfigWriter, UserConfigWriter>();
 builder.Services.AddSingleton<ISessionConfigReader, SessionConfigReader>();
 builder.Services.AddSingleton<ISessionConfigWriter, SessionConfigWriter>();
 
-builder.Services.AddSingleton<UserConfigurationProvider>();
-builder.Services.AddSingleton<SessionConfigurationProvider>();
+builder.Services.AddSingleton<UserConfigProvider>();
+builder.Services.AddSingleton<SessionConfigProvider>();
 
-builder.Services.AddSingleton<IUserConfigurationProvider>(sp => sp.GetService<UserConfigurationProvider>()!);
-builder.Services.AddSingleton<ISessionConfigurationProvider>(sp => sp.GetService<SessionConfigurationProvider>()!);
+builder.Services.AddSingleton<IUserConfigProvider>(sp => sp.GetService<UserConfigProvider>()!);
+builder.Services.AddSingleton<ISessionConfigProvider>(sp => sp.GetService<SessionConfigProvider>()!);
 
 // Load daemon config
 // TODO: Replace path with the one served by IAppDirectoryService.
@@ -84,9 +84,9 @@ builder.Services.AddSingleton<ICommandHandler>(sp => sp.GetService<CommandHandle
 builder.Services.AddSingleton<ISessionManager>(sp => sp.GetService<SessionManager>()!);
 builder.Services.AddSingleton<INotificationManager>(sp => sp.GetService<NotificationManager>()!);
 
-builder.Services.AddSingleton<DaemonService>(sp => sp.GetService<UserConfigurationFileCreator>()!);
-builder.Services.AddSingleton<DaemonService>(sp => sp.GetService<UserConfigurationProvider>()!);
-builder.Services.AddSingleton<DaemonService>(sp => sp.GetService<SessionConfigurationProvider>()!);
+builder.Services.AddSingleton<DaemonService>(sp => sp.GetService<UserConfigFileCreator>()!);
+builder.Services.AddSingleton<DaemonService>(sp => sp.GetService<UserConfigProvider>()!);
+builder.Services.AddSingleton<DaemonService>(sp => sp.GetService<SessionConfigProvider>()!);
 builder.Services.AddSingleton<DaemonService>(sp => sp.GetService<CommandServer>()!);
 builder.Services.AddSingleton<DaemonService>(sp => sp.GetService<CommandHandler>()!);
 builder.Services.AddSingleton<DaemonService>(sp => sp.GetService<SessionManager>()!);

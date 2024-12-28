@@ -5,9 +5,9 @@ namespace Tiempitod.NET.Configuration.Session;
 /// <summary>
 /// Provides access to user's configuration and custom defined session configurations.
 /// </summary>
-public class SessionConfigurationProvider : DaemonService, ISessionConfigurationProvider
+public class SessionConfigProvider : DaemonService, ISessionConfigProvider
 {
-    private readonly IUserConfigurationProvider _userConfigurationProvider;
+    private readonly IUserConfigProvider _userConfigProvider;
     private readonly ISessionConfigReader _sessionConfigReader;
     private readonly ISessionConfigWriter _sessionConfigWriter;
 
@@ -15,19 +15,19 @@ public class SessionConfigurationProvider : DaemonService, ISessionConfiguration
     public SessionConfig DefaultSessionConfig { get; private set; }
     
     /// <summary>
-    /// Instantiates a new <see cref="SessionConfigurationProvider"/>.
+    /// Instantiates a new <see cref="SessionConfigProvider"/>.
     /// </summary>
     /// <param name="logger">Logger to register special events.</param>
-    /// <param name="userConfigurationProvider">Provider of user's configuration.</param>
+    /// <param name="userConfigProvider">Provider of user's configuration.</param>
     /// <param name="sessionConfigReader">Reader of session configurations.</param>
     /// <param name="sessionConfigWriter">Writer of session configurations.</param>
-    public SessionConfigurationProvider(
-        ILogger<SessionConfigurationProvider> logger,
-        IUserConfigurationProvider userConfigurationProvider,
+    public SessionConfigProvider(
+        ILogger<SessionConfigProvider> logger,
+        IUserConfigProvider userConfigProvider,
         ISessionConfigReader sessionConfigReader,
         ISessionConfigWriter sessionConfigWriter) : base(logger)
     {
-        _userConfigurationProvider = userConfigurationProvider;
+        _userConfigProvider = userConfigProvider;
         _sessionConfigReader = sessionConfigReader;
         _sessionConfigWriter = sessionConfigWriter;
     }
@@ -69,7 +69,7 @@ public class SessionConfigurationProvider : DaemonService, ISessionConfiguration
             return;
         } 
         
-        string userDefaultSession = _userConfigurationProvider.UserConfiguration.DefaultSessionId;
+        string userDefaultSession = _userConfigProvider.UserConfig.DefaultSessionId;
         if (SessionConfigs.TryGetValue(userDefaultSession, out SessionConfig sessionConfig))
         {
             DefaultSessionConfig = sessionConfig;

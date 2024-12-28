@@ -3,7 +3,7 @@ namespace Tiempitod.NET.Configuration.Session;
 /// <summary>
 /// Defines a provider for user's configuration.
 /// </summary>
-public interface ISessionConfigurationProvider
+public interface ISessionConfigProvider
 {
     /// <summary>
     /// Default and custom session configurations of the user.

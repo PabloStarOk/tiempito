@@ -5,16 +5,16 @@ namespace Tiempitod.NET.Configuration.AppFilesystem;
 /// <summary>
 /// Creates the default user's configuration file.
 /// </summary>
-public class UserConfigurationFileCreator : DaemonService
+public class UserConfigFileCreator : DaemonService
 {
     private readonly IFileProvider _userDirectoryFileProvider;
     
     /// <summary>
-    /// Instantiates a new <see cref="UserConfigurationFileCreator"/>.
+    /// Instantiates a new <see cref="UserConfigFileCreator"/>.
     /// </summary>
     /// <param name="logger">Logger to register special events.</param>
     /// <param name="userDirectoryFileProvider">A provider of files in the user's configuration directory.</param>
-    public UserConfigurationFileCreator(ILogger<UserConfigurationFileCreator> logger,
+    public UserConfigFileCreator(ILogger<UserConfigFileCreator> logger,
         [FromKeyedServices(AppConfigConstants.UserConfigFileProviderKey)] IFileProvider userDirectoryFileProvider) : base(logger)
     {
         _userDirectoryFileProvider = userDirectoryFileProvider;

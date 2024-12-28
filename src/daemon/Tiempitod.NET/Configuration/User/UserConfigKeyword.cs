@@ -1,6 +1,6 @@
 namespace Tiempitod.NET.Configuration.User;
 
-public enum UserConfigurationKeyword
+public enum UserConfigKeyword
 {
     DefaultSession
 }
