@@ -13,11 +13,9 @@ public class CommandServer : DaemonService, ICommandServer
     private CancellationTokenSource _sendMessageTokenSource;
     private CancellationTokenSource _readMessageTokenSource;
     private readonly int _maxRestartAttempts;
-    
-    public event EventHandler<string> CommandReceived;
-
     private string _currentConnectedUser = string.Empty;
     private int _currentRestartAttempts;
+    public event EventHandler<string> CommandReceived;
 
     public CommandServer(
         ILogger<CommandServer> logger,
@@ -50,7 +48,7 @@ public class CommandServer : DaemonService, ICommandServer
     {
         RegenerateToken(ref _readMessageTokenSource);
         RegenerateToken(ref _sendMessageTokenSource);
-        HandleRequestsAsync().Forget();
+        Task.Run(() => RunAsync(_readMessageTokenSource.Token)).Forget();
     }
 
     public void Restart()
@@ -99,65 +97,110 @@ public class CommandServer : DaemonService, ICommandServer
         
         await _asyncMessageHandler.SendMessageAsync(_pipeServer, response, _sendMessageTokenSource.Token);
     }
-    
-    // TODO: Refactor method
-    private async Task HandleRequestsAsync()
+
+    /// <summary>
+    /// Runs the server to connect and disconnect from the client and handle requests.
+    /// </summary>
+    private async Task RunAsync(CancellationToken cancellationToken)
     {
         try
         {
-            while (!_readMessageTokenSource.IsCancellationRequested)
+            while (!cancellationToken.IsCancellationRequested)
             {
-                // Connect or reconnect the server to a client.
                 if (!_pipeServer.IsConnected)
-                {
-                    await _pipeServer.WaitForConnectionAsync(_readMessageTokenSource.Token);
+                    await ConnectAsync(cancellationToken);
 
-                    try
-                    {
-                        if (_pipeConfig.DisplayImpersonationUser)
-                            _currentConnectedUser = _pipeServer.GetImpersonationUserName();
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.LogWarning(ex, "Error when trying to get connected client's username at {Time}", DateTimeOffset.Now);
-                    }
-                    
-                    Logger.LogInformation("Command server connected to client {User}", _currentConnectedUser);
-                }
+                // Handle client requests
+                string commandReceived = await ReceiveRequestsAsync(cancellationToken);
                 
-                if (!_pipeServer.CanRead)
-                {
-                    Logger.LogError("Named pipe stream doesn't support read operations.");
-                    return;
-                }
+                // Empty means disconnection.
+                if (string.IsNullOrEmpty(commandReceived))
+                    Disconnect();
                 
-                string receivedCommand = await _asyncMessageHandler.ReadMessageAsync(_pipeServer, _readMessageTokenSource.Token);
+                Logger.LogInformation("Command receive {Command}", commandReceived);
                 
-                // String empty means client has closed its connection.
-                if (receivedCommand == string.Empty)
-                {
-                    _pipeServer.Disconnect();
-                    Logger.LogInformation("Command server disconnected from client {User}", _currentConnectedUser);
-                    _currentConnectedUser = string.Empty;
-                    continue;   
-                }
-                
-                CommandReceived?.Invoke(this, receivedCommand);
+                CommandReceived?.Invoke(this, commandReceived);
             }
         }
         catch (Exception ex)
         {
             if (!_readMessageTokenSource.IsCancellationRequested)
-                Logger.LogCritical(ex,"Error while handling command requests at {Time}", DateTimeOffset.Now);
-        }
-        finally
-        {
+                Logger.LogCritical(ex,"Error while running command server at {Time}", DateTimeOffset.Now);
+            
             if (!_readMessageTokenSource.IsCancellationRequested)
                 Restart();
         }
     }
 
-    private void RegenerateToken(ref CancellationTokenSource tokenSource)
+    /// <summary>
+    /// Waits for connections.
+    /// </summary>
+    /// <param name="cancellationToken">Token to stop the task.</param>
+    private async Task ConnectAsync(CancellationToken cancellationToken)
+    {
+        await _pipeServer.WaitForConnectionAsync(cancellationToken);
+        
+        if (cancellationToken.IsCancellationRequested)
+            return;
+        
+        _currentConnectedUser = GetConnectedUser();
+        Logger.LogInformation("Command server connected to client {User}", _currentConnectedUser);
+    }
+    
+    /// <summary>
+    /// Disconnects from the current connected client.
+    /// </summary>
+    private void Disconnect()
+    {
+        _pipeServer.Disconnect();
+        Logger.LogInformation("Command server disconnected from client {User}", _currentConnectedUser);
+        _currentConnectedUser = string.Empty;
+    }
+
+    /// <summary>
+    /// Receives all incoming requests from the current connected client.
+    /// </summary>
+    /// <param name="cancellationToken">Token to stop the task.</param>
+    /// <returns>A string with the received message.</returns>
+    private async Task<string> ReceiveRequestsAsync(CancellationToken cancellationToken)
+    {
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            if (!_pipeServer.IsConnected)
+                break;
+            
+            if (_pipeServer.CanRead)
+                return await _asyncMessageHandler.ReadMessageAsync(_pipeServer, cancellationToken);
+
+            Logger.LogError("Named pipe stream doesn't support read operations.");
+        }
+        return string.Empty;
+    }
+
+    /// <summary>
+    /// Gets the username of the current connected client.
+    /// </summary>
+    /// <returns>A string with the name of the user if it's possible, an empty string otherwise.</returns>
+    private string GetConnectedUser()
+    {
+        var user = string.Empty;
+        try
+        {
+            if (_pipeConfig.DisplayImpersonationUser)
+                user = _pipeServer.GetImpersonationUserName();
+        }
+        catch
+        {
+            return user;
+        }
+        return user;
+    }
+    
+    /// <summary>
+    /// Regenerates the given token
+    /// </summary>
+    /// <param name="tokenSource"></param>
+    private static void RegenerateToken(ref CancellationTokenSource tokenSource)
     {
         if (tokenSource.TryReset())
             return;
