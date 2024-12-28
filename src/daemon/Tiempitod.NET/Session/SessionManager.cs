@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Options;
 using Tiempitod.NET.Configuration.Notifications;
 using Tiempitod.NET.Configuration.Session;
+using Tiempitod.NET.Extensions;
 using Tiempitod.NET.Notifications;
 
 namespace Tiempitod.NET.Session;

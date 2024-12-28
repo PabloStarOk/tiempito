@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Options;
 using System.IO.Pipes;
 using Tiempitod.NET.Configuration.Server;
+using Tiempitod.NET.Extensions;
 
 namespace Tiempitod.NET.Commands.Server;
 
