@@ -7,7 +7,7 @@ namespace Tiempitod.NET.Server;
 /// </summary>
 public interface ICommandServer
 {
-    public event EventHandler<string> CommandReceived;
+    public event EventHandler<Request> RequestReceived;
     
     /// <summary>
     /// Starts the server to handle command requests.

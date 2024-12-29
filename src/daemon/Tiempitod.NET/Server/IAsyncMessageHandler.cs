@@ -18,5 +18,5 @@ public interface IAsyncMessageHandler
     /// Reads a received message from a string.
     /// </summary>
     /// <returns>A string representing the message sent by the client.</returns>
-    public Task<string> ReadMessageAsync(PipeStream ioStream, CancellationToken cancellationToken);
+    public Task<Request> ReadMessageAsync(PipeStream ioStream, CancellationToken cancellationToken);
 }

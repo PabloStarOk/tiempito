@@ -20,12 +20,12 @@ public class CommandHandler : DaemonService, ICommandHandler
 
     protected override void OnStartService()
     {
-        _commandServer.CommandReceived += ReceiveCommand;
+        _commandServer.RequestReceived += ReceiveRequest;
     }
 
     protected override void OnStopService()
     {
-        _commandServer.CommandReceived -= ReceiveCommand;
+        _commandServer.RequestReceived -= ReceiveRequest;
 
         if (!_sessionTokenSource.IsCancellationRequested)
             _sessionTokenSource.Cancel();
@@ -76,9 +76,9 @@ public class CommandHandler : DaemonService, ICommandHandler
         await SendResponseAsync(operationResult);
     }
 
-    private void ReceiveCommand(object? _, string command)
+    private void ReceiveRequest(object? _, Request request)
     {
-        HandleCommandAsync(command).GetAwaiter();
+        HandleCommandAsync(request.Data).GetAwaiter();
     }
 
     private async Task SendResponseAsync(OperationResult operationResult)

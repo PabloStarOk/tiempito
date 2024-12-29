@@ -16,7 +16,7 @@ public class CommandServer : DaemonService, ICommandServer
     private readonly int _maxRestartAttempts;
     private string _currentConnectedUser = string.Empty;
     private int _currentRestartAttempts;
-    public event EventHandler<string> CommandReceived;
+    public event EventHandler<Request> RequestReceived;
 
     public CommandServer(
         ILogger<CommandServer> logger,
@@ -112,13 +112,16 @@ public class CommandServer : DaemonService, ICommandServer
                     await ConnectAsync(cancellationToken);
 
                 // Handle client requests
-                string commandReceived = await ReceiveRequestsAsync(cancellationToken);
+                Request request = await ReceiveRequestsAsync(cancellationToken);
                 
                 // Empty means disconnection.
-                if (string.IsNullOrEmpty(commandReceived))
+                if (request.Length < 0)
+                {
                     Disconnect();
+                    continue;
+                }
                 
-                CommandReceived?.Invoke(this, commandReceived);
+                RequestReceived?.Invoke(this, request);
             }
         }
         catch (Exception ex)
@@ -161,7 +164,7 @@ public class CommandServer : DaemonService, ICommandServer
     /// </summary>
     /// <param name="cancellationToken">Token to stop the task.</param>
     /// <returns>A string with the received message.</returns>
-    private async Task<string> ReceiveRequestsAsync(CancellationToken cancellationToken)
+    private async Task<Request> ReceiveRequestsAsync(CancellationToken cancellationToken)
     {
         while (!cancellationToken.IsCancellationRequested)
         {
@@ -173,7 +176,8 @@ public class CommandServer : DaemonService, ICommandServer
 
             Logger.LogError("Named pipe stream doesn't support read operations.");
         }
-        return string.Empty;
+
+        return new Request(string.Empty, string.Empty.Length);
     }
 
     /// <summary>

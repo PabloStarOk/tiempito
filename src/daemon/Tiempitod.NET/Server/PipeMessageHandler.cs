@@ -63,7 +63,7 @@ public class PipeMessageHandler : IAsyncMessageHandler
     /// <exception cref="IOException">Pipe is disconnected.</exception>
     /// <exception cref="ArgumentNullException"><see cref="PipeStream"/> argument is null.</exception>
     /// <exception cref="InvalidOperationException"><see cref="PipeStream"/> doesn't support write operations.</exception>
-    public async Task<string> ReadMessageAsync(PipeStream ioStream, CancellationToken cancellationToken)
+    public async Task<Request> ReadMessageAsync(PipeStream ioStream, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(ioStream);
         
@@ -78,7 +78,7 @@ public class PipeMessageHandler : IAsyncMessageHandler
         length += ioStream.ReadByte();
         
         if (length <= 0)
-            return string.Empty;
+            return new Request(string.Empty, length);
         
         var payload = new byte[length];
 
@@ -87,7 +87,8 @@ public class PipeMessageHandler : IAsyncMessageHandler
         {
             bytesRead += await ioStream.ReadAsync(payload.AsMemory(bytesRead, length - bytesRead), cancellationToken);
         }
-        
-        return _encoding.GetString(payload);
+
+        string dataString = _encoding.GetString(payload);
+        return new Request(dataString, length);
     }
 }
