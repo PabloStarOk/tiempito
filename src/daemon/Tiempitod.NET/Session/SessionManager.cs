@@ -65,7 +65,7 @@ public sealed class SessionManager : DaemonService, ISessionManager
             configSessionToUse.FocusDuration,
             configSessionToUse.BreakDuration);
         
-        RegenerateTokenSource(ref _timerTokenSource);
+        _timerTokenSource = RegenerateTokenSource(_timerTokenSource);
         RunTimerAsync(_timerTokenSource.Token).Forget();
         
         return new OperationResult(Success: true, Message: "Session started.");
@@ -88,7 +88,7 @@ public sealed class SessionManager : DaemonService, ISessionManager
         if (_currentSession.Status is not SessionStatus.Paused)
             return new OperationResult(Success: false, Message: "There are no paused sessions to resume.");
         
-        RegenerateTokenSource(ref _timerTokenSource);
+        _timerTokenSource = RegenerateTokenSource(_timerTokenSource);
         _currentSession.Status = SessionStatus.Executing;
         RunTimerAsync(_timerTokenSource.Token).Forget();
         Logger.LogWarning("Continuing session at time {Time}", DateTimeOffset.Now);

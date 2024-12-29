@@ -70,8 +70,8 @@ public class Server : DaemonService, IServer
     /// </summary>
     private void Start()
     {
-        RegenerateTokenSource(ref _readMessageTokenSource);
-        RegenerateTokenSource(ref _sendMessageTokenSource);
+        _readMessageTokenSource = RegenerateTokenSource(_readMessageTokenSource);
+        _sendMessageTokenSource = RegenerateTokenSource(_sendMessageTokenSource);
         Task.Run(() => RunAsync(_readMessageTokenSource.Token)).Forget();
     }
 

@@ -60,13 +60,20 @@ public abstract class DaemonService(ILogger<DaemonService> logger)
     /// <summary>
     /// Regenerates a cancellation token source managed by the daemon service.
     /// </summary>
-    /// <param name="tokenSource">Token source to regenerate.</param>
-    protected static void RegenerateTokenSource(ref CancellationTokenSource tokenSource)
+    /// <param name="oldTokenSource">Token source to regenerate.</param>
+    protected static CancellationTokenSource RegenerateTokenSource(CancellationTokenSource oldTokenSource)
     {
-        if (tokenSource.TryReset())
-            return;
-
-        tokenSource.Dispose();
-        tokenSource = new CancellationTokenSource();
+        try
+        {
+            if (oldTokenSource.TryReset())
+                return oldTokenSource;
+        }
+        catch (ObjectDisposedException)
+        {
+            return new CancellationTokenSource();
+        }
+        
+        oldTokenSource.Dispose();
+        return new CancellationTokenSource();
     }
 }
