@@ -7,25 +7,25 @@ namespace Tiempitod.NET.Commands.Handler;
 
 public class CommandHandler : DaemonService, ICommandHandler
 {
-    private readonly ICommandServer _commandServer;
+    private readonly IServer _server;
     private readonly ISessionManager _sessionManager;
     private CancellationTokenSource _sessionTokenSource;
 
-    public CommandHandler(ILogger<CommandHandler> logger, ICommandServer commandServer, ISessionManager sessionManager) : base(logger)
+    public CommandHandler(ILogger<CommandHandler> logger, IServer server, ISessionManager sessionManager) : base(logger)
     {
-        _commandServer = commandServer;
+        _server = server;
         _sessionManager = sessionManager;
         _sessionTokenSource = new CancellationTokenSource();
     }
 
     protected override void OnStartService()
     {
-        _commandServer.RequestReceived += ReceiveRequest;
+        _server.RequestReceived += ReceiveRequest;
     }
 
     protected override void OnStopService()
     {
-        _commandServer.RequestReceived -= ReceiveRequest;
+        _server.RequestReceived -= ReceiveRequest;
 
         if (!_sessionTokenSource.IsCancellationRequested)
             _sessionTokenSource.Cancel();
@@ -83,20 +83,20 @@ public class CommandHandler : DaemonService, ICommandHandler
 
     private async Task SendResponseAsync(OperationResult operationResult)
     {
-        DaemonResponse daemonResponse;
+        Response response;
 
         try
         {
-            daemonResponse = operationResult.Success 
-                ? DaemonResponse.Ok(operationResult.Message) 
-                : DaemonResponse.BadRequest(operationResult.Message);
+            response = operationResult.Success 
+                ? Response.Ok(operationResult.Message) 
+                : Response.BadRequest(operationResult.Message);
         }
         catch (Exception ex)
         {
             Logger.LogCritical(ex, "Exception captured at {Time}", DateTimeOffset.Now);
-            daemonResponse = DaemonResponse.InternalError($"An internal error occurred: {ex.Message}");
+            response = Response.InternalError($"An internal error occurred: {ex.Message}");
         }
         
-        await _commandServer.SendResponseAsync(daemonResponse);
+        await _server.SendResponseAsync(response);
     }
 }

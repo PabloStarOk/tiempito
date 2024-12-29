@@ -1,6 +1,6 @@
 namespace Tiempitod.NET.Server.Messages;
 
-public enum DaemonStatusCode
+public enum ResponseStatusCode
 {
     Ok = 200,
     BadRequest = 400,

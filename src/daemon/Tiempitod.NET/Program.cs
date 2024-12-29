@@ -75,12 +75,12 @@ if (OperatingSystem.IsWindowsVersionAtLeast(10,0,10240))
     builder.Services.AddTransient<ISystemNotifier, WindowsNotifier>();
 #endif
 
-builder.Services.AddSingleton<CommandServer>();
+builder.Services.AddSingleton<Server>();
 builder.Services.AddSingleton<CommandHandler>();
 builder.Services.AddSingleton<SessionManager>();
 builder.Services.AddSingleton<NotificationManager>();
 
-builder.Services.AddSingleton<ICommandServer>(sp => sp.GetService<CommandServer>()!);
+builder.Services.AddSingleton<IServer>(sp => sp.GetService<Server>()!);
 builder.Services.AddSingleton<ICommandHandler>(sp => sp.GetService<CommandHandler>()!);
 builder.Services.AddSingleton<ISessionManager>(sp => sp.GetService<SessionManager>()!);
 builder.Services.AddSingleton<INotificationManager>(sp => sp.GetService<NotificationManager>()!);
@@ -88,7 +88,7 @@ builder.Services.AddSingleton<INotificationManager>(sp => sp.GetService<Notifica
 builder.Services.AddSingleton<DaemonService>(sp => sp.GetService<UserConfigFileCreator>()!);
 builder.Services.AddSingleton<DaemonService>(sp => sp.GetService<UserConfigProvider>()!);
 builder.Services.AddSingleton<DaemonService>(sp => sp.GetService<SessionConfigProvider>()!);
-builder.Services.AddSingleton<DaemonService>(sp => sp.GetService<CommandServer>()!);
+builder.Services.AddSingleton<DaemonService>(sp => sp.GetService<Server>()!);
 builder.Services.AddSingleton<DaemonService>(sp => sp.GetService<CommandHandler>()!);
 builder.Services.AddSingleton<DaemonService>(sp => sp.GetService<SessionManager>()!);
 builder.Services.AddSingleton<DaemonService>(sp => sp.GetService<NotificationManager>()!);

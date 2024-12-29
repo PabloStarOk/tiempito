@@ -3,9 +3,9 @@ using Tiempitod.NET.Server.Messages;
 namespace Tiempitod.NET.Server;
 
 /// <summary>
-/// Defines a server to receive and handle commands. 
+/// Defines a server to receive requests and send responses.
 /// </summary>
-public interface ICommandServer
+public interface IServer
 {
     public event EventHandler<Request> RequestReceived;
     
@@ -29,5 +29,5 @@ public interface ICommandServer
     /// Sends a response to the current connected client.
     /// </summary>
     /// <returns>A Task representing the operation.</returns>
-    public Task SendResponseAsync(DaemonResponse response);
+    public Task SendResponseAsync(Response response);
 }

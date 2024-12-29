@@ -6,7 +6,10 @@ using Tiempitod.NET.Server.Messages;
 
 namespace Tiempitod.NET.Server;
 
-public class CommandServer : DaemonService, ICommandServer
+/// <summary>
+/// Represents the server to receive requests and send responses to the client.
+/// </summary>
+public class Server : DaemonService, IServer
 {
     private readonly PipeConfig _pipeConfig;
     private readonly NamedPipeServerStream _pipeServer;
@@ -18,8 +21,8 @@ public class CommandServer : DaemonService, ICommandServer
     private int _currentRestartAttempts;
     public event EventHandler<Request> RequestReceived;
 
-    public CommandServer(
-        ILogger<CommandServer> logger,
+    public Server(
+        ILogger<Server> logger,
         IOptions<PipeConfig> daemonConfigOptions,
         NamedPipeServerStream pipeServer,
         IAsyncMessageHandler asyncMessageHandler) : base(logger)
@@ -82,7 +85,7 @@ public class CommandServer : DaemonService, ICommandServer
         await _pipeServer.DisposeAsync();
     }
 
-    public async Task SendResponseAsync(DaemonResponse response)
+    public async Task SendResponseAsync(Response response)
     {
         if (!_pipeServer.IsConnected)
         {

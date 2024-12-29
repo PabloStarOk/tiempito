@@ -12,7 +12,7 @@ public interface IAsyncMessageHandler
     /// Sends a message that contains an object.
     /// </summary>
     /// <returns></returns>
-    public Task SendMessageAsync<T>(PipeStream ioStream, T obj, CancellationToken cancellationToken) where T : DaemonResponse;
+    public Task SendMessageAsync<T>(PipeStream ioStream, T obj, CancellationToken cancellationToken) where T : Response;
     
     /// <summary>
     /// Reads a received message from a string.

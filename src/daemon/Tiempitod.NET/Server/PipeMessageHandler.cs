@@ -29,7 +29,7 @@ public class PipeMessageHandler : IAsyncMessageHandler
     /// <exception cref="ArgumentNullException"><see cref="PipeStream"/> argument is null.</exception>
     /// <exception cref="ArgumentNullException"><see cref="object"/> argument is null.</exception>
     /// <exception cref="InvalidOperationException"><see cref="PipeStream"/> doesn't support write operations.</exception>
-    public async Task SendMessageAsync<T>(PipeStream ioStream, T obj, CancellationToken cancellationToken) where T : DaemonResponse
+    public async Task SendMessageAsync<T>(PipeStream ioStream, T obj, CancellationToken cancellationToken) where T : Response
     {
         ArgumentNullException.ThrowIfNull(ioStream);
         ArgumentNullException.ThrowIfNull(obj);
