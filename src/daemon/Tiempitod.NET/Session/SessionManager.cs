@@ -98,7 +98,7 @@ public sealed class SessionManager : DaemonService, ISessionManager
 
     public async Task<OperationResult> CancelSessionAsync()
     {
-        if (_currentSession.Status is SessionStatus.Cancelled or SessionStatus.Finished)
+        if (_currentSession.Status is SessionStatus.Cancelled or SessionStatus.Finished or SessionStatus.None)
             return new OperationResult(Success: false, Message: "There are no active sessions to cancel.");
         
         await _timerTokenSource.CancelAsync();
