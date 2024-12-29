@@ -36,55 +36,6 @@ public class Server : DaemonService, IServer
         _readMessageTokenSource = new CancellationTokenSource();
     }
 
-    protected override void OnStartService()
-    {
-        Start();
-        Logger.LogInformation("Command server started.");
-    }
-
-    protected override void OnStopService()
-    {
-        StopAsync().GetAwaiter().GetResult();
-        Logger.LogInformation("Command server restarted.");
-    }
-
-    public void Start()
-    {
-        RegenerateToken(ref _readMessageTokenSource);
-        RegenerateToken(ref _sendMessageTokenSource);
-        Task.Run(() => RunAsync(_readMessageTokenSource.Token)).Forget();
-    }
-
-    public void Restart()
-    {
-        if (_maxRestartAttempts > 0 && _currentRestartAttempts > _maxRestartAttempts)
-        {
-            Logger.LogError("Maximum restart attempts reached, command server will not restart.");
-            return;
-        }
-        _currentRestartAttempts++;
-        
-        if (_pipeServer.IsConnected)
-            _pipeServer.Disconnect();
-        
-        Start();
-        Logger.LogWarning("Command server restarted.");
-    }
-    
-    public async Task StopAsync()
-    {
-        await _readMessageTokenSource.CancelAsync();
-        await _sendMessageTokenSource.CancelAsync();
-        
-        _sendMessageTokenSource.Dispose();
-        _readMessageTokenSource.Dispose();
-        
-        if (_pipeServer.IsConnected)
-            _pipeServer.Disconnect();
-        
-        await _pipeServer.DisposeAsync();
-    }
-
     public async Task SendResponseAsync(Response response)
     {
         if (!_pipeServer.IsConnected)
@@ -100,6 +51,64 @@ public class Server : DaemonService, IServer
         }
         
         await _asyncMessageHandler.SendMessageAsync(_pipeServer, response, _sendMessageTokenSource.Token);
+    }
+    
+    protected override void OnStartService()
+    {
+        Start();
+        Logger.LogInformation("Command server started.");
+    }
+
+    protected override void OnStopService()
+    {
+        StopAsync().GetAwaiter().GetResult();
+        Logger.LogInformation("Command server restarted.");
+    }
+
+    /// <summary>
+    /// Starts the server.
+    /// </summary>
+    private void Start()
+    {
+        RegenerateToken(ref _readMessageTokenSource);
+        RegenerateToken(ref _sendMessageTokenSource);
+        Task.Run(() => RunAsync(_readMessageTokenSource.Token)).Forget();
+    }
+
+    /// <summary>
+    /// Restarts the server.
+    /// </summary>
+    private void Restart()
+    {
+        if (_maxRestartAttempts > 0 && _currentRestartAttempts > _maxRestartAttempts)
+        {
+            Logger.LogError("Maximum restart attempts reached, command server will not restart.");
+            return;
+        }
+        _currentRestartAttempts++;
+        
+        if (_pipeServer.IsConnected)
+            _pipeServer.Disconnect();
+        
+        Start();
+        Logger.LogWarning("Command server restarted.");
+    }
+    
+    /// <summary>
+    /// Stops the server.
+    /// </summary>
+    private async Task StopAsync()
+    {
+        await _readMessageTokenSource.CancelAsync();
+        await _sendMessageTokenSource.CancelAsync();
+        
+        _sendMessageTokenSource.Dispose();
+        _readMessageTokenSource.Dispose();
+        
+        if (_pipeServer.IsConnected)
+            _pipeServer.Disconnect();
+        
+        await _pipeServer.DisposeAsync();
     }
 
     /// <summary>
