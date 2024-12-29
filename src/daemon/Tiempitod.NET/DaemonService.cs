@@ -56,4 +56,17 @@ public abstract class DaemonService(ILogger<DaemonService> logger)
     /// Empty body if services doesn't need to clean up anything.
     /// </summary>
     protected virtual void OnStopService() { }
+
+    /// <summary>
+    /// Regenerates a cancellation token source managed by the daemon service.
+    /// </summary>
+    /// <param name="tokenSource">Token source to regenerate.</param>
+    protected static void RegenerateTokenSource(ref CancellationTokenSource tokenSource)
+    {
+        if (tokenSource.TryReset())
+            return;
+
+        tokenSource.Dispose();
+        tokenSource = new CancellationTokenSource();
+    }
 }

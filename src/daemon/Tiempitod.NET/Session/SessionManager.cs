@@ -65,7 +65,7 @@ public sealed class SessionManager : DaemonService, ISessionManager
             configSessionToUse.FocusDuration,
             configSessionToUse.BreakDuration);
         
-        RegenerateCancellationToken();
+        RegenerateTokenSource(ref _timerTokenSource);
         RunTimerAsync(_timerTokenSource.Token).Forget();
         
         return new OperationResult(Success: true, Message: "Session started.");
@@ -88,7 +88,7 @@ public sealed class SessionManager : DaemonService, ISessionManager
         if (_currentSession.Status is not SessionStatus.Paused)
             return new OperationResult(Success: false, Message: "There are no paused sessions to resume.");
         
-        RegenerateCancellationToken();
+        RegenerateTokenSource(ref _timerTokenSource);
         _currentSession.Status = SessionStatus.Executing;
         RunTimerAsync(_timerTokenSource.Token).Forget();
         Logger.LogWarning("Continuing session at time {Time}", DateTimeOffset.Now);
@@ -110,15 +110,6 @@ public sealed class SessionManager : DaemonService, ISessionManager
         
         Logger.LogWarning("Session cancelled at {Time}", DateTimeOffset.Now);
         return new OperationResult(Success: true, Message: "Session cancelled.");
-    }
-
-    private void RegenerateCancellationToken()
-    {
-        if (_timerTokenSource.TryReset())
-            return;
-        
-        _timerTokenSource.Dispose();
-        _timerTokenSource = new CancellationTokenSource();
     }
     
     /// <summary>

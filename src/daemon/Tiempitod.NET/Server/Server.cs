@@ -70,8 +70,8 @@ public class Server : DaemonService, IServer
     /// </summary>
     private void Start()
     {
-        RegenerateToken(ref _readMessageTokenSource);
-        RegenerateToken(ref _sendMessageTokenSource);
+        RegenerateTokenSource(ref _readMessageTokenSource);
+        RegenerateTokenSource(ref _sendMessageTokenSource);
         Task.Run(() => RunAsync(_readMessageTokenSource.Token)).Forget();
     }
 
@@ -211,16 +211,12 @@ public class Server : DaemonService, IServer
         return user;
     }
     
-    /// <summary>
-    /// Regenerates the given token
-    /// </summary>
-    /// <param name="tokenSource"></param>
-    private static void RegenerateToken(ref CancellationTokenSource tokenSource)
-    {
-        if (tokenSource.TryReset())
-            return;
-
-        tokenSource.Dispose();
-        tokenSource = new CancellationTokenSource();
-    }
+    // private static void RegenerateToken(ref CancellationTokenSource tokenSource)
+    // {
+    //     if (tokenSource.TryReset())
+    //         return;
+    //
+    //     tokenSource.Dispose();
+    //     tokenSource = new CancellationTokenSource();
+    // }
 }
