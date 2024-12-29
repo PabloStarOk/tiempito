@@ -6,7 +6,6 @@ using Tiempitod.NET.Notifications;
 
 namespace Tiempitod.NET.Session;
 
-// TODO: Introduce configuration.
 /// <summary>
 /// A concrete class to manage sessions.
 /// </summary>
