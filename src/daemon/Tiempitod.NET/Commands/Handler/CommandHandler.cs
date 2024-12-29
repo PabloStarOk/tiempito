@@ -41,12 +41,6 @@ public class CommandHandler : DaemonService, ICommandHandler
         switch (commandString)
         {
             case "start":
-                if (_sessionTokenSource.IsCancellationRequested && !_sessionTokenSource.TryReset())
-                {
-                    _sessionTokenSource.Dispose();
-                    _sessionTokenSource = new CancellationTokenSource();
-                }
-                _sessionTokenSource.Token.ThrowIfCancellationRequested();
                 command = new StartSessionCommand(_sessionManager);
                 break;
             
