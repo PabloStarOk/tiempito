@@ -2,7 +2,7 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tiempitod.NET", "src\daemon\Tiempitod.NET\Tiempitod.NET.csproj", "{C00A0339-2ED8-464E-BA68-AA473956CD67}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tiempito", "src\cli\Tiempito\Tiempito.csproj", "{AC54CE43-0738-4915-A22E-A6D5903A537C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TiempitoCli.NET", "src\cli\TiempitoCli.NET\TiempitoCli.NET.csproj", "{AC54CE43-0738-4915-A22E-A6D5903A537C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
