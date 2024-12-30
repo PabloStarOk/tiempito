@@ -1,10 +1,11 @@
 using Microsoft.Extensions.Options;
 using System.IO.Pipes;
+using Tiempito.IPC.NET.Messages;
+using Tiempito.IPC.NET.Packets;
 using Tiempitod.NET.Configuration.Server;
 using Tiempitod.NET.Extensions;
-using Tiempitod.NET.Server.Messages;
 
-namespace Tiempitod.NET.Server;
+namespace Tiempitod.NET.Server; 
 
 /// <summary>
 /// Represents the server to receive requests and send responses to the client.
@@ -13,7 +14,9 @@ public class Server : DaemonService, IServer
 {
     private readonly PipeConfig _pipeConfig;
     private readonly NamedPipeServerStream _pipeServer;
-    private readonly IAsyncMessageHandler _asyncMessageHandler;
+    private readonly IAsyncPacketHandler _asyncPacketHandler;
+    private readonly IPacketSerializer _packetSerializer;
+    private readonly IPacketDeserializer _packetDeserializer;
     private CancellationTokenSource _sendMessageTokenSource;
     private CancellationTokenSource _readMessageTokenSource;
     private readonly int _maxRestartAttempts;
@@ -25,11 +28,15 @@ public class Server : DaemonService, IServer
         ILogger<Server> logger,
         IOptions<PipeConfig> daemonConfigOptions,
         NamedPipeServerStream pipeServer,
-        IAsyncMessageHandler asyncMessageHandler) : base(logger)
+        IAsyncPacketHandler asyncPacketHandler,
+        IPacketSerializer packetSerializer,
+        IPacketDeserializer packetDeserializer) : base(logger)
     {
         _pipeConfig = daemonConfigOptions.Value;
         _pipeServer = pipeServer;
-        _asyncMessageHandler = asyncMessageHandler;
+        _asyncPacketHandler = asyncPacketHandler;
+        _packetSerializer = packetSerializer;
+        _packetDeserializer = packetDeserializer;
         _maxRestartAttempts = daemonConfigOptions.Value.MaxRestartAttempts;
         
         _sendMessageTokenSource = new CancellationTokenSource();
@@ -49,8 +56,9 @@ public class Server : DaemonService, IServer
             Logger.LogError("Named pipe stream doesn't support write operations.");
             return;
         }
-        
-        await _asyncMessageHandler.SendMessageAsync(_pipeServer, response, _sendMessageTokenSource.Token);
+
+        Packet outgoingPacket = _packetSerializer.Serialize(response);
+        await _asyncPacketHandler.WritePacketAsync(_pipeServer, outgoingPacket, _sendMessageTokenSource.Token);
     }
     
     protected override void OnStartService()
@@ -124,15 +132,16 @@ public class Server : DaemonService, IServer
                     await ConnectAsync(cancellationToken);
 
                 // Handle client requests
-                Request request = await ReceiveRequestsAsync(cancellationToken);
+                Packet incomingPacket = await ReceiveRequestsAsync(cancellationToken);
                 
-                // Empty means disconnection.
-                if (request.Length < 0)
+                // A length lower than zero means a client disconnection.
+                if (incomingPacket.Length < 0)
                 {
                     Disconnect();
                     continue;
                 }
-                
+
+                var request = _packetDeserializer.Deserialize<Request>(incomingPacket);
                 RequestReceived?.Invoke(this, request);
             }
         }
@@ -176,7 +185,7 @@ public class Server : DaemonService, IServer
     /// </summary>
     /// <param name="cancellationToken">Token to stop the task.</param>
     /// <returns>A string with the received message.</returns>
-    private async Task<Request> ReceiveRequestsAsync(CancellationToken cancellationToken)
+    private async Task<Packet> ReceiveRequestsAsync(CancellationToken cancellationToken)
     {
         while (!cancellationToken.IsCancellationRequested)
         {
@@ -184,12 +193,12 @@ public class Server : DaemonService, IServer
                 break;
             
             if (_pipeServer.CanRead)
-                return await _asyncMessageHandler.ReadMessageAsync(_pipeServer, cancellationToken);
+                return await _asyncPacketHandler.ReadPacketAsync(_pipeServer, cancellationToken);
 
             Logger.LogError("Named pipe stream doesn't support read operations.");
         }
 
-        return new Request(string.Empty, string.Empty.Length);
+        return new Packet(string.Empty.Length, string.Empty);
     }
 
     /// <summary>
@@ -210,13 +219,4 @@ public class Server : DaemonService, IServer
         }
         return user;
     }
-    
-    // private static void RegenerateToken(ref CancellationTokenSource tokenSource)
-    // {
-    //     if (tokenSource.TryReset())
-    //         return;
-    //
-    //     tokenSource.Dispose();
-    //     tokenSource = new CancellationTokenSource();
-    // }
 }

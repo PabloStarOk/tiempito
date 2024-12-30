@@ -21,6 +21,7 @@ public class Client
     {
         _pipeClient = pipeClient;
         _packetHandler = packetHandler;
+        _packetSerializer = packetSerializer;
         _packetDeserializer = packetDeserializer;
         _connectionTimeout = connectionTimeout;
     }

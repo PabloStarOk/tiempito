@@ -30,4 +30,8 @@
     <ItemGroup>
       <Folder Include="bin\Linux\net8.0\" />
     </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\lib\Tiempito.IPC.NET\Tiempito.IPC.NET.csproj" />
+    </ItemGroup>
 </Project>

@@ -3,6 +3,7 @@ using Microsoft.Extensions.Options;
 using Salaros.Configuration;
 using System.IO.Pipes;
 using System.Text;
+using Tiempito.IPC.NET.Packets;
 using Tiempitod.NET;
 using Tiempitod.NET.Commands.Handler;
 using Tiempitod.NET.Configuration;
@@ -64,7 +65,9 @@ builder.Services.AddSingleton(new NamedPipeServerStream(
     pipeConfig.PipeMaxInstances));
 
 builder.Services.AddTransient<IProgress<Session>, Progress<Session>>();
-builder.Services.AddTransient<IAsyncMessageHandler, PipeMessageHandler>();
+builder.Services.AddTransient<IAsyncPacketHandler, PipePacketHandler>();
+builder.Services.AddTransient<IPacketSerializer, PacketSerializer>();
+builder.Services.AddTransient<IPacketDeserializer, PacketDeserializer>();
 
 // Add system notification
 #if LINUX

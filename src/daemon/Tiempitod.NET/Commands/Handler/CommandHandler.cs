@@ -1,6 +1,6 @@
+using Tiempito.IPC.NET.Messages;
 using Tiempitod.NET.Commands.SessionCommands;
 using Tiempitod.NET.Server;
-using Tiempitod.NET.Server.Messages;
 using Tiempitod.NET.Session;
 
 namespace Tiempitod.NET.Commands.Handler;
@@ -9,7 +9,7 @@ public class CommandHandler : DaemonService, ICommandHandler
 {
     private readonly IServer _server;
     private readonly ISessionManager _sessionManager;
-    private CancellationTokenSource _sessionTokenSource;
+    private readonly CancellationTokenSource _sessionTokenSource;
 
     public CommandHandler(ILogger<CommandHandler> logger, IServer server, ISessionManager sessionManager) : base(logger)
     {
@@ -72,7 +72,7 @@ public class CommandHandler : DaemonService, ICommandHandler
 
     private void ReceiveRequest(object? _, Request request)
     {
-        HandleCommandAsync(request.Data).GetAwaiter();
+        HandleCommandAsync(request.Command).GetAwaiter();
     }
 
     private async Task SendResponseAsync(OperationResult operationResult)
