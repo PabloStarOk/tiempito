@@ -1,20 +1,9 @@
 ﻿using System.CommandLine;
-using System.IO.Pipes;
-using System.Text;
 using Tiempito.CLI.NET.Client;
 using Tiempito.IPC.NET.Messages;
-using Tiempito.IPC.NET.Packets;
 
 // Session Commands
-const string host = ".";
-const string pipeName = "tiempito-pipe"; // TODO: Read config of the host.
-const PipeDirection pipeDirection = PipeDirection.InOut; // TODO: Read config of the host.
-var pipeClient = new NamedPipeClientStream(host, pipeName, pipeDirection);
-var encoding = new UTF8Encoding(); // TODO: Read config of the host.
-var pipeMessageHandler = new PipePacketHandler(encoding);
-var packetSerializer = new PacketSerializer();
-var packetDeserializer = new PacketDeserializer();
-var client = new Client(pipeClient, pipeMessageHandler, packetSerializer, packetDeserializer, 3000);
+var client = Client.Create();
 
 var rootCommand = new RootCommand("Tiempito CLI");
 var sessionCommand = new Command("session", "Manage a session.");

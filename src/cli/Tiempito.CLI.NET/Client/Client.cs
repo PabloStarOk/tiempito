@@ -1,4 +1,5 @@
 using System.IO.Pipes;
+using System.Text;
 using Tiempito.IPC.NET.Messages;
 using Tiempito.IPC.NET.Packets;
 
@@ -58,5 +59,21 @@ public class Client
             throw new InvalidOperationException("Response not recognized.");
         
         return _packetDeserializer.Deserialize<Response>(incomingPacket);
+    }
+
+    public static Client Create()
+    {
+        const string host = ".";
+        const string pipeName = "tiempito-pipe"; // TODO: Read config of the host.
+        const PipeDirection pipeDirection = PipeDirection.InOut; // TODO: Read config of the host.
+
+        // Client dependencies.
+        var pipeClient = new NamedPipeClientStream(host, pipeName, pipeDirection);
+        var encoding = new UTF8Encoding(); // TODO: Read config of the host.
+        var pipeMessageHandler = new PipePacketHandler(encoding);
+        var packetSerializer = new PacketSerializer();
+        var packetDeserializer = new PacketDeserializer();
+        
+        return new Client(pipeClient, pipeMessageHandler, packetSerializer, packetDeserializer, 3000);
     }
 }
