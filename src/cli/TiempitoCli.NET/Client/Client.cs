@@ -43,8 +43,8 @@ public class Client
         if (!_pipeClient.IsConnected)
             return;
 
-        Packet packet = _packetSerializer.Serialize(request);
-        await _packetHandler.WritePacketAsync(_pipeClient, packet);
+        Packet outgoingPacket = _packetSerializer.Serialize(request);
+        await _packetHandler.WritePacketAsync(_pipeClient, outgoingPacket);
     }
 
     public async Task<Response> ReceiveResponseAsync()
@@ -52,11 +52,11 @@ public class Client
         if (!_pipeClient.IsConnected)
             throw new InvalidOperationException("Named pipe is not connected.");
 
-        Packet? packet = await _packetHandler.ReadPacketAsync(_pipeClient);
+        Packet? incomingPacket = await _packetHandler.ReadPacketAsync(_pipeClient);
 
-        if (packet == null)
+        if (incomingPacket == null)
             throw new InvalidOperationException("Response not recognized.");
         
-        return _packetDeserializer.Deserialize<Response>(packet);
+        return _packetDeserializer.Deserialize<Response>(incomingPacket);
     }
 }
