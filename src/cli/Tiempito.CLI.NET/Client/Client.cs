@@ -2,7 +2,7 @@ using System.IO.Pipes;
 using Tiempito.IPC.NET.Messages;
 using Tiempito.IPC.NET.Packets;
 
-namespace TiempitoCli.NET.Client;
+namespace Tiempito.CLI.NET.Client;
 
 public class Client
 {

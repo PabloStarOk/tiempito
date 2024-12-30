@@ -1,7 +1,7 @@
 ﻿using System.CommandLine;
 using System.IO.Pipes;
 using System.Text;
-using TiempitoCli.NET.Client;
+using Tiempito.CLI.NET.Client;
 using Tiempito.IPC.NET.Messages;
 using Tiempito.IPC.NET.Packets;
 
