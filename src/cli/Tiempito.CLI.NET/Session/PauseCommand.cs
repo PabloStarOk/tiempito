@@ -20,7 +20,7 @@ public class PauseCommand : Command
     {
         var arguments = new Dictionary<string, string>
         {
-            { "sessionId", sessionId }
+            { "session-id", sessionId }
         };
         await _client.SendRequestAsync(new Request(CommandType: "session", SubcommandType: "pause", arguments));
         Response response = await _client.ReceiveResponseAsync();

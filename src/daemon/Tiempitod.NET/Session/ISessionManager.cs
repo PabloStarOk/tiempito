@@ -15,18 +15,21 @@ public interface ISessionManager
     /// <summary>
     /// Pauses a session that is currently executing.
     /// </summary>
+    /// <param name="sessionId">ID of the session to pause.</param>
     /// <returns>An <see cref="OperationResult"/> to know if the session was paused successfully.</returns>
-    public Task<OperationResult> PauseSessionAsync();
+    public Task<OperationResult> PauseSessionAsync(string sessionId = "");
     
     /// <summary>
     /// Continues a session that is currently paused.
     /// </summary>
+    /// <param name="sessionId">ID of the session to resume.</param>
     /// <returns>An <see cref="OperationResult"/> to know if the session was resumed successfully.</returns>
-    public OperationResult ResumeSession();
+    public OperationResult ResumeSession(string sessionId = "");
 
     /// <summary>
     /// Cancels the current session.
     /// </summary>
+    /// <param name="sessionId">ID of the session to cancel.</param>
     /// <returns>An <see cref="OperationResult"/> to know if the session was cancelled successfully.</returns>
-    public Task<OperationResult> CancelSessionAsync();
+    public Task<OperationResult> CancelSessionAsync(string sessionId = "");
 }
