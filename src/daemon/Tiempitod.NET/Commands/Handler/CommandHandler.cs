@@ -72,7 +72,7 @@ public class CommandHandler : DaemonService, ICommandHandler
 
     private void ReceiveRequest(object? _, Request request)
     {
-        HandleCommandAsync(request.Command).GetAwaiter();
+        HandleCommandAsync(request.SubcommandType.ToLower()).GetAwaiter();
     }
 
     private async Task SendResponseAsync(OperationResult operationResult)

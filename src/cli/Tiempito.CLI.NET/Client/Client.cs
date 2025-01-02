@@ -5,33 +5,31 @@ using Tiempito.IPC.NET.Packets;
 
 namespace Tiempito.CLI.NET.Client;
 
-public class Client
+public class Client : IClient
 {
     private readonly NamedPipeClientStream _pipeClient;
     private readonly IAsyncPacketHandler _packetHandler;
     private readonly IPacketSerializer _packetSerializer;
     private readonly IPacketDeserializer _packetDeserializer;
-    private readonly int _connectionTimeout;
+    private const int ConnectionTimeout = 3000;
     
     public Client(
         NamedPipeClientStream pipeClient,
         IAsyncPacketHandler packetHandler,
         IPacketSerializer packetSerializer,
-        IPacketDeserializer packetDeserializer,
-        int connectionTimeout)
+        IPacketDeserializer packetDeserializer)
     {
         _pipeClient = pipeClient;
         _packetHandler = packetHandler;
         _packetSerializer = packetSerializer;
         _packetDeserializer = packetDeserializer;
-        _connectionTimeout = connectionTimeout;
     }
     
     public async Task SendRequestAsync(Request request)
     {
         try
         {
-            await _pipeClient.ConnectAsync(_connectionTimeout);
+            await _pipeClient.ConnectAsync(ConnectionTimeout);
         }
         catch (TimeoutException)
         {
@@ -59,21 +57,5 @@ public class Client
             throw new InvalidOperationException("Response not recognized.");
         
         return _packetDeserializer.Deserialize<Response>(incomingPacket);
-    }
-
-    public static Client Create()
-    {
-        const string host = ".";
-        const string pipeName = "tiempito-pipe"; // TODO: Read config of the host.
-        const PipeDirection pipeDirection = PipeDirection.InOut; // TODO: Read config of the host.
-
-        // Client dependencies.
-        var pipeClient = new NamedPipeClientStream(host, pipeName, pipeDirection);
-        var encoding = new UTF8Encoding(); // TODO: Read config of the host.
-        var pipeMessageHandler = new PipePacketHandler(encoding);
-        var packetSerializer = new PacketSerializer();
-        var packetDeserializer = new PacketDeserializer();
-        
-        return new Client(pipeClient, pipeMessageHandler, packetSerializer, packetDeserializer, 3000);
     }
 }
