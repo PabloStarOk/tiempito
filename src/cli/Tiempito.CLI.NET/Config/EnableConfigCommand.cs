@@ -1,6 +1,5 @@
 using System.CommandLine;
 using Tiempito.CLI.NET.Client;
-using Tiempito.IPC.NET.Messages;
 
 namespace Tiempito.CLI.NET.Config;
 
@@ -9,20 +8,22 @@ namespace Tiempito.CLI.NET.Config;
 /// </summary>
 public class EnableConfigCommand : Command
 {
+    private readonly IAsyncCommandExecutor _asyncCommandExecutor;
     private readonly string _commandParent;
-    private readonly IClient _client;
     private readonly string[] _allowedFeatureArgs = ["nc", "notification"];
     
     /// <summary>
     /// Instantiates a <see cref="EnableConfigCommand"/>.
     /// </summary>
-    /// <param name="client">Client to send the request to the daemon.</param>
-    /// <param name="commandParent">Parent of the command.</param>
+    /// <param name="asyncCommandExecutor">An asynchronous executor of commands.</param>
+    /// <param name="commandParent">Command parent of this command.</param>
     /// <param name="featureArgument">Argument that will contain the feature to enable.</param>
-    public EnableConfigCommand(IClient client, string commandParent, Argument<string> featureArgument) 
+    public EnableConfigCommand(
+        IAsyncCommandExecutor asyncCommandExecutor,
+        string commandParent, Argument<string> featureArgument) 
         : base ("enable", "Enables a specified feature in the user's configuration.")
     {
-        _client = client;
+        _asyncCommandExecutor = asyncCommandExecutor;
         _commandParent = commandParent;
         featureArgument.FromAmong(_allowedFeatureArgs);
         AddArgument(featureArgument);
@@ -40,8 +41,6 @@ public class EnableConfigCommand : Command
             { "feature", feature }
         };
         
-        await _client.SendRequestAsync(new Request(_commandParent, Name, arguments));
-        Response response = await _client.ReceiveResponseAsync();
-        Console.WriteLine(response.Message);
+        await _asyncCommandExecutor.ExecuteAsync(_commandParent, subcommand: Name, arguments);
     }
 }

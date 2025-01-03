@@ -1,6 +1,5 @@
 using System.CommandLine;
 using Tiempito.CLI.NET.Client;
-using Tiempito.IPC.NET.Messages;
 
 namespace Tiempito.CLI.NET.Config;
 
@@ -9,27 +8,28 @@ namespace Tiempito.CLI.NET.Config;
 /// </summary>
 public class DisableConfigCommand : Command
 {
+    private readonly IAsyncCommandExecutor _asyncCommandExecutor;
     private readonly string _commandParent;
-    private readonly IClient _client;
     private readonly string[] _allowedFeatureArgs = ["nc", "notification"]; // TODO: Duplicated variable.
     
     /// <summary>
     /// Instantiates a <see cref="DisableConfigCommand"/>.
     /// </summary>
-    /// <param name="client">Client to send the request to the daemon.</param>
+    /// <param name="asyncCommandExecutor">An asynchronous executor of commands.</param>
     /// <param name="commandParent">Command parent of this command.</param>
     /// <param name="featureArgument">Argument that will contain the feature to enable.</param>
-    public DisableConfigCommand(IClient client, string commandParent, Argument<string> featureArgument) 
+    public DisableConfigCommand(
+        IAsyncCommandExecutor asyncCommandExecutor,
+        string commandParent, Argument<string> featureArgument) 
         : base ("disable", "Disables a specified feature in the user's configuration.")
     {
-        _client = client;
+        _asyncCommandExecutor = asyncCommandExecutor;
         _commandParent = commandParent;
         featureArgument.FromAmong(_allowedFeatureArgs);
         AddArgument(featureArgument);
         this.SetHandler(CommandHandler, featureArgument);
     }
-
-    // TODO: Duplicated code.
+    
     /// <summary>
     /// Sends the request to enable the given feature.
     /// </summary>
@@ -40,9 +40,6 @@ public class DisableConfigCommand : Command
         {
             { "feature", feature }
         };
-        
-        await _client.SendRequestAsync(new Request(_commandParent, Name, arguments));
-        Response response = await _client.ReceiveResponseAsync();
-        Console.WriteLine(response.Message);
+        await _asyncCommandExecutor.ExecuteAsync(_commandParent, subcommand: Name, arguments);
     }
 }

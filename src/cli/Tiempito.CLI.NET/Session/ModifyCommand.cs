@@ -1,17 +1,20 @@
 using System.CommandLine;
 using Tiempito.CLI.NET.Client;
-using Tiempito.IPC.NET.Messages;
 
 namespace Tiempito.CLI.NET.Session;
 
 public class ModifyCommand : Command
 {
-    private readonly IClient _client;
+    private readonly IAsyncCommandExecutor _asyncCommandExecutor;
+    private readonly string _commandParent;
     
-    public ModifyCommand(IClient client, Option<string> sessionIdOption) 
+    public ModifyCommand(
+        IAsyncCommandExecutor asyncCommandExecutor,
+        string commandParent, Option<string> sessionIdOption) 
         : base("modify", "Modifies an existing session configuration.")
     {
-        _client = client;
+        _asyncCommandExecutor = asyncCommandExecutor;
+        _commandParent = commandParent;
         
         var targetCyclesOption = new Option<string>("--target-cycles", "Target cycles to complete.")
         {
@@ -46,7 +49,6 @@ public class ModifyCommand : Command
             breakDurationOption);
     }
     
-    // TODO: Replace Console with IConsole from DI.
     /// <summary>
     /// Sends the request to modify a configuration session.
     /// </summary>
@@ -63,9 +65,6 @@ public class ModifyCommand : Command
             { "focus-duration", focusDuration },
             { "break-duration", breakDuration },
         };
-        // TODO: Replace hardcoded command and subcommand.
-        await _client.SendRequestAsync(new Request(CommandType: "session", SubcommandType: "modify", arguments));
-        Response response = await _client.ReceiveResponseAsync();
-        Console.WriteLine(response.Message);
+        await _asyncCommandExecutor.ExecuteAsync(_commandParent, subcommand: Name, arguments);
     }
 }

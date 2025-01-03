@@ -20,9 +20,10 @@ IAsyncPacketHandler packetHandler = new PipePacketHandler(Encoding.UTF8); // TOD
 IPacketSerializer packetSerializer = new PacketSerializer();
 IPacketDeserializer packetDeserializer = new PacketDeserializer();
 IClient client = new Client(pipeClient, packetHandler, packetSerializer, packetDeserializer);
+IAsyncCommandExecutor asyncCommandExecutor = new CommandExecutor(client);
 
-Command sessionCommand = new SessionCommand(client).GetCommand();
-Command configCommand = new ConfigCommand(client).GetCommand();
+Command sessionCommand = new SessionCommand(asyncCommandExecutor).GetCommand();
+Command configCommand = new ConfigCommand(asyncCommandExecutor).GetCommand();
 
 rootCommand.AddCommand(sessionCommand);
 rootCommand.AddCommand(configCommand);

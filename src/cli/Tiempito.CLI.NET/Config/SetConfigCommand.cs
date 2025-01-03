@@ -1,6 +1,5 @@
 using System.CommandLine;
 using Tiempito.CLI.NET.Client;
-using Tiempito.IPC.NET.Messages;
 
 namespace Tiempito.CLI.NET.Config;
 
@@ -9,18 +8,22 @@ namespace Tiempito.CLI.NET.Config;
 /// </summary>
 public class SetConfigCommand : Command
 {
-    private readonly IClient _client;
+    private readonly IAsyncCommandExecutor _asyncCommandExecutor;
+    private readonly string _commandParent;
     
     /// <summary>
     /// Instantiates a <see cref="SetConfigCommand"/>.
     /// </summary>
-    /// <param name="client">Client connection to send the request to the daemon.</param>
+    /// <param name="asyncCommandExecutor">An asynchronous executor of commands.</param>
+    /// <param name="commandParent">Command parent of this command.</param>
     /// <param name="defaultSessionIdOption">An option to change the default session of the user.</param>
     public SetConfigCommand(
-        IClient client, Option<string> defaultSessionIdOption) 
+        IAsyncCommandExecutor asyncCommandExecutor,
+        string commandParent, Option<string> defaultSessionIdOption) 
         : base("set", "Sets the specified user configuration.")
     {
-        _client = client;
+        _asyncCommandExecutor = asyncCommandExecutor;
+        _commandParent = commandParent;
         defaultSessionIdOption.IsRequired = false;
         AddOption(defaultSessionIdOption);
         this.SetHandler(CommandHandler, defaultSessionIdOption);
@@ -36,8 +39,6 @@ public class SetConfigCommand : Command
         {
             { "default-session-id", defaultSessionId }
         };
-        await _client.SendRequestAsync(new Request(CommandType: "config", SubcommandType: Name, arguments));
-        Response response = await _client.ReceiveResponseAsync();
-        Console.WriteLine(response.Message);
+        await _asyncCommandExecutor.ExecuteAsync(_commandParent, subcommand: Name, arguments);
     }
 }

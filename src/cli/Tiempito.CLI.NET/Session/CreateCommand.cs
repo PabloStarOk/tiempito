@@ -1,6 +1,5 @@
 using System.CommandLine;
 using Tiempito.CLI.NET.Client;
-using Tiempito.IPC.NET.Messages;
 
 namespace Tiempito.CLI.NET.Session;
 
@@ -9,12 +8,16 @@ namespace Tiempito.CLI.NET.Session;
 /// </summary>
 public class CreateCommand : Command
 {
-    private readonly IClient _client;
+    private readonly IAsyncCommandExecutor _asyncCommandExecutor;
+    private readonly string _commandParent;
     
-    public CreateCommand(IClient client, Option<string> sessionIdOption) 
+    public CreateCommand(
+        IAsyncCommandExecutor asyncCommandExecutor,
+        string commandParent, Option<string> sessionIdOption) 
         : base("create", "Creates a new session configuration.")
     {
-        _client = client;
+        _asyncCommandExecutor = asyncCommandExecutor;
+        _commandParent = commandParent;
         
         var targetCyclesOption = new Option<string>("--target-cycles", "Target cycles to complete.")
         {
@@ -49,7 +52,6 @@ public class CreateCommand : Command
             breakDurationOption);
     }
     
-    // TODO: Replace Console with IConsole from DI.
     /// <summary>
     /// Sends the request to create a new configuration session.
     /// </summary>
@@ -66,8 +68,6 @@ public class CreateCommand : Command
             { "focus-duration", focusDuration },
             { "break-duration", breakDuration },
         };
-        await _client.SendRequestAsync(new Request(CommandType: "session", SubcommandType: "create", arguments));
-        Response response = await _client.ReceiveResponseAsync();
-        Console.WriteLine(response.Message);
+        await _asyncCommandExecutor.ExecuteAsync(_commandParent, subcommand: Name, arguments);
     }
 }

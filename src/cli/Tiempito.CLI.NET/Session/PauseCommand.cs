@@ -1,18 +1,21 @@
 using System.CommandLine;
 using Tiempito.CLI.NET.Client;
-using Tiempito.IPC.NET.Messages;
 
 namespace Tiempito.CLI.NET.Session;
 
 public class PauseCommand : Command
 {
-    private readonly IClient _client;
+    private readonly IAsyncCommandExecutor _asyncCommandExecutor;
+    private readonly string _commandParent;
     
     public PauseCommand(
-        IClient client, Option<string> sessionIdOption,
+        IAsyncCommandExecutor asyncCommandExecutor,
+        string commandParent, Option<string> sessionIdOption,
         string name, string description) : base(name, description)
     {
-        _client = client;
+        _asyncCommandExecutor = asyncCommandExecutor;
+        _commandParent = commandParent;
+        
         sessionIdOption.IsRequired = false;
         AddOption(sessionIdOption);
         this.SetHandler(CommandHandler, sessionIdOption);
@@ -24,8 +27,6 @@ public class PauseCommand : Command
         {
             { "session-id", sessionId }
         };
-        await _client.SendRequestAsync(new Request(CommandType: "session", SubcommandType: "pause", arguments));
-        Response response = await _client.ReceiveResponseAsync();
-        Console.WriteLine(response.Message);
+        await _asyncCommandExecutor.ExecuteAsync(_commandParent, subcommand: Name, arguments);
     }
 }
