@@ -23,6 +23,7 @@ public class SessionCommand
         var sessionCommand = new Command(name: "session", description: "Manage sessions.");
 
         sessionCommand.AddCommand(new CreateCommand(_client, _sessionIdOption));
+        sessionCommand.AddCommand(new ModifyCommand(_client, _sessionIdOption));
         sessionCommand.AddCommand(BuildStartCommand());
         sessionCommand.AddCommand(BuildCancelCommand());
         sessionCommand.AddCommand(BuildPauseCommand());

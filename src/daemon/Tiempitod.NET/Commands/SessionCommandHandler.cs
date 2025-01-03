@@ -57,6 +57,7 @@ public class SessionCommandHandler : ICommandHandler
             "resume" => new ResumeSessionCommand(_sessionManager, args),
             "cancel" => new CancelSessionCommand(_sessionManager, args),
             "create" => new CreateSessionCommand(_sessionConfigProvider, args),
+            "modify" => new ModifySessionCommand(_sessionConfigProvider, args),
             _ => null
         };
 

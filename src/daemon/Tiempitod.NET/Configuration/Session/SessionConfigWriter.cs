@@ -24,6 +24,7 @@ public class SessionConfigWriter : ISessionConfigWriter
     {
         string sectionName = prefixSectionName + sessionConfig.Id;
         var targetCycles = sessionConfig.TargetCycles.ToString();
+        // BUG: Saving as minutes when are in seconds will cause saving floats which are not gonna be parsed when loading configs again.
         string focusDuration = sessionConfig.FocusDuration.TotalMinutes.ToString(CultureInfo.InvariantCulture) + "m";
         string breakDuration = sessionConfig.BreakDuration.TotalMinutes.ToString(CultureInfo.InvariantCulture) + "m";
         

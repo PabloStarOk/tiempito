@@ -45,7 +45,7 @@ public class SessionConfigProvider : DaemonService, ISessionConfigProvider
             (AppConfigConstants.SessionSectionPrefix, sessionConfig);
         
         if (wasWritten)
-            SessionConfigs.Add(sessionConfig.Id, sessionConfig);
+            SessionConfigs.TryAdd(sessionConfig.Id, sessionConfig);
 
         return wasWritten ?
             new OperationResult(true, "Session configuration was saved.") :
