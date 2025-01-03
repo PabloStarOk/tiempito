@@ -10,6 +10,7 @@ public class ConfigCommand
 {
     private readonly IClient _client;
     private readonly Option<string> _defaultSessionIdOption;
+    private readonly Argument<string> _featureArgument;
 
     /// <summary>
     /// Instantiates a new <see cref="ConfigCommand"/>.
@@ -23,6 +24,11 @@ public class ConfigCommand
             Arity = ArgumentArity.ExactlyOne
         };
         _defaultSessionIdOption.AddAlias("-d");
+        
+        _featureArgument = new Argument<string>("feature", "Feature to enable or disable.")
+        {
+            Arity = ArgumentArity.ExactlyOne
+        };
     }
 
     /// <summary>
@@ -34,6 +40,7 @@ public class ConfigCommand
         var configCommand = new Command("config", "Modifies the user's configuration.");
         
         configCommand.AddCommand(new SetConfigCommand(_client, _defaultSessionIdOption));
+        configCommand.AddCommand(new EnableConfigCommand(_client, configCommand.Name, _featureArgument));
 
         return configCommand;
     }
