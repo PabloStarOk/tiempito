@@ -4,6 +4,7 @@ using System.CommandLine.Parsing;
 using System.IO.Pipes;
 using System.Text;
 using Tiempito.CLI.NET.Client;
+using Tiempito.CLI.NET.Config;
 using Tiempito.CLI.NET.Session;
 using Tiempito.IPC.NET.Packets;
 
@@ -21,7 +22,10 @@ IPacketDeserializer packetDeserializer = new PacketDeserializer();
 IClient client = new Client(pipeClient, packetHandler, packetSerializer, packetDeserializer);
 
 Command sessionCommand = new SessionCommand(client).GetCommand();
+Command configCommand = new ConfigCommand(client).GetCommand();
 
 rootCommand.AddCommand(sessionCommand);
+rootCommand.AddCommand(configCommand);
+
 Parser parser = builder.Build();
 await parser.InvokeAsync(args);

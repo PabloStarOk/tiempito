@@ -1,4 +1,5 @@
 using Tiempitod.NET.Configuration.Session;
+using Tiempitod.NET.Configuration.User;
 using Tiempitod.NET.Exceptions;
 using Tiempitod.NET.Session;
 
@@ -10,19 +11,23 @@ namespace Tiempitod.NET.Commands;
 /// </summary>
 public class CommandHandlerFactory : ICommandHandlerFactory
 {
+    private readonly IUserConfigProvider _userConfigProvider;
     private readonly ISessionConfigProvider _sessionConfigProvider;
     private readonly ISessionManager _sessionManager;
     
     /// <summary>
     /// Instantiates a new <see cref="CommandHandlerFactory"/>
     /// </summary>
+    /// <param name="userConfigProvider">Provider of user's configuration.</param>
     /// <param name="sessionConfigProvider">Provider of session configurations.</param>
     /// <param name="sessionManager">Manager of sessions.</param>
     public CommandHandlerFactory(
+        IUserConfigProvider userConfigProvider, 
         ISessionConfigProvider sessionConfigProvider, 
         ISessionManager sessionManager)
     {
         _sessionManager = sessionManager;
+        _userConfigProvider = userConfigProvider;
         _sessionConfigProvider = sessionConfigProvider;
     }
     
@@ -37,6 +42,7 @@ public class CommandHandlerFactory : ICommandHandlerFactory
         return commandType switch
         {
             "session" => new SessionCommandHandler(_sessionConfigProvider, _sessionManager),
+            "config" => new ConfigCommandsHandler(_userConfigProvider),
             _ => throw new CommandNotFoundException(commandType)
         };
     }
