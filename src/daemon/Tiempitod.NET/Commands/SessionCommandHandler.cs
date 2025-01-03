@@ -1,5 +1,6 @@
 using Tiempito.IPC.NET.Messages;
 using Tiempitod.NET.Commands.SessionCommands;
+using Tiempitod.NET.Configuration.Session;
 using Tiempitod.NET.Session;
 
 namespace Tiempitod.NET.Commands;
@@ -9,15 +10,20 @@ namespace Tiempitod.NET.Commands;
 /// </summary>
 public class SessionCommandHandler : ICommandHandler
 {
+    private readonly ISessionConfigProvider _sessionConfigProvider;
     private readonly ISessionManager _sessionManager;
     
     /// <summary>
     /// Instantiates a <see cref="SessionCommandHandler"/>.
     /// </summary>
+    /// <param name="sessionConfigProvider">Provider of session configurations.</param>
     /// <param name="sessionManager">Manager of sessions.</param>
-    public SessionCommandHandler(ISessionManager sessionManager)
+    public SessionCommandHandler(
+        ISessionConfigProvider sessionConfigProvider,
+        ISessionManager sessionManager)
     {
         _sessionManager = sessionManager;
+        _sessionConfigProvider = sessionConfigProvider;
     }
     
     public async Task<OperationResult> HandleCommandAsync(Request request, CancellationToken cancellationToken = default)
@@ -50,6 +56,7 @@ public class SessionCommandHandler : ICommandHandler
             "pause" => new PauseSessionCommand(_sessionManager, args),
             "resume" => new ResumeSessionCommand(_sessionManager, args),
             "cancel" => new CancelSessionCommand(_sessionManager, args),
+            "create" => new CreateSessionCommand(_sessionConfigProvider, args),
             _ => null
         };
 

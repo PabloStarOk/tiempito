@@ -13,6 +13,8 @@ public class StartCommand : Command
         string name, string description) : base(name, description)
     {
         _client = client;
+        sessionIdOption.IsRequired = false;
+        AddOption(sessionIdOption);
         this.SetHandler(CommandHandler, sessionIdOption);
     }
 

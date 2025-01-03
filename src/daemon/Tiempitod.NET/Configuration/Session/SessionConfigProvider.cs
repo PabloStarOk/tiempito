@@ -41,8 +41,13 @@ public class SessionConfigProvider : DaemonService, ISessionConfigProvider
     // TODO: Make method asynchronous.
     public OperationResult SaveSessionConfig(SessionConfig sessionConfig)
     {
-        return  _sessionConfigWriter.Write
-            (AppConfigConstants.SessionSectionPrefix, sessionConfig) ?
+        bool wasWritten = _sessionConfigWriter.Write
+            (AppConfigConstants.SessionSectionPrefix, sessionConfig);
+        
+        if (wasWritten)
+            SessionConfigs.Add(sessionConfig.Id, sessionConfig);
+
+        return wasWritten ?
             new OperationResult(true, "Session configuration was saved.") :
             new OperationResult(true, "Session configuration was not saved.");
     }

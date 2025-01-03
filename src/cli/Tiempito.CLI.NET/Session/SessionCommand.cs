@@ -11,9 +11,8 @@ public class SessionCommand
     public SessionCommand(IClient client)
     {
         _client = client;
-        _sessionIdOption = new Option<string>("--id", "ID of the session to start.")
+        _sessionIdOption = new Option<string>("--id", "ID of the session configuration.")
         {
-            IsRequired = false,
             Arity = ArgumentArity.ExactlyOne
         };
         _sessionIdOption.AddAlias("-i");
@@ -22,9 +21,8 @@ public class SessionCommand
     public Command GetCommand()
     {
         var sessionCommand = new Command(name: "session", description: "Manage sessions.");
-        
-        sessionCommand.AddGlobalOption(_sessionIdOption);
-        
+
+        sessionCommand.AddCommand(new CreateCommand(_client, _sessionIdOption));
         sessionCommand.AddCommand(BuildStartCommand());
         sessionCommand.AddCommand(BuildCancelCommand());
         sessionCommand.AddCommand(BuildPauseCommand());
