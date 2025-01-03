@@ -47,6 +47,7 @@ public class ConfigCommandsHandler : ICommandHandler
         command = request.SubcommandType switch
         {
             "set" => new SetConfigCommand(_userConfigProvider, args),
+            "enable" => new EnableConfigCommand(_userConfigProvider, args),
             _ => null
         };
 

@@ -31,13 +31,30 @@ public class UserConfigReader : IUserConfigReader
 
         foreach (IConfigKeyValue keyValue in configSection.Keys)
         {
-            string keywordString = keyValue.Name.ToLower();
+            string keywordString = keyValue.Name;
 
-            if (Enum.TryParse(keywordString, out UserConfigKeyword keyword))
+            if (!Enum.TryParse(keywordString, ignoreCase: true, out UserConfigKeyword keyword))
                 continue;
-            
-            if (keyword is UserConfigKeyword.DefaultSession)
-                userConfig = new UserConfig(keyValue.Content);
+
+            switch (keyword)
+            {
+                case UserConfigKeyword.DefaultSession:
+                    userConfig = new UserConfig(keyValue.Content);
+                    break;
+                    
+                case UserConfigKeyword.EnabledFeatures:
+                    foreach (string enabledFeat in keyValue.Content.Split(','))
+                    {
+                        if (string.IsNullOrWhiteSpace(enabledFeat))
+                            continue;
+                        
+                        userConfig.AddFeature(enabledFeat.Trim());
+                    }
+                    break;
+                
+                default:
+                    continue;
+            }
         }
         
         return userConfig;
