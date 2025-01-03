@@ -41,6 +41,7 @@ public class ConfigCommand
         
         configCommand.AddCommand(new SetConfigCommand(_client, _defaultSessionIdOption));
         configCommand.AddCommand(new EnableConfigCommand(_client, configCommand.Name, _featureArgument));
+        configCommand.AddCommand(new DisableConfigCommand(_client, configCommand.Name, _featureArgument));
 
         return configCommand;
     }
