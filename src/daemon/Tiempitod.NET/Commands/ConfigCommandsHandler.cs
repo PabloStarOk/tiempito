@@ -48,6 +48,7 @@ public class ConfigCommandsHandler : ICommandHandler
         {
             "set" => new SetConfigCommand(_userConfigProvider, args),
             "enable" => new EnableConfigCommand(_userConfigProvider, args),
+            "disable" => new DisableConfigCommand(_userConfigProvider, args),
             _ => null
         };
 

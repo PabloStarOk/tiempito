@@ -61,4 +61,13 @@ public struct UserConfig
     {
         _enabledFeatures.Add(feature);
     }
+    
+    /// <summary>
+    /// Remove a feature from the enabled ones.
+    /// </summary>
+    /// <param name="configFeature">Feature to remove.</param>
+    public void RemoveFeature(ConfigFeature configFeature)
+    {
+        _enabledFeatures.Remove(configFeature.Name);
+    }
 }
