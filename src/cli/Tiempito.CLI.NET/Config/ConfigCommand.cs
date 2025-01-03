@@ -22,6 +22,7 @@ public class ConfigCommand
         {
             Arity = ArgumentArity.ExactlyOne
         };
+        _defaultSessionIdOption.AddAlias("-d");
     }
 
     /// <summary>
