@@ -24,18 +24,22 @@ public class SessionCommand
 
         sessionCommand.AddCommand(new CreateCommand(_asyncCommandExecutor, sessionCommand.Name, _sessionIdOption));
         sessionCommand.AddCommand(new ModifyCommand(_asyncCommandExecutor, sessionCommand.Name, _sessionIdOption));
-        sessionCommand.AddCommand(new StartCommand(
-            _asyncCommandExecutor, sessionCommand.Name, _sessionIdOption, 
-            name: "start", description: "Starts a new session."));
-        sessionCommand.AddCommand(new CancelCommand(
-            _asyncCommandExecutor, sessionCommand.Name, _sessionIdOption, 
-            name: "cancel", description: "Cancels a session that is being executed."));
-        sessionCommand.AddCommand(new PauseCommand(
-            _asyncCommandExecutor, sessionCommand.Name, _sessionIdOption, 
-            name: "pause", description: "Pauses a session that is being executed."));
-        sessionCommand.AddCommand(new ResumeCommand(
-            _asyncCommandExecutor, sessionCommand.Name, _sessionIdOption, 
-            name: "resume", description: "Resumes a paused session."));
+        
+        sessionCommand.AddCommand(new GenericSessionCommand(
+            _asyncCommandExecutor, sessionCommand.Name, _sessionIdOption,
+            "start", "Starts a new session."));
+        
+        sessionCommand.AddCommand(new GenericSessionCommand(
+            _asyncCommandExecutor, sessionCommand.Name, _sessionIdOption,
+            "cancel", "Cancels a session that is being executed."));
+        
+        sessionCommand.AddCommand(new GenericSessionCommand(
+            _asyncCommandExecutor, sessionCommand.Name, _sessionIdOption,
+            "pause", "Pauses a session that is being executed."));
+        
+        sessionCommand.AddCommand(new GenericSessionCommand(
+            _asyncCommandExecutor, sessionCommand.Name, _sessionIdOption,
+            "resume", "Resumes a paused session."));
         
         return sessionCommand;
     }

@@ -40,8 +40,14 @@ public class ConfigCommand
         var configCommand = new Command("config", "Modifies the user's configuration.");
         
         configCommand.AddCommand(new SetConfigCommand(_asyncCommandExecutor, configCommand.Name, _defaultSessionIdOption));
-        configCommand.AddCommand(new EnableConfigCommand(_asyncCommandExecutor, configCommand.Name, _featureArgument));
-        configCommand.AddCommand(new DisableConfigCommand(_asyncCommandExecutor, configCommand.Name, _featureArgument));
+        
+        configCommand.AddCommand(new GenericFeatureConfigCommand(
+            _asyncCommandExecutor, configCommand.Name, _featureArgument,
+            "enable", "Enables a specified feature in the user's configuration."));
+        
+        configCommand.AddCommand(new GenericFeatureConfigCommand(
+            _asyncCommandExecutor, configCommand.Name, _featureArgument,
+            "disable", "Disables a specified feature in the user's configuration."));
         
         return configCommand;
     }
