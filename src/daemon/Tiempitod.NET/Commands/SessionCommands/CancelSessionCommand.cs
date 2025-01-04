@@ -8,9 +8,9 @@ namespace Tiempitod.NET.Commands.SessionCommands;
 public class CancelSessionCommand : ICommand
 {
     private readonly ISessionManager _sessionManager;
-    private readonly IDictionary<string, string> _arguments;
+    private readonly IReadOnlyDictionary<string, string> _arguments;
    
-    public CancelSessionCommand(ISessionManager sessionManager, IDictionary<string, string> arguments)
+    public CancelSessionCommand(ISessionManager sessionManager, IReadOnlyDictionary<string, string> arguments)
     {
         _sessionManager = sessionManager;
         _arguments = arguments;

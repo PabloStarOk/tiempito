@@ -42,7 +42,7 @@ public class ConfigCommandsHandler : ICommandHandler
     private bool TryCreateCommand(Request request, out ICommand? command)
     {
         command = null;
-        IDictionary<string, string> args = request.Arguments;
+        IReadOnlyDictionary<string, string> args = request.Arguments;
         
         command = request.SubcommandType switch
         {

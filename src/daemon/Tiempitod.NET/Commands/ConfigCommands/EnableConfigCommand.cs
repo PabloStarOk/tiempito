@@ -8,7 +8,7 @@ namespace Tiempitod.NET.Commands.ConfigCommands;
 public class EnableConfigCommand : ICommand
 {
     private readonly IUserConfigProvider _userConfigProvider;
-    private readonly IDictionary<string, string> _arguments;
+    private readonly IReadOnlyDictionary<string, string> _arguments;
     
     /// <summary>
     /// Instantiates a <see cref="EnableConfigCommand"/>
@@ -17,7 +17,7 @@ public class EnableConfigCommand : ICommand
     /// <param name="arguments">Parameters and their values to modify.</param>
     public EnableConfigCommand(
         IUserConfigProvider userConfigProvider,
-        IDictionary<string, string> arguments)
+        IReadOnlyDictionary<string, string> arguments)
     {
         _userConfigProvider = userConfigProvider;
         _arguments = arguments;

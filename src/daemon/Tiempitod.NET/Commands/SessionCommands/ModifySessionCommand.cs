@@ -5,7 +5,7 @@ namespace Tiempitod.NET.Commands.SessionCommands;
 public class ModifySessionCommand : ICommand
 {
     private readonly ISessionConfigProvider _sessionConfigProvider;
-    private readonly IDictionary<string, string> _arguments;
+    private readonly IReadOnlyDictionary<string, string> _arguments;
     
     /// <summary>
     /// Instantiates a <see cref="ModifySessionCommand"/>.
@@ -14,7 +14,7 @@ public class ModifySessionCommand : ICommand
     /// <param name="arguments">Arguments of the command.</param>
     public ModifySessionCommand(
         ISessionConfigProvider sessionConfigProvider,
-        IDictionary<string, string> arguments)
+        IReadOnlyDictionary<string, string> arguments)
     {
         _sessionConfigProvider = sessionConfigProvider;
         _arguments = arguments;

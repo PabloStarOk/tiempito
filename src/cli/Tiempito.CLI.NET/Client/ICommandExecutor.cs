@@ -13,5 +13,5 @@ public interface IAsyncCommandExecutor
     /// <param name="subcommand">Subcommand of the parent.</param>
     /// <param name="args">Arguments of the command.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    public Task ExecuteAsync(string command, string subcommand, IDictionary<string, string> args);
+    public Task ExecuteAsync(string command, string subcommand, IReadOnlyDictionary<string, string> args);
 }

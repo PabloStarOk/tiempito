@@ -25,7 +25,7 @@ public class CommandExecutor : IAsyncCommandExecutor
         _stdErr = stdErr;
     }
     
-    public async Task ExecuteAsync(string command, string subcommand, IDictionary<string, string> args)
+    public async Task ExecuteAsync(string command, string subcommand, IReadOnlyDictionary<string, string> args)
     {
         // Send request.
         try

@@ -8,14 +8,14 @@ namespace Tiempitod.NET.Commands.ConfigCommands;
 public class SetConfigCommand : ICommand
 {
     private readonly IUserConfigProvider _userConfigProvider;
-    private readonly IDictionary<string, string> _arguments;
+    private readonly IReadOnlyDictionary<string, string> _arguments;
     
     /// <summary>
     /// Instantiates a <see cref="SetConfigCommand"/>
     /// </summary>
     /// <param name="userConfigProvider">Provider of user's configuration.</param>
     /// <param name="arguments">Parameters and their values to modify.</param>
-    public SetConfigCommand(IUserConfigProvider userConfigProvider, IDictionary<string, string> arguments)
+    public SetConfigCommand(IUserConfigProvider userConfigProvider, IReadOnlyDictionary<string, string> arguments)
     {
         _userConfigProvider = userConfigProvider;
         _arguments = arguments;

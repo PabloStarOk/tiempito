@@ -8,9 +8,9 @@ namespace Tiempitod.NET.Commands.SessionCommands;
 public class PauseSessionCommand : ICommand
 {
    private readonly ISessionManager _sessionManager;
-   private readonly IDictionary<string, string> _arguments;
+   private readonly IReadOnlyDictionary<string, string> _arguments;
    
-   public PauseSessionCommand(ISessionManager sessionManager, IDictionary<string, string> arguments)
+   public PauseSessionCommand(ISessionManager sessionManager, IReadOnlyDictionary<string, string> arguments)
    {
       _sessionManager = sessionManager;
       _arguments = arguments;
