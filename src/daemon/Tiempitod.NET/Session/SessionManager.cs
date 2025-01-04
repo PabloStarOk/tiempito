@@ -118,12 +118,16 @@ public sealed class SessionManager : DaemonService, ISessionManager
     /// <param name="stoppingToken">Cancel the timer.</param>
     private async Task RunTimerAsync(CancellationToken stoppingToken)
     {
-        Logger.LogInformation("Starting session at {Time}", DateTimeOffset.Now);
+        if (_currentSession.Status is SessionStatus.None)
+        {
+            Logger.LogInformation("Starting session at {Time}", DateTimeOffset.Now);
+            await _notificationManager.CloseLastNotificationAsync();
+            await _notificationManager.NotifyAsync(
+                summary: _notificationConfig.SessionStartedSummary,
+                body: _notificationConfig.SessionStartedBody);
+        }
         _currentSession.Status = SessionStatus.Executing;
-        await _notificationManager.CloseLastNotificationAsync();
-        await _notificationManager.NotifyAsync(
-            summary: _notificationConfig.SessionStartedSummary,
-            body: _notificationConfig.SessionStartedBody);
+        
         
         while ((_currentSession.CurrentCycle < _currentSession.TargetCycles
                || _currentSession.TargetCycles < 1)
