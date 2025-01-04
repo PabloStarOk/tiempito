@@ -1,7 +1,7 @@
-namespace Tiempitod.NET.Server.Messages;
+namespace Tiempito.IPC.NET.Messages;
 
 /// <summary>
-/// Represents a response from the daemon for the client.
+/// Represents a response from the daemon.
 /// </summary>
 /// <param name="StatusCode">Status of the response.</param>
 /// <param name="Success">If the requested operation was completed successfully.</param>
@@ -47,3 +47,4 @@ public record Response(ResponseStatusCode StatusCode, bool Success, string Messa
             Message: message);
     }
 }
+

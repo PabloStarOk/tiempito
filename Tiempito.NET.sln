@@ -2,7 +2,9 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tiempitod.NET", "src\daemon\Tiempitod.NET\Tiempitod.NET.csproj", "{C00A0339-2ED8-464E-BA68-AA473956CD67}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TiempitoCli.NET", "src\cli\TiempitoCli.NET\TiempitoCli.NET.csproj", "{AC54CE43-0738-4915-A22E-A6D5903A537C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tiempito.CLI.NET", "src\cli\Tiempito.CLI.NET\Tiempito.CLI.NET.csproj", "{AC54CE43-0738-4915-A22E-A6D5903A537C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tiempito.IPC.NET", "src\lib\Tiempito.IPC.NET\Tiempito.IPC.NET.csproj", "{73DFDB5F-2E39-4C40-BA04-C9279C9FF0A6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -22,5 +24,11 @@ Global
 		{AC54CE43-0738-4915-A22E-A6D5903A537C}.Release|Any CPU.Build.0 = Release|Any CPU
 		{AC54CE43-0738-4915-A22E-A6D5903A537C}.Linux|Any CPU.ActiveCfg = Debug|Any CPU
 		{AC54CE43-0738-4915-A22E-A6D5903A537C}.Linux|Any CPU.Build.0 = Debug|Any CPU
+		{73DFDB5F-2E39-4C40-BA04-C9279C9FF0A6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{73DFDB5F-2E39-4C40-BA04-C9279C9FF0A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{73DFDB5F-2E39-4C40-BA04-C9279C9FF0A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{73DFDB5F-2E39-4C40-BA04-C9279C9FF0A6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{73DFDB5F-2E39-4C40-BA04-C9279C9FF0A6}.Linux|Any CPU.ActiveCfg = Debug|Any CPU
+		{73DFDB5F-2E39-4C40-BA04-C9279C9FF0A6}.Linux|Any CPU.Build.0 = Debug|Any CPU
 	EndGlobalSection
 EndGlobal

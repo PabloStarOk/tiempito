@@ -1,4 +1,4 @@
-using Tiempitod.NET.Server.Messages;
+using Tiempito.IPC.NET.Messages;
 
 namespace Tiempitod.NET.Server;
 

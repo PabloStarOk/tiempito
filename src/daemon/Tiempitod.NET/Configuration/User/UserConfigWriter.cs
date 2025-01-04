@@ -1,4 +1,5 @@
 using Salaros.Configuration;
+using System.Text;
 
 namespace Tiempitod.NET.Configuration.User;
 
@@ -22,10 +23,24 @@ public class UserConfigWriter : IUserConfigWriter
     // TODO: Make method asynchronous.
     public bool Write(UserConfig userConfig)
     {
-        return _configParser.SetValue(
-                AppConfigConstants.UserSectionName,
-                UserConfigKeyword.DefaultSession.ToString(),
-                userConfig.DefaultSessionId)
-            && _configParser.Save();
+        bool wasSessionIdSet = _configParser.SetValue
+        (
+            AppConfigConstants.UserSectionName,
+            UserConfigKeyword.DefaultSession.ToString(),
+            userConfig.DefaultSessionId
+        );
+        
+        var enabledFeatures = new StringBuilder()
+            .AppendJoin(',', userConfig.EnabledFeatures)
+            .ToString();
+        
+        bool wasEnabledFeaturesSet = _configParser.SetValue
+        (
+            AppConfigConstants.UserSectionName,
+            UserConfigKeyword.EnabledFeatures.ToString(),
+            enabledFeatures
+        );
+        
+        return wasSessionIdSet && wasEnabledFeaturesSet && _configParser.Save();
     }
 }

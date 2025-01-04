@@ -6,6 +6,7 @@ using Tiempitod.NET.Notifications;
 
 namespace Tiempitod.NET.Session;
 
+// TODO: Add multi executing sessions feature.
 /// <summary>
 /// A concrete class to manage sessions.
 /// </summary>
@@ -54,7 +55,7 @@ public sealed class SessionManager : DaemonService, ISessionManager
 
         if (string.IsNullOrWhiteSpace(sessionId))
             configSessionToUse = _sessionConfigProvider.DefaultSessionConfig;
-        else if (_sessionConfigProvider.SessionConfigs.TryGetValue(sessionId, out SessionConfig foundSessionConfig))
+        else if (_sessionConfigProvider.SessionConfigs.TryGetValue(sessionId.ToLower(), out SessionConfig foundSessionConfig)) // TODO: Unify letter case management for sessionId.
             configSessionToUse = foundSessionConfig;
         else
             return new OperationResult(Success: false, Message: $"Session with ID {sessionId} was not found");
@@ -70,7 +71,7 @@ public sealed class SessionManager : DaemonService, ISessionManager
         return new OperationResult(Success: true, Message: "Session started.");
     }
 
-    public async Task<OperationResult> PauseSessionAsync()
+    public async Task<OperationResult> PauseSessionAsync(string sessionId = "")
     {
         if (_currentSession.Status is not SessionStatus.Executing)
             return new OperationResult(Success: false, Message: "There are no running sessions.");
@@ -82,7 +83,7 @@ public sealed class SessionManager : DaemonService, ISessionManager
         return new OperationResult(Success: true, Message: "Session paused.");
     }
 
-    public OperationResult ResumeSession()
+    public OperationResult ResumeSession(string sessionId = "")
     {
         if (_currentSession.Status is not SessionStatus.Paused)
             return new OperationResult(Success: false, Message: "There are no paused sessions to resume.");
@@ -95,7 +96,7 @@ public sealed class SessionManager : DaemonService, ISessionManager
         return new OperationResult(Success: true, Message: "Session resumed.");
     }
 
-    public async Task<OperationResult> CancelSessionAsync()
+    public async Task<OperationResult> CancelSessionAsync(string sessionId = "")
     {
         if (_currentSession.Status is SessionStatus.Cancelled or SessionStatus.Finished or SessionStatus.None)
             return new OperationResult(Success: false, Message: "There are no active sessions to cancel.");

@@ -38,6 +38,10 @@ public class UserConfigProvider : DaemonService, IUserConfigProvider
 
         bool wasWritten = _userConfigWriter.Write(userConfig);
 
+        // TODO: Default session configuration must be reloaded.
+        if (wasWritten)
+            UserConfig = userConfig;
+        
         return new OperationResult
         (
             wasWritten,

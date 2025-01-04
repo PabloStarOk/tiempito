@@ -8,14 +8,17 @@ namespace Tiempitod.NET.Commands.SessionCommands;
 public class PauseSessionCommand : ICommand
 {
    private readonly ISessionManager _sessionManager;
+   private readonly IDictionary<string, string> _arguments;
    
-   public PauseSessionCommand(ISessionManager sessionManager)
+   public PauseSessionCommand(ISessionManager sessionManager, IDictionary<string, string> arguments)
    {
       _sessionManager = sessionManager;
+      _arguments = arguments;
    }
    
    public async Task<OperationResult> ExecuteAsync(CancellationToken cancellationToken = default)
    {
-      return await _sessionManager.PauseSessionAsync();
+      _arguments.TryGetValue("session-id", out string? sessionId);
+      return await _sessionManager.PauseSessionAsync(sessionId ?? string.Empty);
    }
 }

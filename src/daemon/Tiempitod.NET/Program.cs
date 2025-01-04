@@ -3,8 +3,9 @@ using Microsoft.Extensions.Options;
 using Salaros.Configuration;
 using System.IO.Pipes;
 using System.Text;
+using Tiempito.IPC.NET.Packets;
 using Tiempitod.NET;
-using Tiempitod.NET.Commands.Handler;
+using Tiempitod.NET.Commands;
 using Tiempitod.NET.Configuration;
 using Tiempitod.NET.Configuration.AppFilesystem;
 using Tiempitod.NET.Configuration.Notifications;
@@ -64,7 +65,9 @@ builder.Services.AddSingleton(new NamedPipeServerStream(
     pipeConfig.PipeMaxInstances));
 
 builder.Services.AddTransient<IProgress<Session>, Progress<Session>>();
-builder.Services.AddTransient<IAsyncMessageHandler, PipeMessageHandler>();
+builder.Services.AddTransient<IAsyncPacketHandler, PipePacketHandler>();
+builder.Services.AddTransient<IPacketSerializer, PacketSerializer>();
+builder.Services.AddTransient<IPacketDeserializer, PacketDeserializer>();
 
 // Add system notification
 #if LINUX
@@ -76,12 +79,12 @@ if (OperatingSystem.IsWindowsVersionAtLeast(10,0,10240))
 #endif
 
 builder.Services.AddSingleton<Server>();
-builder.Services.AddSingleton<CommandHandler>();
+builder.Services.AddSingleton<RequestOrchestrator>();
 builder.Services.AddSingleton<SessionManager>();
 builder.Services.AddSingleton<NotificationManager>();
 
 builder.Services.AddSingleton<IServer>(sp => sp.GetService<Server>()!);
-builder.Services.AddSingleton<ICommandHandler>(sp => sp.GetService<CommandHandler>()!);
+builder.Services.AddSingleton<ICommandHandlerFactory, CommandHandlerFactory>();
 builder.Services.AddSingleton<ISessionManager>(sp => sp.GetService<SessionManager>()!);
 builder.Services.AddSingleton<INotificationManager>(sp => sp.GetService<NotificationManager>()!);
 
@@ -89,7 +92,7 @@ builder.Services.AddSingleton<DaemonService>(sp => sp.GetService<UserConfigFileC
 builder.Services.AddSingleton<DaemonService>(sp => sp.GetService<UserConfigProvider>()!);
 builder.Services.AddSingleton<DaemonService>(sp => sp.GetService<SessionConfigProvider>()!);
 builder.Services.AddSingleton<DaemonService>(sp => sp.GetService<Server>()!);
-builder.Services.AddSingleton<DaemonService>(sp => sp.GetService<CommandHandler>()!);
+builder.Services.AddSingleton<DaemonService>(sp => sp.GetService<RequestOrchestrator>()!);
 builder.Services.AddSingleton<DaemonService>(sp => sp.GetService<SessionManager>()!);
 builder.Services.AddSingleton<DaemonService>(sp => sp.GetService<NotificationManager>()!);
 
