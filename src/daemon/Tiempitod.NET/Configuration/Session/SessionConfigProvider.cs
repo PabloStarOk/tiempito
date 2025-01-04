@@ -43,13 +43,15 @@ public class SessionConfigProvider : DaemonService, ISessionConfigProvider
     {
         bool wasWritten = _sessionConfigWriter.Write
             (AppConfigConstants.SessionSectionPrefix, sessionConfig);
-        
-        if (wasWritten)
-            SessionConfigs.TryAdd(sessionConfig.Id, sessionConfig);
 
-        return wasWritten ?
-            new OperationResult(true, "Session configuration was saved.") :
-            new OperationResult(true, "Session configuration was not saved.");
+        if (!wasWritten)
+            return new OperationResult(false, "Session configuration was not saved.");
+        
+        // Add or update 
+        if (!SessionConfigs.TryAdd(sessionConfig.Id, sessionConfig))
+            SessionConfigs[sessionConfig.Id] = sessionConfig;
+
+        return new OperationResult(true, "Session configuration was saved.");
     }
 
     /// <summary>
