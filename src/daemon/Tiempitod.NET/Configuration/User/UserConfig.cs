@@ -2,7 +2,6 @@ using System.Collections.Immutable;
 
 namespace Tiempitod.NET.Configuration.User;
 
-// TODO: Make struct readonly.
 /// <summary>
 /// Represents the configuration of the user.
 /// </summary>
@@ -14,6 +13,15 @@ public struct UserConfig
     /// The id of the default session to start by the daemon.
     /// </summary>
     public string DefaultSessionId { get; }
+    
+    /// <summary>
+    /// If the notifications feature is enabled.
+    /// </summary>
+    public bool NotificationsEnabled { get; private set; }
+    
+    /// <summary>
+    /// All enabled features.
+    /// </summary>
     public IReadOnlyList<string> EnabledFeatures => _enabledFeatures;
     
     /// <summary>
@@ -51,6 +59,7 @@ public struct UserConfig
     public void AddFeature(ConfigFeature configFeature)
     {
         _enabledFeatures.Add(configFeature.Name);
+        OnFeatureModified(configFeature.Name, true);
     }
     
     /// <summary>
@@ -60,6 +69,7 @@ public struct UserConfig
     public void AddFeature(string feature)
     {
         _enabledFeatures.Add(feature);
+        OnFeatureModified(feature, wasAdded: true);
     }
     
     /// <summary>
@@ -69,5 +79,25 @@ public struct UserConfig
     public void RemoveFeature(ConfigFeature configFeature)
     {
         _enabledFeatures.Remove(configFeature.Name);
+        OnFeatureModified(configFeature.Name, wasAdded: false);
+    }
+
+    /// <summary>
+    /// Updates the variables of this struct according to the added/removed
+    /// features.
+    /// </summary>
+    /// <param name="feature">The feature that was modified.</param>
+    /// <param name="wasAdded">If the feature was added.</param>
+    private void OnFeatureModified(string feature, bool wasAdded)
+    {
+        switch (feature)
+        {
+            case "notification": // TODO: Replace hardcoded name with enum.
+                NotificationsEnabled = wasAdded;
+                break;
+            
+            default:
+                return;
+        }
     }
 }
