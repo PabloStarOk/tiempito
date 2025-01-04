@@ -1,5 +1,4 @@
 using System.IO.Pipes;
-using System.Text;
 using Tiempito.IPC.NET.Messages;
 using Tiempito.IPC.NET.Packets;
 
@@ -27,18 +26,8 @@ public class Client : IClient
     
     public async Task SendRequestAsync(Request request)
     {
-        try
-        {
-            await _pipeClient.ConnectAsync(ConnectionTimeout);
-        }
-        catch (TimeoutException)
-        {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine("Daemon is not running.");
-            Console.ForegroundColor = ConsoleColor.White;
-            return;
-        }
-
+        await _pipeClient.ConnectAsync(ConnectionTimeout);
+        
         if (!_pipeClient.IsConnected)
             return;
 
