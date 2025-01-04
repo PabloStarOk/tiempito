@@ -3,11 +3,18 @@ using Tiempito.CLI.NET.Client;
 
 namespace Tiempito.CLI.NET.Session;
 
+/// <summary>
+/// 
+/// </summary>
 public class SessionCommand
 {
     private readonly IAsyncCommandExecutor _asyncCommandExecutor;
     private readonly Option<string> _sessionIdOption;
     
+    /// <summary>
+    /// Instantiates a <see cref="SessionCommand"/>
+    /// </summary>
+    /// <param name="asyncCommandExecutor">An asynchronous executor of commands.</param>
     public SessionCommand(IAsyncCommandExecutor asyncCommandExecutor)
     {
         _asyncCommandExecutor = asyncCommandExecutor;
@@ -18,6 +25,11 @@ public class SessionCommand
         _sessionIdOption.AddAlias("-i");
     }
 
+    /// <summary>
+    /// Creates a new <see cref="Command"/> named session with grouping
+    /// all subcommands to manage a session.
+    /// </summary>
+    /// <returns>A configured <see cref="Command"/>.</returns>
     public Command GetCommand()
     {
         var sessionCommand = new Command(name: "session", description: "Manage sessions.");

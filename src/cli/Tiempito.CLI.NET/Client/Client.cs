@@ -4,6 +4,9 @@ using Tiempito.IPC.NET.Packets;
 
 namespace Tiempito.CLI.NET.Client;
 
+/// <summary>
+/// Client that sends requests to the daemon and receive responses from the daemon.
+/// </summary>
 public class Client : IClient
 {
     private readonly NamedPipeClientStream _pipeClient;
@@ -12,6 +15,13 @@ public class Client : IClient
     private readonly IPacketDeserializer _packetDeserializer;
     private const int ConnectionTimeout = 3000;
     
+    /// <summary>
+    /// Instantiates a <see cref="Client"/>. 
+    /// </summary>
+    /// <param name="pipeClient">Named pipe to connect to the daemon.</param>
+    /// <param name="packetHandler">Handler of packets.</param>
+    /// <param name="packetSerializer">Serializer of packets.</param>
+    /// <param name="packetDeserializer">Deserializer of packets.</param>
     public Client(
         NamedPipeClientStream pipeClient,
         IAsyncPacketHandler packetHandler,
@@ -24,6 +34,10 @@ public class Client : IClient
         _packetDeserializer = packetDeserializer;
     }
     
+    /// <summary>
+    /// Sends a request to the daemon.
+    /// </summary>
+    /// <param name="request">Request to send to the daemon.</param>
     public async Task SendRequestAsync(Request request)
     {
         await _pipeClient.ConnectAsync(ConnectionTimeout);
@@ -35,6 +49,11 @@ public class Client : IClient
         await _packetHandler.WritePacketAsync(_pipeClient, outgoingPacket);
     }
 
+    /// <summary>
+    /// Receives a response from the daemon.
+    /// </summary>
+    /// <returns>The response of the daemon.</returns>
+    /// <exception cref="InvalidOperationException">If the incoming packet is null.</exception>
     public async Task<Response> ReceiveResponseAsync()
     {
         if (!_pipeClient.IsConnected)

@@ -32,6 +32,10 @@ public class GenericSessionCommand : Command
         this.SetHandler(CommandHandler, sessionIdOption);
     }
     
+    /// <summary>
+    /// Sends the request to manage a tiempito session.
+    /// </summary>
+    /// <param name="sessionId">ID of the session to use.</param>
     private async Task CommandHandler(string sessionId)
     {
         var arguments = new Dictionary<string, string>

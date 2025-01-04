@@ -3,11 +3,20 @@ using Tiempito.CLI.NET.Client;
 
 namespace Tiempito.CLI.NET.Session;
 
+/// <summary>
+/// Represents the command to modify an existing session configuration.
+/// </summary>
 public class ModifyCommand : Command
 {
     private readonly IAsyncCommandExecutor _asyncCommandExecutor;
     private readonly string _commandParent;
     
+    /// <summary>
+    /// Instantiates a <see cref="ModifyCommand"/>.
+    /// </summary>
+    /// <param name="asyncCommandExecutor">An asynchronous executor of commands.</param>
+    /// <param name="commandParent">Command parent of this command.</param>
+    /// <param name="sessionIdOption">Session id option.</param>
     public ModifyCommand(
         IAsyncCommandExecutor asyncCommandExecutor,
         string commandParent, Option<string> sessionIdOption) 

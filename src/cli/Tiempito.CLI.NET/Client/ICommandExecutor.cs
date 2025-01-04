@@ -6,7 +6,7 @@ namespace Tiempito.CLI.NET.Client;
 public interface IAsyncCommandExecutor
 {
     /// <summary>
-    /// Sends a request to the daemon to execute a command,
+    /// Sends a request to the daemon to execute a command and
     /// receives the response and displays the result to the user.
     /// </summary>
     /// <param name="command">Command parent.</param>

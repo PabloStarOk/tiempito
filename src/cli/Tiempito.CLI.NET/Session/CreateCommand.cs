@@ -4,13 +4,19 @@ using Tiempito.CLI.NET.Client;
 namespace Tiempito.CLI.NET.Session;
 
 /// <summary>
-/// Creates a new session configuration.
+/// Represents the command to create a new session configuration.
 /// </summary>
 public class CreateCommand : Command
 {
     private readonly IAsyncCommandExecutor _asyncCommandExecutor;
     private readonly string _commandParent;
     
+    /// <summary>
+    /// Instantiates a <see cref="CreateCommand"/>.
+    /// </summary>
+    /// <param name="asyncCommandExecutor">An asynchronous executor of commands.</param>
+    /// <param name="commandParent">Command parent of this command.</param>
+    /// <param name="sessionIdOption">ID option of the new session configuration.</param>
     public CreateCommand(
         IAsyncCommandExecutor asyncCommandExecutor,
         string commandParent, Option<string> sessionIdOption) 
