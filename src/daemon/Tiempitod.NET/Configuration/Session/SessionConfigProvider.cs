@@ -12,7 +12,7 @@ public class SessionConfigProvider : DaemonService, ISessionConfigProvider
     private readonly ISessionConfigWriter _sessionConfigWriter;
 
     public IDictionary<string, SessionConfig> SessionConfigs { get; private set; } = new Dictionary<string, SessionConfig>();
-    public SessionConfig DefaultSessionConfig { get; private set; }
+    public SessionConfig DefaultSessionConfig { get; private set; } // TODO: Default session configuration must be reloaded when user config is reloaded.
     
     /// <summary>
     /// Instantiates a new <see cref="SessionConfigProvider"/>.
