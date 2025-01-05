@@ -11,9 +11,10 @@ public class SessionConfigProvider : DaemonService, ISessionConfigProvider
     private readonly ISessionConfigReader _sessionConfigReader;
     private readonly ISessionConfigWriter _sessionConfigWriter;
     private readonly EventHandler _defaultSessionChangedHandler;
+    private IDictionary<string, SessionConfig> _sessionConfigs;
     
-    public IDictionary<string, SessionConfig> SessionConfigs { get; private set; } = new Dictionary<string, SessionConfig>();
-    public SessionConfig DefaultSessionConfig { get; private set; } // TODO: Default session configuration must be reloaded when user config is reloaded.
+    public IReadOnlyDictionary<string, SessionConfig> SessionConfigs => _sessionConfigs.AsReadOnly();
+    public SessionConfig DefaultSessionConfig { get; private set; }
     
     /// <summary>
     /// Instantiates a new <see cref="SessionConfigProvider"/>.
@@ -31,6 +32,7 @@ public class SessionConfigProvider : DaemonService, ISessionConfigProvider
         _userConfigProvider = userConfigProvider;
         _sessionConfigReader = sessionConfigReader;
         _sessionConfigWriter = sessionConfigWriter;
+        _sessionConfigs = new Dictionary<string, SessionConfig>();
         _defaultSessionChangedHandler = (_, _) => SetDefaultUserSessionConfig();
     }
 
@@ -56,8 +58,8 @@ public class SessionConfigProvider : DaemonService, ISessionConfigProvider
             return new OperationResult(false, "Session configuration was not saved.");
         
         // Add or update 
-        if (!SessionConfigs.TryAdd(sessionConfig.Id, sessionConfig))
-            SessionConfigs[sessionConfig.Id] = sessionConfig;
+        if (!_sessionConfigs.TryAdd(sessionConfig.Id, sessionConfig))
+            _sessionConfigs[sessionConfig.Id] = sessionConfig;
 
         return new OperationResult(true, "Session configuration was saved.");
     }
@@ -67,7 +69,7 @@ public class SessionConfigProvider : DaemonService, ISessionConfigProvider
     /// </summary>
     private void LoadSessionConfigs()
     {
-        SessionConfigs = _sessionConfigReader.ReadSessions(AppConfigConstants.SessionSectionPrefix);
+        _sessionConfigs = _sessionConfigReader.ReadSessions(AppConfigConstants.SessionSectionPrefix);
     }
     
     /// <summary>
