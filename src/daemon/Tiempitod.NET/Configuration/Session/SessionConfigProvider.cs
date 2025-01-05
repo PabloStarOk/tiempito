@@ -36,14 +36,14 @@ public class SessionConfigProvider : DaemonService, ISessionConfigProvider
 
     protected override void OnStartService()
     {
-        _userConfigProvider.OnDefaultSessionChanged += _defaultSessionChangedHandler; 
+        _userConfigProvider.OnUserConfigChanged += _defaultSessionChangedHandler; 
         LoadSessionConfigs();
         SetDefaultUserSessionConfig();
     }
 
     protected override void OnStopService()
     { 
-        _userConfigProvider.OnDefaultSessionChanged -= _defaultSessionChangedHandler;
+        _userConfigProvider.OnUserConfigChanged -= _defaultSessionChangedHandler;
     }
 
     // TODO: Make method asynchronous.

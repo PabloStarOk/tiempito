@@ -12,7 +12,7 @@ public struct UserConfig
     /// <summary>
     /// The id of the default session to start by the daemon.
     /// </summary>
-    public string DefaultSessionId { get; }
+    public string DefaultSessionId { get; init; }
     
     /// <summary>
     /// If the notifications feature is enabled.

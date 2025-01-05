@@ -5,7 +5,7 @@ public class UserConfigProvider : DaemonService, IUserConfigProvider
     private readonly IUserConfigReader _userConfigReader;
     private readonly IUserConfigWriter _userConfigWriter;
 
-    public event EventHandler? OnDefaultSessionChanged;
+    public event EventHandler? OnUserConfigChanged;
     public UserConfig UserConfig { get; private set; }
 
     /// <summary>
@@ -44,12 +44,10 @@ public class UserConfigProvider : DaemonService, IUserConfigProvider
         if (wasWritten)
         {
             // Save new user config
-            UserConfig oldUserConfig = UserConfig;
             UserConfig = userConfig;
             
             // Notify default session changed
-            if (oldUserConfig.DefaultSessionId != UserConfig.DefaultSessionId)
-                OnDefaultSessionChanged?.Invoke(this, EventArgs.Empty);
+            OnUserConfigChanged?.Invoke(this, EventArgs.Empty);
             
             responseMsg = "The user configuration was saved.";
         }

@@ -26,8 +26,12 @@ public class SetConfigCommand : ICommand
         if (!_arguments.TryGetValue("default-session-id", out string? defaultSessionId)
             || string.IsNullOrWhiteSpace(defaultSessionId))
             return Task.FromResult(new OperationResult(Success: false, "Nothing to update."));
+
+        UserConfig newUserConfig = _userConfigProvider.UserConfig with
+        {
+            DefaultSessionId = defaultSessionId,
+        };
         
-        var newUserConfig = new UserConfig(defaultSessionId);
         return Task.FromResult(_userConfigProvider.SaveUserConfig(newUserConfig));
     }
 }
