@@ -9,7 +9,12 @@ public interface IUserConfigProvider
     /// User's configuration.
     /// </summary>
     public UserConfig UserConfig { get; }
-    
+
+    /// <summary>
+    /// Invoked when the default session of the user is changed.
+    /// </summary>
+    public event EventHandler OnDefaultSessionChanged;
+
     /// <summary>
     /// Saves the given user configuration in the user's configuration file.
     /// </summary>

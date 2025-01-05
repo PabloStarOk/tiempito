@@ -10,7 +10,8 @@ public class SessionConfigProvider : DaemonService, ISessionConfigProvider
     private readonly IUserConfigProvider _userConfigProvider;
     private readonly ISessionConfigReader _sessionConfigReader;
     private readonly ISessionConfigWriter _sessionConfigWriter;
-
+    private readonly EventHandler _defaultSessionChangedHandler;
+    
     public IDictionary<string, SessionConfig> SessionConfigs { get; private set; } = new Dictionary<string, SessionConfig>();
     public SessionConfig DefaultSessionConfig { get; private set; } // TODO: Default session configuration must be reloaded when user config is reloaded.
     
@@ -30,12 +31,19 @@ public class SessionConfigProvider : DaemonService, ISessionConfigProvider
         _userConfigProvider = userConfigProvider;
         _sessionConfigReader = sessionConfigReader;
         _sessionConfigWriter = sessionConfigWriter;
+        _defaultSessionChangedHandler = (_, _) => SetDefaultUserSessionConfig();
     }
 
     protected override void OnStartService()
     {
+        _userConfigProvider.OnDefaultSessionChanged += _defaultSessionChangedHandler; 
         LoadSessionConfigs();
         SetDefaultUserSessionConfig();
+    }
+
+    protected override void OnStopService()
+    { 
+        _userConfigProvider.OnDefaultSessionChanged -= _defaultSessionChangedHandler;
     }
 
     // TODO: Make method asynchronous.

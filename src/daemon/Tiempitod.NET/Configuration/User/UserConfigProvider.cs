@@ -4,7 +4,8 @@ public class UserConfigProvider : DaemonService, IUserConfigProvider
 {
     private readonly IUserConfigReader _userConfigReader;
     private readonly IUserConfigWriter _userConfigWriter;
-    
+
+    public event EventHandler? OnDefaultSessionChanged;
     public UserConfig UserConfig { get; private set; }
 
     /// <summary>
@@ -38,13 +39,23 @@ public class UserConfigProvider : DaemonService, IUserConfigProvider
 
         bool wasWritten = _userConfigWriter.Write(userConfig);
         
-        if (wasWritten)
-            UserConfig = userConfig;
+        string responseMsg;
         
-        return new OperationResult
-        (
-            wasWritten,
-            wasWritten ? "The user configuration was saved." : "User configuration was not saved, try again."
-        );
+        if (wasWritten)
+        {
+            // Save new user config
+            UserConfig oldUserConfig = UserConfig;
+            UserConfig = userConfig;
+            
+            // Notify default session changed
+            if (oldUserConfig.DefaultSessionId != UserConfig.DefaultSessionId)
+                OnDefaultSessionChanged?.Invoke(this, EventArgs.Empty);
+            
+            responseMsg = "The user configuration was saved.";
+        }
+        else
+            responseMsg = "User configuration was not saved, try again.";
+
+        return new OperationResult(wasWritten, responseMsg);
     }
 }
