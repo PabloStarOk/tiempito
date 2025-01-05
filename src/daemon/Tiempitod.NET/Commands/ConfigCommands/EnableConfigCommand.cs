@@ -34,6 +34,9 @@ public class EnableConfigCommand : ICommand
         
         ConfigFeature configFeature = UserConfig.AllowedFeatures.First(f => f.Name == feature || f.Aliases.Contains(feature));
         
+        if (_userConfigProvider.UserConfig.EnabledFeatures.Contains(configFeature.Name))
+            return Task.FromResult(new OperationResult(Success: false, "Feature already enabled."));
+        
         // TODO: Return operation result with custom message.
         UserConfig updatedUserConfig = _userConfigProvider.UserConfig;
         updatedUserConfig.AddFeature(configFeature);
