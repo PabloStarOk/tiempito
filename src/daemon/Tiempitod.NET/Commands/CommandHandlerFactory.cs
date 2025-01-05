@@ -41,7 +41,7 @@ public class CommandHandlerFactory : ICommandHandlerFactory
     {
         return commandType switch
         {
-            "session" => new SessionCommandHandler(_sessionConfigProvider, _sessionManager),
+            "session" => new SessionCommandsHandler(_sessionConfigProvider, _sessionManager),
             "config" => new ConfigCommandsHandler(_userConfigProvider),
             _ => throw new CommandNotFoundException(commandType)
         };

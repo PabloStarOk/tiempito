@@ -8,17 +8,17 @@ namespace Tiempitod.NET.Commands;
 /// <summary>
 /// Handles command requests related to sessions.
 /// </summary>
-public class SessionCommandHandler : ICommandHandler
+public class SessionCommandsHandler : ICommandHandler
 {
     private readonly ISessionConfigProvider _sessionConfigProvider;
     private readonly ISessionManager _sessionManager;
     
     /// <summary>
-    /// Instantiates a <see cref="SessionCommandHandler"/>.
+    /// Instantiates a <see cref="SessionCommandsHandler"/>.
     /// </summary>
     /// <param name="sessionConfigProvider">Provider of session configurations.</param>
     /// <param name="sessionManager">Manager of sessions.</param>
-    public SessionCommandHandler(
+    public SessionCommandsHandler(
         ISessionConfigProvider sessionConfigProvider,
         ISessionManager sessionManager)
     {
