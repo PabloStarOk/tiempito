@@ -34,8 +34,8 @@ public class SessionCommand
     {
         var sessionCommand = new Command(name: "session", description: "Manage sessions.");
 
-        sessionCommand.AddCommand(new CreateCommand(_asyncCommandExecutor, sessionCommand.Name, _sessionIdOption));
-        sessionCommand.AddCommand(new ModifyCommand(_asyncCommandExecutor, sessionCommand.Name, _sessionIdOption));
+        sessionCommand.AddCommand(new CreateSessionCommand(_asyncCommandExecutor, sessionCommand.Name, _sessionIdOption));
+        sessionCommand.AddCommand(new ModifySessionCommand(_asyncCommandExecutor, sessionCommand.Name, _sessionIdOption));
         
         sessionCommand.AddCommand(new GenericSessionCommand(
             _asyncCommandExecutor, sessionCommand.Name, _sessionIdOption,
