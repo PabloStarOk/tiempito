@@ -9,6 +9,7 @@ public static class AppConfigConstants
     public const string RootConfigDirName = "tiempito";
     
     // Config file names
+    public const string IconFileName = "icon.png";
     public const string DaemonConfigFileName = "tiempitod.conf";
     public const string UserConfigFileName = "user.conf";
     

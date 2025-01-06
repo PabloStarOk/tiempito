@@ -72,7 +72,10 @@ builder.Services.AddTransient<IPacketDeserializer, PacketDeserializer>();
 // Add system notification
 #if LINUX
 if (OperatingSystem.IsLinux())
+{
     builder.Services.AddTransient<ISystemNotifier, LinuxNotifier>();
+    builder.Services.AddTransient<ISystemAsyncIconLoader, LinuxSystemIconLoader>();
+}
 #elif WINDOWS10_0_17763_0_OR_GREATER
 if (OperatingSystem.IsWindowsVersionAtLeast(10,0,10240))
     builder.Services.AddTransient<ISystemNotifier, WindowsNotifier>();

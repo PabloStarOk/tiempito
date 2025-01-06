@@ -19,4 +19,9 @@ public interface IAppFilesystemPathProvider
     /// Path of daemon's configuration file.
     /// </summary>
     public string DaemonConfigFilePath { get; }
+
+    /// <summary>
+    /// Path of the application's icon.
+    /// </summary>
+    public string ApplicationIconPath { get; }
 }

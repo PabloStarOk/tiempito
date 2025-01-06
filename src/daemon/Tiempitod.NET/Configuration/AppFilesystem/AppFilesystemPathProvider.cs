@@ -8,6 +8,7 @@ public class AppFilesystemPathProvider : IAppFilesystemPathProvider
     public string AppConfigDirectoryPath { get; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), AppConfigConstants.RootConfigDirName);
     public string UserConfigDirectoryPath { get; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), AppConfigConstants.RootConfigDirName);
     public string DaemonConfigFilePath { get; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), AppConfigConstants.RootConfigDirName, AppConfigConstants.DaemonConfigFileName);
+    public string ApplicationIconPath { get; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), AppConfigConstants.RootConfigDirName, AppConfigConstants.IconFileName);
 
     /// <summary>
     /// Instantiates a new <see cref="AppFilesystemPathProvider"/> and creates user's config directory if it doesn't exist.

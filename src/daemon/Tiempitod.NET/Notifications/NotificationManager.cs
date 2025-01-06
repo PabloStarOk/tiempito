@@ -1,5 +1,5 @@
 using Microsoft.Extensions.Options;
-using Tiempitod.NET.Configuration;
+using Tiempitod.NET.Configuration.AppFilesystem;
 using Tiempitod.NET.Configuration.Notifications;
 using Tiempitod.NET.Configuration.User;
 using Tmds.DBus.Protocol;
@@ -13,13 +13,17 @@ public class NotificationManager : DaemonService, INotificationManager
 {
     private readonly ISystemNotifier _systemNotifier;
     private readonly IUserConfigProvider _userConfigProvider;
+    private readonly ISystemAsyncIconLoader _systemAsyncIconLoader;
+    private readonly string _appIconFilePath;
     private Notification _baseNotification;
 
     public NotificationManager(
         ILogger<NotificationManager> logger,
         IOptions<NotificationConfig> notificationConfigOptions,
+        IAppFilesystemPathProvider appFilesystemPathProvider,
         IUserConfigProvider userConfigProvider,
-        ISystemNotifier systemNotifier) : base(logger)
+        ISystemNotifier systemNotifier,
+        ISystemAsyncIconLoader systemAsyncIconLoader) : base(logger)
     {
         _baseNotification = new Notification(
             notificationConfigOptions.Value.AppName,
@@ -27,12 +31,36 @@ public class NotificationManager : DaemonService, INotificationManager
             expirationTimeout: notificationConfigOptions.Value.ExpirationTimeoutMs);
         _userConfigProvider = userConfigProvider;
         _systemNotifier = systemNotifier;
+        _systemAsyncIconLoader = systemAsyncIconLoader;
+        _appIconFilePath = appFilesystemPathProvider.ApplicationIconPath;
     }
 
     protected override void OnStartService()
     {
+#if LINUX
+        Task.Run
+        (
+            async () =>
+            {
+                try
+                {
+                    if (!Path.Exists(_appIconFilePath))
+                        return;
+                    NotificationImageData appImgData = await _systemAsyncIconLoader.LoadAsync(_appIconFilePath);
+                    _baseNotification.Hints.TryAdd("image-data", appImgData);
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError(ex, "Application's icon couldn't be loaded.");
+                }
+            }
+        );
+        
         _baseNotification.Hints.TryAdd("sound-name", VariantValue.String("message-new-instant"));
         _baseNotification.Hints.TryAdd("category", "im");
+#elif WINDOWS10_0_17763_0_OR_GREATER
+        _baseNotification.Icon = _appIconFilePath;
+#endif
     }
 
     protected override void OnStopService()
