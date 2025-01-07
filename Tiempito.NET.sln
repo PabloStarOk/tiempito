@@ -11,6 +11,7 @@ Global
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 		Linux|Any CPU = Linux|Any CPU
+		Windows|Any CPU = Windows|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{C00A0339-2ED8-464E-BA68-AA473956CD67}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -19,17 +20,23 @@ Global
 		{C00A0339-2ED8-464E-BA68-AA473956CD67}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C00A0339-2ED8-464E-BA68-AA473956CD67}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C00A0339-2ED8-464E-BA68-AA473956CD67}.Linux|Any CPU.Build.0 = Linux|Any CPU
+		{C00A0339-2ED8-464E-BA68-AA473956CD67}.Windows|Any CPU.ActiveCfg = Windows|Any CPU
+		{C00A0339-2ED8-464E-BA68-AA473956CD67}.Windows|Any CPU.Build.0 = Windows|Any CPU
 		{AC54CE43-0738-4915-A22E-A6D5903A537C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{AC54CE43-0738-4915-A22E-A6D5903A537C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AC54CE43-0738-4915-A22E-A6D5903A537C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AC54CE43-0738-4915-A22E-A6D5903A537C}.Release|Any CPU.Build.0 = Release|Any CPU
 		{AC54CE43-0738-4915-A22E-A6D5903A537C}.Linux|Any CPU.ActiveCfg = Debug|Any CPU
 		{AC54CE43-0738-4915-A22E-A6D5903A537C}.Linux|Any CPU.Build.0 = Debug|Any CPU
+		{AC54CE43-0738-4915-A22E-A6D5903A537C}.Windows|Any CPU.ActiveCfg = Windows|Any CPU
+		{AC54CE43-0738-4915-A22E-A6D5903A537C}.Windows|Any CPU.Build.0 = Windows|Any CPU
 		{73DFDB5F-2E39-4C40-BA04-C9279C9FF0A6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{73DFDB5F-2E39-4C40-BA04-C9279C9FF0A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{73DFDB5F-2E39-4C40-BA04-C9279C9FF0A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{73DFDB5F-2E39-4C40-BA04-C9279C9FF0A6}.Release|Any CPU.Build.0 = Release|Any CPU
 		{73DFDB5F-2E39-4C40-BA04-C9279C9FF0A6}.Linux|Any CPU.ActiveCfg = Debug|Any CPU
 		{73DFDB5F-2E39-4C40-BA04-C9279C9FF0A6}.Linux|Any CPU.Build.0 = Debug|Any CPU
+		{73DFDB5F-2E39-4C40-BA04-C9279C9FF0A6}.Windows|Any CPU.ActiveCfg = Windows|Any CPU
+		{73DFDB5F-2E39-4C40-BA04-C9279C9FF0A6}.Windows|Any CPU.Build.0 = Windows|Any CPU
 	EndGlobalSection
 EndGlobal
