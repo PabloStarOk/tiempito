@@ -1,4 +1,14 @@
-# Tiempito
+<header style="display: flex; justify-content: center; align-items: center; padding-bottom: 1rem;">
+    <img src="./assets/icon.svg" alt="A clock icon with a gradient color" width="100">
+    <h1 style="background: linear-gradient(90deg, #FF67A7 0%, #FC8E50 100%);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;">
+            Tiempito
+    <h1>
+</header>
+
+---
 
 "Tiempito" is a customizable timer designed to help you focus on work or study tasks while taking regular breaks to boost productivity. It's built with .NET and uses a daemon to run and a CLI for user interaction.
 
