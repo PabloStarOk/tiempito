@@ -5,10 +5,13 @@ namespace Tiempitod.NET.Configuration.AppFilesystem;
 /// </summary>
 public class AppFilesystemPathProvider : IAppFilesystemPathProvider
 {
-    public string AppConfigDirectoryPath { get; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), AppConfigConstants.RootConfigDirName);
-    public string UserConfigDirectoryPath { get; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), AppConfigConstants.RootConfigDirName);
-    public string DaemonConfigFilePath { get; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), AppConfigConstants.RootConfigDirName, AppConfigConstants.DaemonConfigFileName);
-    public string ApplicationIconPath { get; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), AppConfigConstants.RootConfigDirName, AppConfigConstants.IconFileName);
+    private readonly static string CommonAppData = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+    private readonly static string UserAppData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+    
+    public string AppConfigDirectoryPath { get; }
+    public string UserConfigDirectoryPath { get; }
+    public string DaemonConfigFilePath { get; }
+    public string ApplicationIconPath { get; }
 
     /// <summary>
     /// Instantiates a new <see cref="AppFilesystemPathProvider"/> and creates user's config directory if it doesn't exist.
@@ -17,6 +20,11 @@ public class AppFilesystemPathProvider : IAppFilesystemPathProvider
     /// <exception cref="ArgumentException">If the application's shared configuration directory doesn't exist.</exception>
     public AppFilesystemPathProvider(ILogger<AppFilesystemPathProvider> logger)
     {
+        AppConfigDirectoryPath = Path.Combine(CommonAppData, AppConfigConstants.RootConfigDirName);
+        UserConfigDirectoryPath = Path.Combine(UserAppData, AppConfigConstants.RootConfigDirName);
+        DaemonConfigFilePath = Path.Combine(CommonAppData, AppConfigConstants.RootConfigDirName, AppConfigConstants.DaemonConfigFileName);
+        ApplicationIconPath = Path.Combine(CommonAppData, AppConfigConstants.RootConfigDirName, AppConfigConstants.IconFileName);
+        
         if (!Directory.Exists(AppConfigDirectoryPath))
         {
             logger.LogCritical("Application's configuration directory doesn't exist at {Path}", AppConfigDirectoryPath);
