@@ -1,5 +1,6 @@
 ﻿#if WINDOWS10_0_17763_0_OR_GREATER
 using Microsoft.Toolkit.Uwp.Notifications;
+using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 
 namespace Tiempitod.NET.Notifications.Windows;
@@ -20,7 +21,7 @@ public class WindowsNotifier : ISystemNotifier
         try
         {
             if (_lastNotificationTag != Guid.Empty)
-                ToastNotificationManagerCompat.History.Remove(_lastNotificationTag.ToString());
+                ToastNotificationManagerCompat.History.Clear();
         }
         catch (Exception ex)
         {
@@ -35,11 +36,14 @@ public class WindowsNotifier : ISystemNotifier
         try
         {
             _lastNotificationTag = Guid.NewGuid();
-
+            
+            var iconUri = new Uri(notification.Icon);
+            
             ToastContentBuilder toastNotification = new ToastContentBuilder()
                 .SetToastScenario(ToastScenario.Default)
                 .AddText(notification.Summary, AdaptiveTextStyle.Header)
                 .AddText(notification.Body, AdaptiveTextStyle.Body)
+                .AddAppLogoOverride(iconUri)
                 .AddButton
                 (
                     new ToastButton()

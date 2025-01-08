@@ -2,7 +2,9 @@ using Microsoft.Extensions.Options;
 using Tiempitod.NET.Configuration.AppFilesystem;
 using Tiempitod.NET.Configuration.Notifications;
 using Tiempitod.NET.Configuration.User;
+#if LINUX
 using Tmds.DBus.Protocol;
+#endif
 
 namespace Tiempitod.NET.Notifications;
 
@@ -13,7 +15,9 @@ public class NotificationManager : DaemonService, INotificationManager
 {
     private readonly ISystemNotifier _systemNotifier;
     private readonly IUserConfigProvider _userConfigProvider;
+#if LINUX
     private readonly ISystemAsyncIconLoader _systemAsyncIconLoader;
+#endif
     private readonly string _appIconFilePath;
     private Notification _baseNotification;
 
@@ -22,16 +26,22 @@ public class NotificationManager : DaemonService, INotificationManager
         IOptions<NotificationConfig> notificationConfigOptions,
         IAppFilesystemPathProvider appFilesystemPathProvider,
         IUserConfigProvider userConfigProvider,
-        ISystemNotifier systemNotifier,
-        ISystemAsyncIconLoader systemAsyncIconLoader) : base(logger)
+        ISystemNotifier systemNotifier
+#if LINUX
+        , ISystemAsyncIconLoader systemAsyncIconLoader
+#endif
+        ) : base(logger)
     {
         _baseNotification = new Notification(
             notificationConfigOptions.Value.AppName,
             icon: notificationConfigOptions.Value.IconPath,
             expirationTimeout: notificationConfigOptions.Value.ExpirationTimeoutMs);
         _userConfigProvider = userConfigProvider;
+
         _systemNotifier = systemNotifier;
+#if LINUX
         _systemAsyncIconLoader = systemAsyncIconLoader;
+#endif
         _appIconFilePath = appFilesystemPathProvider.ApplicationIconPath;
     }
 
