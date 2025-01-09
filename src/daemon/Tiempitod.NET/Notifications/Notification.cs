@@ -11,6 +11,7 @@ public struct Notification
     public string[] Actions { get; set; }
     public IDictionary<string, object> Hints { get; set;  }
     public int ExpirationTimeout { get; set; }
+    public string AudioFilePath { get; set; }
 
     public Notification(string applicationName,
         string summary = "",
@@ -19,7 +20,8 @@ public struct Notification
         string icon = "",
         string[]? actions = default,
         IDictionary<string, object>? hints = default,
-        int expirationTimeout = 0)
+        int expirationTimeout = 0,
+        string audioFilePath = "")
     {
         ApplicationName = applicationName;
         ReplacesId = replacesId;
@@ -29,5 +31,6 @@ public struct Notification
         Actions = actions ?? [];
         Hints = hints ?? new Dictionary<string, object>();
         ExpirationTimeout = expirationTimeout;
+        AudioFilePath = audioFilePath;
     }
 }

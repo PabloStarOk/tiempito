@@ -1,3 +1,5 @@
+using Tiempitod.NET.Configuration.AppFilesystem;
+
 namespace Tiempitod.NET.Configuration.Notifications;
 
 /// <summary>
@@ -6,10 +8,13 @@ namespace Tiempitod.NET.Configuration.Notifications;
 public class NotificationConfig
 {
     public const string Notification = "Notification";
-
+    
     public string AppName { get; init; } = "Tiempito";
     public string IconPath { get; init; } = string.Empty;
     public int ExpirationTimeoutMs { get; init; } = 10000;
+    public string SessionStartedSoundName { get; init; } = "start-session-alarm.wav";
+    public string SessionFinishedSoundName { get; init; }  = "end-session-alarm.wav";
+    public string TimeCompletedSoundName { get; init; } = "time-completed-alarm.wav";
     public string SessionStartedSummary { get; init; } = "Session started";
     public string SessionStartedBody { get; init; } = "A new session was started.";
     public string SessionFinishedSummary { get; init; } = "Session finished";

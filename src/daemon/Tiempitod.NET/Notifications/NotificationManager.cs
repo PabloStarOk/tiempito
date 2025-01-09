@@ -3,7 +3,6 @@ using Tiempitod.NET.Configuration.AppFilesystem;
 using Tiempitod.NET.Configuration.Notifications;
 using Tiempitod.NET.Configuration.User;
 #if LINUX
-using System.Collections;
 using Tmds.DBus.Protocol;
 #endif
 
@@ -15,7 +14,9 @@ namespace Tiempitod.NET.Notifications;
 public class NotificationManager : DaemonService, INotificationManager
 {
     private readonly ISystemNotifier _systemNotifier;
+    private readonly IAppFilesystemPathProvider _appFilesystemPathProvider;
     private readonly IUserConfigProvider _userConfigProvider;
+    private readonly IOptions<NotificationConfig> _notificationConfigOptions;
 #if LINUX
     private readonly ISystemAsyncIconLoader _systemAsyncIconLoader;
 #endif
@@ -37,9 +38,10 @@ public class NotificationManager : DaemonService, INotificationManager
             notificationConfigOptions.Value.AppName,
             icon: notificationConfigOptions.Value.IconPath,
             expirationTimeout: notificationConfigOptions.Value.ExpirationTimeoutMs);
+        _appFilesystemPathProvider = appFilesystemPathProvider;
         _userConfigProvider = userConfigProvider;
-
         _systemNotifier = systemNotifier;
+        _notificationConfigOptions = notificationConfigOptions;
 #if LINUX
         _systemAsyncIconLoader = systemAsyncIconLoader;
 #endif
@@ -77,14 +79,23 @@ public class NotificationManager : DaemonService, INotificationManager
     {
         _systemNotifier.CleanUp();
     }
-
-    public async Task NotifyAsync(string summary, string body)
+    
+    public async Task NotifyAsync(string summary, string body, NotificationSoundType notificationSoundType)
     {
         if (!_userConfigProvider.UserConfig.NotificationsEnabled)
             return;
         
         _baseNotification.Summary = summary;
         _baseNotification.Body = body;
+        string soundFileName = notificationSoundType switch
+        {
+            NotificationSoundType.SessionStarted => _notificationConfigOptions.Value.SessionStartedSoundName,
+            NotificationSoundType.SessionFinished => _notificationConfigOptions.Value.SessionFinishedSoundName,
+            NotificationSoundType.TimeCompleted => _notificationConfigOptions.Value.TimeCompletedSoundName,
+            _ => string.Empty
+        };
+        _baseNotification.AudioFilePath = Path.Combine(_appFilesystemPathProvider.AppConfigDirectoryPath, soundFileName);
+
         await _systemNotifier.NotifyAsync(_baseNotification);
     }
 
