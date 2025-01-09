@@ -3,6 +3,7 @@ using Tiempitod.NET.Configuration.AppFilesystem;
 using Tiempitod.NET.Configuration.Notifications;
 using Tiempitod.NET.Configuration.User;
 #if LINUX
+using System.Collections;
 using Tmds.DBus.Protocol;
 #endif
 
@@ -66,8 +67,7 @@ public class NotificationManager : DaemonService, INotificationManager
             }
         );
         
-        _baseNotification.Hints.TryAdd("sound-name", VariantValue.String("message-new-instant"));
-        _baseNotification.Hints.TryAdd("category", "im");
+        _baseNotification.Hints.TryAdd("category", VariantValue.String("im"));
 #elif WINDOWS10_0_17763_0_OR_GREATER
         _baseNotification.Icon = _appIconFilePath;
 #endif
