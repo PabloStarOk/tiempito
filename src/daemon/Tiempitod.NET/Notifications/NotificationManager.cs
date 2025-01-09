@@ -16,7 +16,7 @@ public class NotificationManager : DaemonService, INotificationManager
     private readonly ISystemNotifier _systemNotifier;
     private readonly IAppFilesystemPathProvider _appFilesystemPathProvider;
     private readonly IUserConfigProvider _userConfigProvider;
-    private readonly IOptions<NotificationConfig> _notificationConfigOptions;
+    private readonly IOptionsMonitor<NotificationConfig> _notificationConfigOptions;
 #if LINUX
     private readonly ISystemAsyncIconLoader _systemAsyncIconLoader;
 #endif
@@ -25,7 +25,7 @@ public class NotificationManager : DaemonService, INotificationManager
 
     public NotificationManager(
         ILogger<NotificationManager> logger,
-        IOptions<NotificationConfig> notificationConfigOptions,
+        IOptionsMonitor<NotificationConfig> notificationConfigOptions,
         IAppFilesystemPathProvider appFilesystemPathProvider,
         IUserConfigProvider userConfigProvider,
         ISystemNotifier systemNotifier
@@ -35,9 +35,9 @@ public class NotificationManager : DaemonService, INotificationManager
         ) : base(logger)
     {
         _baseNotification = new Notification(
-            notificationConfigOptions.Value.AppName,
-            icon: notificationConfigOptions.Value.IconPath,
-            expirationTimeout: notificationConfigOptions.Value.ExpirationTimeoutMs);
+            notificationConfigOptions.CurrentValue.AppName,
+            icon: notificationConfigOptions.CurrentValue.IconPath,
+            expirationTimeout: notificationConfigOptions.CurrentValue.ExpirationTimeoutMs);
         _appFilesystemPathProvider = appFilesystemPathProvider;
         _userConfigProvider = userConfigProvider;
         _systemNotifier = systemNotifier;
@@ -89,9 +89,9 @@ public class NotificationManager : DaemonService, INotificationManager
         _baseNotification.Body = body;
         string soundFileName = notificationSoundType switch
         {
-            NotificationSoundType.SessionStarted => _notificationConfigOptions.Value.SessionStartedSoundName,
-            NotificationSoundType.SessionFinished => _notificationConfigOptions.Value.SessionFinishedSoundName,
-            NotificationSoundType.TimeCompleted => _notificationConfigOptions.Value.TimeCompletedSoundName,
+            NotificationSoundType.SessionStarted => _notificationConfigOptions.CurrentValue.SessionStartedSoundName,
+            NotificationSoundType.SessionFinished => _notificationConfigOptions.CurrentValue.SessionFinishedSoundName,
+            NotificationSoundType.TimeCompleted => _notificationConfigOptions.CurrentValue.TimeCompletedSoundName,
             _ => string.Empty
         };
         _baseNotification.AudioFilePath = Path.Combine(_appFilesystemPathProvider.AppConfigDirectoryPath, soundFileName);
