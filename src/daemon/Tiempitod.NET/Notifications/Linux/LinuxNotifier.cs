@@ -12,9 +12,10 @@ public class LinuxNotifier : ISystemNotifier, IDisposable
 {
     private readonly Connection _connection;
     private readonly IDBusLinuxNotification _dbusInterface;
+    private readonly ISystemSoundPlayer _soundPlayer;
     private uint _lastNotificationId;
 
-    public LinuxNotifier()
+    public LinuxNotifier(ISystemSoundPlayer soundPlayer)
     {
         _connection = Connection.Session;
         _dbusInterface = _connection.CreateProxy<IDBusLinuxNotification>
@@ -22,6 +23,7 @@ public class LinuxNotifier : ISystemNotifier, IDisposable
             serviceName: "org.freedesktop.Notifications",
             path: "/org/freedesktop/Notifications"
         );
+        _soundPlayer = soundPlayer;
     }
 
     public void CleanUp()
@@ -35,7 +37,8 @@ public class LinuxNotifier : ISystemNotifier, IDisposable
     /// <param name="notification">Notification to display.</param>
     public async Task NotifyAsync(Notification notification)
     {
-        _lastNotificationId = await _dbusInterface.NotifyAsync
+        Task playSoundTask = _soundPlayer.PlayAsync(notification.AudioFilePath);
+        Task<uint> notifyTask = _dbusInterface.NotifyAsync
         (
             notification.ApplicationName,
             notification.ReplacesId,
@@ -46,6 +49,8 @@ public class LinuxNotifier : ISystemNotifier, IDisposable
             notification.Hints,
             notification.ExpirationTimeout
         );
+        await playSoundTask;
+        _lastNotificationId = await notifyTask;
     }
 
     /// <summary>
@@ -53,7 +58,11 @@ public class LinuxNotifier : ISystemNotifier, IDisposable
     /// </summary>
     public async Task CloseNotificationAsync()
     {
-        await _dbusInterface.CloseNotificationAsync(_lastNotificationId);
+        Task stopSoundTask = _soundPlayer.StopAsync();
+        Task closeTask = _dbusInterface.CloseNotificationAsync(_lastNotificationId);
+
+        await stopSoundTask;
+        await closeTask;
     }
 
     public void Dispose()

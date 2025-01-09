@@ -31,6 +31,7 @@ public class WindowsNotifier : ISystemNotifier
         return Task.CompletedTask;
     }
 
+    // TODO: Add Windows custom notification sounds.
     public Task NotifyAsync(Notification notification)
     {
         try

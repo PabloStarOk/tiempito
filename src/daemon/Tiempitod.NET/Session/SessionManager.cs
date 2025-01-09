@@ -124,7 +124,8 @@ public sealed class SessionManager : DaemonService, ISessionManager
             await _notificationManager.CloseLastNotificationAsync();
             await _notificationManager.NotifyAsync(
                 summary: _notificationConfig.SessionStartedSummary,
-                body: _notificationConfig.SessionStartedBody);
+                body: _notificationConfig.SessionStartedBody,
+                NotificationSoundType.SessionStarted);
         }
         _currentSession.Status = SessionStatus.Executing;
         
@@ -148,7 +149,8 @@ public sealed class SessionManager : DaemonService, ISessionManager
         await _notificationManager.CloseLastNotificationAsync();
         await _notificationManager.NotifyAsync(
             summary: _notificationConfig.SessionFinishedSummary,
-            body: _notificationConfig.SessionFinishedBody);
+            body: _notificationConfig.SessionFinishedBody,
+            NotificationSoundType.SessionFinished);
         _currentSession.Status = SessionStatus.Finished;
         Logger.LogInformation("Finishing session at {Time}", DateTimeOffset.Now);
     }
@@ -201,7 +203,7 @@ public sealed class SessionManager : DaemonService, ISessionManager
             body = _notificationConfig.BreakCompletedBody;
             _currentSession.CurrentTimeType = TimeType.Focus;   
         }
-        await _notificationManager.NotifyAsync(summary, body);
+        await _notificationManager.NotifyAsync(summary, body, NotificationSoundType.TimeCompleted);
         
         _currentSession.Elapsed = TimeSpan.Zero;
     }
