@@ -136,5 +136,28 @@ public class LinuxSystemSoundPlayer : ISystemSoundPlayer
         if (!string.IsNullOrWhiteSpace(eventArgs.Data))
             _logger.LogError("Error while trying to play a notification sound. Sender: {Sender} | ExitCode: {ExitCode} | Error: {Err}", sender, _currentProcess?.ExitCode, eventArgs.Data);
     }
+    
+    public void Dispose()
+    {
+        Dispose(isDisposing: true);
+        GC.SuppressFinalize(this);
+    }
+
+    private void Dispose(bool isDisposing)
+    {
+        if (!isDisposing)
+            return;
+
+        if (_currentProcess == null)
+            return;
+        
+        _currentProcess.Close();
+        _currentProcess.Dispose();
+    }
+
+    ~LinuxSystemSoundPlayer()
+    {
+        Dispose(isDisposing: false);
+    }
 }
 #endif

@@ -105,6 +105,7 @@ public class LinuxNotifier : ISystemNotifier, IDisposable
             return;
 
         _connection.Dispose();
+        _soundPlayer.Dispose();
     }
 
     ~LinuxNotifier()

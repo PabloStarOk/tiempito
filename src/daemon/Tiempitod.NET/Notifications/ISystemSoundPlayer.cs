@@ -3,7 +3,7 @@ namespace Tiempitod.NET.Notifications;
 /// <summary>
 /// Defines a player of sounds.
 /// </summary>
-public interface ISystemSoundPlayer
+public interface ISystemSoundPlayer : IDisposable
 {
     /// <summary>
     /// Plays an audio file.
