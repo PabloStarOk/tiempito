@@ -1,6 +1,5 @@
 ﻿#if WINDOWS10_0_17763_0_OR_GREATER
 using Microsoft.Toolkit.Uwp.Notifications;
-using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 
 namespace Tiempitod.NET.Notifications.Windows;
