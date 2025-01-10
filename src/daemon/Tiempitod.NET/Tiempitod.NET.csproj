@@ -15,17 +15,19 @@
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug Linux' ">
+        <TargetFramework>net8.0</TargetFramework>
         <OutputPath>bin/linux/debug/</OutputPath>
         <DefineConstants>TRACE LINUX</DefineConstants>
         <DebugType>full</DebugType>
     </PropertyGroup>
     
     <PropertyGroup Condition=" '$(Configuration)' == 'Release Linux' ">
-      <OutputPath>bin/linux/release/</OutputPath>
-      <DefineConstants>LINUX</DefineConstants>
-      <Optimize>true</Optimize>
-      <DebugSymbols>false</DebugSymbols>
-      <DebugType>none</DebugType>
+        <TargetFramework>net8.0</TargetFramework>
+        <OutputPath>bin/linux/release/</OutputPath>
+        <DefineConstants>LINUX</DefineConstants>
+        <Optimize>true</Optimize>
+        <DebugSymbols>false</DebugSymbols>
+        <DebugType>none</DebugType>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug Windows' ">
