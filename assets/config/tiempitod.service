@@ -1,0 +1,16 @@
+[Unit]
+Description=tiempito daemon
+
+[Service]
+ExecStart=/path/to/daemon
+Environment=DOTNET_ENVIRONMENT=Production
+User=<user>
+Group=<group>
+StandardOutput=journal
+StandardError=journal
+Environment=DISPLAY=:0
+Environment=XDG_RUNTIME_DIR=<$XDG_RUNTIME_DIR>
+Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=<$XDG_RUNTIME_DIR>/bus
+
+[Install]
+WantedBy=default.target
