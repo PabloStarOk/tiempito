@@ -12,6 +12,7 @@
         <Product>tiempito-cli</Product>
         <AssemblyVersion>1.0.0</AssemblyVersion>
         <NeutralLanguage>en-US</NeutralLanguage>
+        <ApplicationIcon>..\..\..\assets\icon\icon.ico</ApplicationIcon>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug Linux' ">
@@ -45,6 +46,12 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\lib\Tiempito.IPC.NET\Tiempito.IPC.NET.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Include="..\..\..\assets\icon\icon.ico">
+        <Link>icon.ico</Link>
+      </None>
     </ItemGroup>
 
 </Project>

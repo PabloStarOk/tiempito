@@ -11,6 +11,7 @@
         <Product>tiempito-ipc</Product>
         <AssemblyVersion>1.0.0</AssemblyVersion>
         <NeutralLanguage>en-US</NeutralLanguage>
+        <PackageIcon>icon.ico</PackageIcon>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug Linux' ">
@@ -34,5 +35,13 @@
       <Optimize>true</Optimize>
       <DebugType>none</DebugType>
     </PropertyGroup>
+
+    <ItemGroup>
+      <None Include="..\..\..\assets\icon\icon.ico">
+        <Pack>True</Pack>
+        <PackagePath></PackagePath>
+        <Link>icon.ico</Link>
+      </None>
+    </ItemGroup>
 
 </Project>
