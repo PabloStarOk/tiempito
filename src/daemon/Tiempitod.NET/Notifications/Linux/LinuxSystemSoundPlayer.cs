@@ -8,8 +8,11 @@ namespace Tiempitod.NET.Notifications.Linux;
 /// </summary>
 public class LinuxSystemSoundPlayer : ISystemSoundPlayer
 {
-    private readonly ILogger<LinuxSystemSoundPlayer> _logger;
+    private const string RequiredEnvVariable = "XDG_RUNTIME_DIR";
     private const string PreferredAudioSystem = "pw-play";
+    
+    private readonly ILogger<LinuxSystemSoundPlayer> _logger;
+    private readonly bool _isRequiredEnvVariableDefined;
     
     private Process? _currentProcess;
     
@@ -21,32 +24,47 @@ public class LinuxSystemSoundPlayer : ISystemSoundPlayer
     {
         _logger = logger;
         GetAudioSystemAsync().Wait();
+        
+        _isRequiredEnvVariableDefined = Environment.GetEnvironmentVariables().Contains(RequiredEnvVariable);
+        if (!_isRequiredEnvVariableDefined)
+            _logger.LogError("Required \"{RequiredEnvVariable}\" environment variable for Linux is not defined, notifications won't have sound.", RequiredEnvVariable);
     }
     
     public async Task PlayAsync(string filepath)
     {
-        string systemAudioPlayer = await GetAudioSystemAsync();
-        
-        if (string.IsNullOrWhiteSpace(systemAudioPlayer))
+        if (!_isRequiredEnvVariableDefined)
             return;
         
-        _currentProcess = new Process
+        try
         {
-            StartInfo = new ProcessStartInfo
+            string systemAudioPlayer = await GetAudioSystemAsync();
+
+            if (string.IsNullOrWhiteSpace(systemAudioPlayer))
+                return;
+
+            _currentProcess = new Process
             {
-                FileName = systemAudioPlayer,
-                Arguments = filepath,
-                RedirectStandardInput = true,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                CreateNoWindow = false,
-            },
-            EnableRaisingEvents = true
-        };
-        
-        _currentProcess.ErrorDataReceived += OnErrorReceived;
-        _currentProcess.Exited += async (_, _) => await StopAsync();
-        _currentProcess.Start();
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = systemAudioPlayer,
+                    Arguments = filepath,
+                    RedirectStandardInput = true,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    CreateNoWindow = false,
+                },
+                EnableRaisingEvents = true
+            };
+
+            _currentProcess.ErrorDataReceived += OnErrorReceived;
+            _currentProcess.Exited += async (_, _) => await StopAsync();
+            _currentProcess.Start();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Couldn't play notification sound.");
+            await StopAsync();
+        }
     }
 
     public Task StopAsync()
@@ -54,9 +72,17 @@ public class LinuxSystemSoundPlayer : ISystemSoundPlayer
         if (_currentProcess == null)
             return Task.CompletedTask;
         
-        _currentProcess.Close();
-        _currentProcess.Dispose();
-        _currentProcess = null;
+        try
+        {
+            _currentProcess.Close();
+            _currentProcess.Dispose();
+            _currentProcess = null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Couldn't stop notification sound.");
+        }
+        
         return Task.CompletedTask;
     }
     
