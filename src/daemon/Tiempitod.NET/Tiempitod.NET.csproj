@@ -5,19 +5,41 @@
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <UserSecretsId>dotnet-Tiempitod.NET-86cf5476-a7a3-404e-9eff-ac7be73ccb7d</UserSecretsId>
-        <Configurations>Debug;Release;Linux;Windows</Configurations>
+        <Configurations>Debug Windows;Debug Linux;Release Linux;Release Windows</Configurations>
         <Platforms>AnyCPU</Platforms>
+        <PackageId>tiempitod</PackageId>
+        <Authors>PabloStarOk</Authors>
+        <Product>tiempitod</Product>
+        <AssemblyVersion>1.0.0</AssemblyVersion>
+        <NeutralLanguage>en-US</NeutralLanguage>
     </PropertyGroup>
 
-    <PropertyGroup Condition=" '$(Configuration)' == 'Linux' ">
-      <DefineConstants>TRACE LINUX</DefineConstants>
-      <PlatformTarget>x64</PlatformTarget>
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug Linux' ">
+        <OutputPath>bin/linux/debug/</OutputPath>
+        <DefineConstants>TRACE LINUX</DefineConstants>
+        <DebugType>full</DebugType>
+    </PropertyGroup>
+    
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release Linux' ">
+      <OutputPath>bin/linux/release/</OutputPath>
+      <DefineConstants>LINUX</DefineConstants>
+      <Optimize>true</Optimize>
+      <DebugSymbols>false</DebugSymbols>
+      <DebugType>none</DebugType>
     </PropertyGroup>
 
-    <PropertyGroup Condition=" '$(Configuration)' == 'Windows' ">
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug Windows' ">
+        <OutputPath>bin/windows/debug/</OutputPath>
         <DefineConstants>TRACE WINDOWS10_0_17763_0_OR_GREATER</DefineConstants>
-        <PlatformTarget>x64</PlatformTarget>
-        <TargetFramework>net8.0-windows10.0.17763.0</TargetFramework>
+      <DebugType>full</DebugType>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release Windows' ">
+        <OutputPath>bin/windows/release/</OutputPath>
+        <DefineConstants>WINDOWS10_0_17763_0_OR_GREATER</DefineConstants>
+      <DebugType>none</DebugType>
+      <Optimize>true</Optimize>
+      <DebugSymbols>false</DebugSymbols>
     </PropertyGroup>
 
     <ItemGroup>
@@ -28,14 +50,6 @@
         <PackageReference Include="SixLabors.ImageSharp" Version="3.1.6" />
         <PackageReference Include="Tmds.DBus" Version="0.21.2" />
         <PackageReference Include="Tmds.DBus.Protocol" Version="0.21.2" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <None Include="bin\Linux\net8.0\tiempitod.conf" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="bin\Linux\net8.0\" />
     </ItemGroup>
 
     <ItemGroup>

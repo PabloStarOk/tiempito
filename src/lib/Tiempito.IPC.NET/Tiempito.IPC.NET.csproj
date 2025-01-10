@@ -4,8 +4,30 @@
         <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <Configurations>Debug;Release;Windows</Configurations>
+        <Configurations>Debug Linux;Debug Windows;Release Linux;Release Windows</Configurations>
         <Platforms>AnyCPU</Platforms>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug Linux' ">
+      <OutputPath>bin/linux/debug/</OutputPath>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug Windows' ">
+      <OutputPath>bin/windows/debug/</OutputPath>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release Linux' ">
+      <OutputPath>bin/linux/release/</OutputPath>
+      <DefineConstants />
+      <Optimize>true</Optimize>
+      <DebugType>none</DebugType>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release Windows' ">
+      <OutputPath>bin/windows/release/</OutputPath>
+      <DefineConstants />
+      <Optimize>true</Optimize>
+      <DebugType>none</DebugType>
     </PropertyGroup>
 
 </Project>
