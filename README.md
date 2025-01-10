@@ -1,5 +1,5 @@
 <header style="display: flex; justify-content: center; align-items: center; padding-bottom: 1rem;">
-    <img src="./assets/icon.svg" alt="A clock icon with a gradient color" width="100">
+    <img src="./assets/icon/icon.svg" alt="A clock icon with a gradient color" width="100">
     <h1 style="background: linear-gradient(90deg, #FF67A7 0%, #FC8E50 100%);
             background-clip: text;
             -webkit-background-clip: text;
