@@ -6,6 +6,11 @@
         <Nullable>enable</Nullable>
         <Configurations>Debug Linux;Debug Windows;Release Linux;Release Windows</Configurations>
         <Platforms>AnyCPU</Platforms>
+        <PackageId>tiempito-ipc</PackageId>
+        <Authors>PabloStarOk</Authors>
+        <Product>tiempito-ipc</Product>
+        <AssemblyVersion>1.0.0</AssemblyVersion>
+        <NeutralLanguage>en-US</NeutralLanguage>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug Linux' ">

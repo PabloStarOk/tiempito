@@ -7,8 +7,11 @@
         <Nullable>enable</Nullable>
         <Configurations>Debug Linux;Debug Windows;Release Linux;Release Windows</Configurations>
         <Platforms>AnyCPU</Platforms>
-        <PackageId>tiempito</PackageId>
+        <PackageId>tiempito-cli</PackageId>
         <Authors>PabloStarOk</Authors>
+        <Product>tiempito-cli</Product>
+        <AssemblyVersion>1.0.0</AssemblyVersion>
+        <NeutralLanguage>en-US</NeutralLanguage>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug Linux' ">
