@@ -1,10 +1,12 @@
 using Tiempito.IPC.NET.Messages;
 using Tiempitod.NET.Commands.SessionCommands;
 using Tiempitod.NET.Configuration.Session;
+using Tiempitod.NET.Exceptions;
 using Tiempitod.NET.Session;
 
 namespace Tiempitod.NET.Commands;
 
+// TODO: This class can be refactored along with ConfigCommandsHandler to provide only the CreateCommand method.
 /// <summary>
 /// Handles command requests related to sessions.
 /// </summary>
@@ -28,29 +30,32 @@ public class SessionCommandsHandler : ICommandHandler
     
     public async Task<OperationResult> HandleCommandAsync(Request request, CancellationToken cancellationToken = default)
     {
-        if (!TryCreateCommand(request, out ICommand? command))
+        try
+        {
+            ICommand command = CreateCommand(request);
+            return await command.ExecuteAsync(cancellationToken);
+        }
+        catch (CommandNotFoundException ex)
         {
             return new OperationResult
             (
                 Success: false,
-                Message: $"Unknown command '{request.SubcommandType}'"
+                Message: ex.Message
             );
         }
-        return await command.ExecuteAsync(cancellationToken);
     }
 
     /// <summary>
-    /// Tries to create command with the given command request.
+    /// Creates a command with the given command request.
     /// </summary>
     /// <param name="request">Request to create the command.</param>
-    /// <param name="command">Created command.</param>
-    /// <returns>True if the command was created, false otherwise.</returns>
-    private bool TryCreateCommand(Request request, out ICommand? command)
+    /// <returns>An <see cref="ICommand"/>.</returns>
+    /// <exception cref="CommandNotFoundException">If the given command is not recognized.</exception>>
+    private ICommand CreateCommand(Request request)
     {
-        command = null;
         IReadOnlyDictionary<string, string> args = request.Arguments;
         
-        command = request.SubcommandType switch
+        return request.SubcommandType switch
         {
             "start" => new StartSessionCommand(_sessionManager, args),
             "pause" => new PauseSessionCommand(_sessionManager, args),
@@ -58,9 +63,7 @@ public class SessionCommandsHandler : ICommandHandler
             "cancel" => new CancelSessionCommand(_sessionManager, args),
             "create" => new CreateSessionCommand(_sessionConfigProvider, args),
             "modify" => new ModifySessionCommand(_sessionConfigProvider, args),
-            _ => null
+            _ => throw new CommandNotFoundException(request.SubcommandType)
         };
-
-        return command != null;
     }
 }

@@ -1,9 +1,11 @@
 using Tiempito.IPC.NET.Messages;
 using Tiempitod.NET.Commands.ConfigCommands;
 using Tiempitod.NET.Configuration.User;
+using Tiempitod.NET.Exceptions;
 
 namespace Tiempitod.NET.Commands;
 
+// TODO: This class can be refactored along with SessionCommandsHandler to provide only the CreateCommand method.
 /// <summary>
 /// Handles commands to modify user's configuration/
 /// </summary>
@@ -21,37 +23,38 @@ public class ConfigCommandsHandler : ICommandHandler
     }
     
     public async Task<OperationResult> HandleCommandAsync(Request request, CancellationToken cancellationToken = default)
-    { 
-        if (!TryCreateCommand(request, out ICommand? command))
+    {
+        try
+        {
+            ICommand command = CreateCommand(request);
+            return await command.ExecuteAsync(cancellationToken);
+        }
+        catch (CommandNotFoundException ex)
         {
             return new OperationResult
             (
                 Success: false,
-                Message: $"Unknown config command '{request.SubcommandType}'"
+                Message: ex.Message
             );
         }
-        return await command.ExecuteAsync(cancellationToken);
     }
     
     /// <summary>
-    /// Tries to create command with the given command request.
+    /// Creates a command with the given command request.
     /// </summary>
     /// <param name="request">Request to create the command.</param>
-    /// <param name="command">Created command.</param>
-    /// <returns>True if the command was created, false otherwise.</returns>
-    private bool TryCreateCommand(Request request, out ICommand? command)
+    /// <returns>An <see cref="ICommand"/>.</returns>
+    /// <exception cref="CommandNotFoundException">If the given command is not recognized.</exception>
+    private ICommand CreateCommand(Request request)
     {
-        command = null;
         IReadOnlyDictionary<string, string> args = request.Arguments;
         
-        command = request.SubcommandType switch
+        return request.SubcommandType switch
         {
             "set" => new SetConfigCommand(_userConfigProvider, args),
             "enable" => new EnableConfigCommand(_userConfigProvider, args),
             "disable" => new DisableConfigCommand(_userConfigProvider, args),
-            _ => null
+            _ => throw new CommandNotFoundException(request.SubcommandType)
         };
-
-        return command != null;
     }
 }
