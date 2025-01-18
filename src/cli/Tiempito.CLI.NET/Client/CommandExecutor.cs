@@ -38,9 +38,9 @@ public class CommandExecutor : IAsyncCommandExecutor
             await _stdErr.WriteLineAsync("Daemon is not running.");
             return;
         }
-        catch
+        catch (Exception ex)
         {
-            await _stdErr.WriteLineAsync("An error occurred when trying to send a request.");
+            await _stdErr.WriteLineAsync($"An error occurred when trying to send a request. Error: {ex.Message}");
         }
 
         // Receive response.
@@ -49,9 +49,9 @@ public class CommandExecutor : IAsyncCommandExecutor
             Response response = await _client.ReceiveResponseAsync();
             await _stdOut.WriteLineAsync(response.Message);
         }
-        catch
+        catch (Exception ex)
         {
-            await _stdErr.WriteLineAsync("An error occurred when trying to receive a response.");
+            await _stdErr.WriteLineAsync($"An error occurred when trying to receive a response. Error: {ex.Message}");
         }
     }
 }
