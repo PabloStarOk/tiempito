@@ -19,24 +19,35 @@ public class DaemonWorker : BackgroundService
     {
         if (_logger.IsEnabled(LogLevel.Information))
             _logger.LogInformation("tiempitod running at: {Time}", DateTimeOffset.Now);
-
-        _startedSuccessfully = true;
         
         foreach (DaemonService service in _daemonServices)
         {
-            if (!service.StartService())
-                _startedSuccessfully = false;
+            if (service.StartService())
+                continue;
+            
+            _logger.LogCritical("Couldn't start a service, daemon exiting. Service: {Service}", service);
+                
+            Exit(1);
+            return Task.CompletedTask;
         }
         
-        while (!stoppingToken.IsCancellationRequested && _startedSuccessfully) ;
+        while (!stoppingToken.IsCancellationRequested) ;
         
+        Exit(0);
+        return Task.CompletedTask;
+    }
+
+    private void Exit(int exitCode)
+    {
         foreach (DaemonService service in _daemonServices)
-            service.StopService();
+        {
+            if (!service.StopService())
+                _logger.LogCritical("Couldn't stop a service. Service: {Service}", service);
+        }
         
         if (_logger.IsEnabled(LogLevel.Information))
             _logger.LogInformation("tiempitod stopped at: {Time}", DateTimeOffset.Now);
-
-        Environment.Exit(0);
-        return Task.CompletedTask;
+        
+        Environment.Exit(exitCode);
     }
 }
