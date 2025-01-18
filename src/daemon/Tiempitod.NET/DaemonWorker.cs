@@ -15,7 +15,7 @@ public class DaemonWorker : BackgroundService
         _daemonServices = daemonServices;
     }
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
         if (_logger.IsEnabled(LogLevel.Information))
             _logger.LogInformation("tiempitod running at: {Time}", DateTimeOffset.Now);
@@ -35,5 +35,8 @@ public class DaemonWorker : BackgroundService
         
         if (_logger.IsEnabled(LogLevel.Information))
             _logger.LogInformation("tiempitod stopped at: {Time}", DateTimeOffset.Now);
+
+        Environment.Exit(0);
+        return Task.CompletedTask;
     }
 }
