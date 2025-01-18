@@ -10,7 +10,7 @@ public interface ISessionManager
     /// </summary>
     /// <param name="sessionId">ID of the session to start.</param>
     /// <returns>An <see cref="OperationResult"/> to know if the session was started successfully.</returns>
-    public OperationResult StartSession(string sessionId = "");
+    public OperationResult StartSession(string sessionId = "", string sessionConfigId = "");
 
     /// <summary>
     /// Pauses a session that is currently executing.

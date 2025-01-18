@@ -19,6 +19,7 @@ public class StartSessionCommand : ICommand
     public Task<OperationResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         _arguments.TryGetValue("session-id", out string? sessionId);
-        return Task.FromResult(_sessionManager.StartSession(sessionId ?? string.Empty));
+        _arguments.TryGetValue("session-config-id", out string? sessionConfigId);
+        return Task.FromResult(_sessionManager.StartSession(sessionId ?? string.Empty, sessionConfigId ?? string.Empty));
     }
 }

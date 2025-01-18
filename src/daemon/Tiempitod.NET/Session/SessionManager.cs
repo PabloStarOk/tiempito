@@ -58,29 +58,30 @@ public sealed class SessionManager : DaemonService, ISessionManager
         _sessionTimer.OnSessionCompleted -= SessionCompletedHandler;
     }
     
-    public OperationResult StartSession(string sessionId = "")
+    public OperationResult StartSession(string sessionId = "", string sessionConfigId = "")
     {
-        SessionConfig configSessionToUse;
-
-        if (string.IsNullOrWhiteSpace(sessionId))
-        {
-            sessionId = _sessionConfigProvider.DefaultSessionConfig.Id;
-            configSessionToUse = _sessionConfigProvider.DefaultSessionConfig;
-        }
-        else if (_sessionConfigProvider.SessionConfigs.TryGetValue(sessionId.ToLower(), out SessionConfig foundSessionConfig)) // TODO: Unify letter case management for sessionId.
-            configSessionToUse = foundSessionConfig;
+        // Try to get the config
+        SessionConfig configSession;
+        if (string.IsNullOrWhiteSpace(sessionConfigId))
+            configSession = _sessionConfigProvider.DefaultSessionConfig;
+        else if (_sessionConfigProvider.SessionConfigs.TryGetValue(sessionConfigId.ToLower(), out SessionConfig foundSessionConfig)) // TODO: Unify letter case management for sessionId.
+            configSession = foundSessionConfig;
         else
-            return new OperationResult(Success: false, Message: $"Session configuration with ID '{sessionId}' was not found");
+            return new OperationResult(Success: false, Message: $"Session configuration with ID '{sessionConfigId}' was not found");
+
+        // Use session config ID in empty string case
+        if (string.IsNullOrWhiteSpace(sessionId))
+            sessionId = configSession.Id;
         
+        // Verify if the session id already exists.
         ReadOnlyDictionary<string, Session> startedSessions = 
             _sessionStorage.RunningSessions.Concat(_sessionStorage.PausedSessions).ToDictionary().AsReadOnly();
-        
         if (startedSessions.ContainsKey(sessionId))
-            return new OperationResult(Success: false, Message: "There is already a started session with the same ID.");
+            return new OperationResult(Success: false, Message: "There's already a started session with the same ID.");
         
         var sessionToStart = new Session(
-            sessionId, configSessionToUse.TargetCycles,
-            configSessionToUse.FocusDuration, configSessionToUse.BreakDuration);
+            sessionId, configSession.TargetCycles,
+            configSession.FocusDuration, configSession.BreakDuration);
         
         _timerTokenSource = RegenerateTokenSource(_timerTokenSource);
         _sessionTimer.Start(sessionToStart, _timerTokenSource.Token);

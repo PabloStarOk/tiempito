@@ -18,7 +18,7 @@ public class SessionCommand
     public SessionCommand(IAsyncCommandExecutor asyncCommandExecutor)
     {
         _asyncCommandExecutor = asyncCommandExecutor;
-        _sessionIdOption = new Option<string>("--id", "ID of the session configuration.")
+        _sessionIdOption = new Option<string>("--id", "ID of the session.")
         {
             Arity = ArgumentArity.ExactlyOne
         };
@@ -37,7 +37,7 @@ public class SessionCommand
         sessionCommand.AddCommand(new CreateSessionCommand(_asyncCommandExecutor, sessionCommand.Name, _sessionIdOption));
         sessionCommand.AddCommand(new ModifySessionCommand(_asyncCommandExecutor, sessionCommand.Name, _sessionIdOption));
         
-        sessionCommand.AddCommand(new GenericSessionCommand(
+        sessionCommand.AddCommand(new StartSessionCommand(
             _asyncCommandExecutor, sessionCommand.Name, _sessionIdOption,
             "start", "Starts a new session."));
         
