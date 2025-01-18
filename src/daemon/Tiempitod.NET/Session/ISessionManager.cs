@@ -17,7 +17,7 @@ public interface ISessionManager
     /// </summary>
     /// <param name="sessionId">ID of the session to pause.</param>
     /// <returns>An <see cref="OperationResult"/> to know if the session was paused successfully.</returns>
-    public Task<OperationResult> PauseSessionAsync(string sessionId = "");
+    public OperationResult PauseSession(string sessionId = "");
     
     /// <summary>
     /// Continues a session that is currently paused.
@@ -31,5 +31,5 @@ public interface ISessionManager
     /// </summary>
     /// <param name="sessionId">ID of the session to cancel.</param>
     /// <returns>An <see cref="OperationResult"/> to know if the session was cancelled successfully.</returns>
-    public Task<OperationResult> CancelSessionAsync(string sessionId = "");
+    public OperationResult CancelSession(string sessionId = "");
 }

@@ -64,7 +64,6 @@ builder.Services.AddSingleton(new NamedPipeServerStream(
     pipeConfig.PipeDirection,
     pipeConfig.PipeMaxInstances));
 
-builder.Services.AddTransient<IProgress<Session>, Progress<Session>>();
 builder.Services.AddTransient<IAsyncPacketHandler, PipePacketHandler>();
 builder.Services.AddTransient<IPacketSerializer, PacketSerializer>();
 builder.Services.AddTransient<IPacketDeserializer, PacketDeserializer>();
@@ -81,6 +80,12 @@ if (OperatingSystem.IsLinux())
 if (OperatingSystem.IsWindowsVersionAtLeast(10,0,10240))
     builder.Services.AddTransient<ISystemNotifier, WindowsNotifier>();
 #endif
+
+var sessionProgress = new Progress<Session>();
+builder.Services.AddSingleton(sessionProgress);
+builder.Services.AddSingleton<IProgress<Session>>(sessionProgress);
+builder.Services.AddSingleton<ISessionStorage, SessionStorage>();
+builder.Services.AddSingleton<ISessionTimer, SessionTimer>();
 
 builder.Services.AddSingleton<Server>();
 builder.Services.AddSingleton<RequestOrchestrator>();

@@ -16,9 +16,9 @@ public class PauseSessionCommand : ICommand
       _arguments = arguments;
    }
    
-   public async Task<OperationResult> ExecuteAsync(CancellationToken cancellationToken = default)
+   public Task<OperationResult> ExecuteAsync(CancellationToken cancellationToken = default)
    {
       _arguments.TryGetValue("session-id", out string? sessionId);
-      return await _sessionManager.PauseSessionAsync(sessionId ?? string.Empty);
+      return Task.FromResult(_sessionManager.PauseSession(sessionId ?? string.Empty));
    }
 }

@@ -6,6 +6,7 @@ namespace Tiempitod.NET.Session;
 public struct Session
 {
     // Immutable data.
+    public string Id { get; }
     public int TargetCycles { get; }
     public TimeSpan FocusDuration { get; }
     public TimeSpan BreakDuration { get; }
@@ -19,11 +20,13 @@ public struct Session
     /// <summary>
     /// Instantiates a new <see cref="Session"/>.
     /// </summary>
+    /// <param name="id">ID of the session.</param>
     /// <param name="targetCycles">Number of cycles to complete.</param>
     /// <param name="focusDuration">Duration of the focus times.</param>
     /// <param name="breakDuration">Duration of the break times.</param>
-    public Session(int targetCycles, TimeSpan focusDuration, TimeSpan breakDuration)
+    public Session(string id, int targetCycles, TimeSpan focusDuration, TimeSpan breakDuration)
     {
+        Id = id;
         TargetCycles = targetCycles;
         FocusDuration = focusDuration;
         BreakDuration = breakDuration;

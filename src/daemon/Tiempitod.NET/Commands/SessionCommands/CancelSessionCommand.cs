@@ -16,9 +16,9 @@ public class CancelSessionCommand : ICommand
         _arguments = arguments;
     }
    
-    public async Task<OperationResult> ExecuteAsync(CancellationToken cancellationToken = default)
+    public Task<OperationResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         _arguments.TryGetValue("session-id", out string? sessionId);
-        return await _sessionManager.CancelSessionAsync(sessionId ?? string.Empty);
+        return Task.FromResult(_sessionManager.CancelSession(sessionId ?? string.Empty));
     }
 }
