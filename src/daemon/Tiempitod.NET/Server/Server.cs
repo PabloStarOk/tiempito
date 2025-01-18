@@ -22,7 +22,7 @@ public class Server : DaemonService, IServer
     private readonly int _maxRestartAttempts;
     private string _currentConnectedUser = string.Empty;
     private int _currentRestartAttempts;
-    public event EventHandler<Request> RequestReceived;
+    public event EventHandler<Request>? RequestReceived;
 
     public Server(
         ILogger<Server> logger,
