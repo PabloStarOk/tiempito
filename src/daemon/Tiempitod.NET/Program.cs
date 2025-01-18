@@ -81,6 +81,8 @@ if (OperatingSystem.IsWindowsVersionAtLeast(10,0,10240))
     builder.Services.AddTransient<ISystemNotifier, WindowsNotifier>();
 #endif
 
+builder.Services.AddSingleton(TimeProvider.System);
+    
 var sessionProgress = new Progress<Session>();
 builder.Services.AddSingleton(sessionProgress);
 builder.Services.AddSingleton<IProgress<Session>>(sessionProgress);

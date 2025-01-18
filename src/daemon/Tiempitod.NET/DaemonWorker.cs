@@ -6,19 +6,20 @@ namespace Tiempitod.NET;
 public class DaemonWorker : BackgroundService
 {
     private readonly ILogger<DaemonWorker> _logger;
+    private readonly TimeProvider _timeProvider;
     private readonly IEnumerable<DaemonService> _daemonServices;
-    private bool _startedSuccessfully;
 
-    public DaemonWorker(ILogger<DaemonWorker> logger, IEnumerable<DaemonService> daemonServices)
+    public DaemonWorker(ILogger<DaemonWorker> logger, TimeProvider timeProvider, IEnumerable<DaemonService> daemonServices)
     {
         _logger = logger;
+        _timeProvider = timeProvider;
         _daemonServices = daemonServices;
     }
 
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
         if (_logger.IsEnabled(LogLevel.Information))
-            _logger.LogInformation("tiempitod running at: {Time}", DateTimeOffset.Now);
+            _logger.LogInformation("tiempitod running at: {Time}", _timeProvider.GetUtcNow());
         
         foreach (DaemonService service in _daemonServices)
         {
@@ -46,7 +47,7 @@ public class DaemonWorker : BackgroundService
         }
         
         if (_logger.IsEnabled(LogLevel.Information))
-            _logger.LogInformation("tiempitod stopped at: {Time}", DateTimeOffset.Now);
+            _logger.LogInformation("tiempitod stopped at: {Time}", _timeProvider.GetUtcNow());
         
         Environment.Exit(exitCode);
     }
