@@ -56,7 +56,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\cli\Tiempito.CLI.NET\Tiempito.CLI.NET.csproj" />
       <ProjectReference Include="..\..\lib\Tiempito.IPC.NET\Tiempito.IPC.NET.csproj" />
     </ItemGroup>
 
