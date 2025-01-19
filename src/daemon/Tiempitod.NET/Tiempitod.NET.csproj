@@ -4,7 +4,7 @@
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <UserSecretsId>dotnet-Tiempitod.NET-86cf5476-a7a3-404e-9eff-ac7be73ccb7d</UserSecretsId>
-        <Configurations>Debug Windows;Debug Linux;Release Linux;Release Windows</Configurations>
+        <Configurations>Release-Linux;Debug-Windows;Release-Windows;Debug-Linux</Configurations>
         <Platforms>AnyCPU</Platforms>
         <PackageId>tiempitod</PackageId>
         <Authors>PabloStarOk</Authors>
@@ -14,14 +14,21 @@
         <ApplicationIcon>..\..\..\assets\icon\icon.ico</ApplicationIcon>
     </PropertyGroup>
 
-    <PropertyGroup Condition=" '$(Configuration)' == 'Debug Linux' ">
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug-Linux' ">
         <TargetFramework>net8.0</TargetFramework>
         <OutputPath>bin/linux/debug/</OutputPath>
         <DefineConstants>TRACE LINUX</DefineConstants>
         <DebugType>full</DebugType>
     </PropertyGroup>
     
-    <PropertyGroup Condition=" '$(Configuration)' == 'Release Linux' ">
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug-Windows' ">
+        <TargetFramework>net8.0-windows10.0.17763.0</TargetFramework>
+        <OutputPath>bin/windows/debug/</OutputPath>
+        <DefineConstants>TRACE WINDOWS10_0_17763_0_OR_GREATER</DefineConstants>
+        <DebugType>full</DebugType>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release-Linux' ">
         <TargetFramework>net8.0</TargetFramework>
         <OutputPath>bin/linux/release/</OutputPath>
         <DefineConstants>LINUX</DefineConstants>
@@ -29,15 +36,8 @@
         <DebugSymbols>false</DebugSymbols>
         <DebugType>none</DebugType>
     </PropertyGroup>
-
-    <PropertyGroup Condition=" '$(Configuration)' == 'Debug Windows' ">
-        <TargetFramework>net8.0-windows10.0.17763.0</TargetFramework>
-        <OutputPath>bin/windows/debug/</OutputPath>
-        <DefineConstants>TRACE WINDOWS10_0_17763_0_OR_GREATER</DefineConstants>
-        <DebugType>full</DebugType>
-    </PropertyGroup>
-
-    <PropertyGroup Condition=" '$(Configuration)' == 'Release Windows' ">
+    
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release-Windows' ">
         <TargetFramework>net8.0-windows10.0.17763.0</TargetFramework>
         <OutputPath>bin/windows/release/</OutputPath>
         <DefineConstants>WINDOWS10_0_17763_0_OR_GREATER</DefineConstants>
