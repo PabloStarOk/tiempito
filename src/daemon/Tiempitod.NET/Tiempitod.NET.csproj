@@ -50,7 +50,6 @@
         <PackageReference Include="Microsoft.Extensions.Configuration.Ini" Version="9.0.0" />
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
         <PackageReference Include="Microsoft.Toolkit.Uwp.Notifications" Version="7.1.3" />
-        <PackageReference Include="Salaros.ConfigParser" Version="0.3.8" />
         <PackageReference Include="SixLabors.ImageSharp" Version="3.1.6" />
         <PackageReference Include="Tmds.DBus.Protocol" Version="0.21.2" />
     </ItemGroup>
@@ -63,5 +62,11 @@
       <None Include="..\..\..\assets\icon\icon.ico">
         <Link>icon.ico</Link>
       </None>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Reference Include="ConfigParser">
+        <HintPath>..\..\lib\ConfigParser.dll</HintPath>
+      </Reference>
     </ItemGroup>
 </Project>
