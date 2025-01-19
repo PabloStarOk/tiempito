@@ -60,7 +60,7 @@ public class NotificationManager : DaemonService, INotificationManager
                     if (!Path.Exists(_appIconFilePath))
                         return;
                     NotificationImageData appImgData = await _systemAsyncIconLoader.LoadAsync(_appIconFilePath);
-                    _baseNotification.Hints.TryAdd("image-data", appImgData);
+                    _baseNotification.Hints.TryAdd("image-data", appImgData.GetVariantValue());
                 }
                 catch (Exception ex)
                 {

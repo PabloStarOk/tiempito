@@ -1,6 +1,10 @@
+using Tmds.DBus.Protocol;
+
 namespace Tiempitod.NET.Notifications;
 
-[Serializable]
+/// <summary>
+/// Represents a notification.
+/// </summary>
 public struct Notification
 {
     public string ApplicationName { get; set; }
@@ -9,7 +13,7 @@ public struct Notification
     public string Summary { get; set; }
     public string Body { get; set;  }
     public string[] Actions { get; set; }
-    public IDictionary<string, object> Hints { get; set;  }
+    public Dictionary<string, VariantValue> Hints { get; set;  }
     public int ExpirationTimeout { get; set; }
     public string AudioFilePath { get; set; }
 
@@ -18,8 +22,8 @@ public struct Notification
         string body = "",
         uint replacesId = 0,
         string icon = "",
-        string[]? actions = default,
-        IDictionary<string, object>? hints = default,
+        string[]? actions = null,
+        Dictionary<string, VariantValue>? hints = null,
         int expirationTimeout = 0,
         string audioFilePath = "")
     {
@@ -29,7 +33,7 @@ public struct Notification
         Summary = summary;
         Body = body;
         Actions = actions ?? [];
-        Hints = hints ?? new Dictionary<string, object>();
+        Hints = hints ?? new Dictionary<string, VariantValue>();
         ExpirationTimeout = expirationTimeout;
         AudioFilePath = audioFilePath;
     }

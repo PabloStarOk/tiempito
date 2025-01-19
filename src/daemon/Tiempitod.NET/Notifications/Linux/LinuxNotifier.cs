@@ -1,6 +1,5 @@
 #if LINUX
 using System.Runtime.Versioning;
-using Tmds.DBus;
 
 namespace Tiempitod.NET.Notifications.Linux;
 
@@ -13,21 +12,16 @@ public class LinuxNotifier : ISystemNotifier, IDisposable
     private const string RequiredEnvVariable = "DBUS_SESSION_BUS_ADDRESS";
     
     private readonly ILogger<LinuxNotifier> _logger;
-    private readonly Connection _connection;
-    private readonly IDBusLinuxNotification _dbusInterface;
+    private readonly LinuxNotificationsDbus _dbusNotificationsDbus;
     private readonly ISystemSoundPlayer _soundPlayer;
+    private uint _currentNotificationId;
     private uint _lastNotificationId;
     private readonly bool _isRequiredEnvVariableDefined;
 
-    public LinuxNotifier(ILogger<LinuxNotifier> logger, ISystemSoundPlayer soundPlayer)
+    public LinuxNotifier(ILogger<LinuxNotifier> logger, ISystemSoundPlayer soundPlayer, LinuxNotificationsDbus dbusNotificationsDbus)
     {
         _logger = logger;
-        _connection = Connection.Session;
-        _dbusInterface = _connection.CreateProxy<IDBusLinuxNotification>
-        (
-            serviceName: "org.freedesktop.Notifications",
-            path: "/org/freedesktop/Notifications"
-        );
+        _dbusNotificationsDbus = dbusNotificationsDbus;
         _soundPlayer = soundPlayer;
 
         _isRequiredEnvVariableDefined = Environment.GetEnvironmentVariables().Contains(RequiredEnvVariable);
@@ -52,7 +46,8 @@ public class LinuxNotifier : ISystemNotifier, IDisposable
 
             if (_isRequiredEnvVariableDefined)
             {
-                Task<uint> notifyTask = _dbusInterface.NotifyAsync
+                _lastNotificationId = _currentNotificationId;
+                _currentNotificationId = await _dbusNotificationsDbus.NotifyAsync
                 (
                     notification.ApplicationName,
                     notification.ReplacesId,
@@ -63,7 +58,6 @@ public class LinuxNotifier : ISystemNotifier, IDisposable
                     notification.Hints,
                     notification.ExpirationTimeout
                 );
-                _lastNotificationId = await notifyTask;
             }
 
             await playSoundTask;
@@ -82,10 +76,11 @@ public class LinuxNotifier : ISystemNotifier, IDisposable
         try
         {
             Task stopSoundTask = _soundPlayer.StopAsync();
-            Task closeTask = _dbusInterface.CloseNotificationAsync(_lastNotificationId);
+            
+            if (_lastNotificationId != _currentNotificationId)
+                await _dbusNotificationsDbus.CloseNotificationAsync(_lastNotificationId);
 
             await stopSoundTask;
-            await closeTask;
         }
         catch (Exception ex)
         {
@@ -103,8 +98,7 @@ public class LinuxNotifier : ISystemNotifier, IDisposable
     {
         if (!isDisposing)
             return;
-
-        _connection.Dispose();
+        
         _soundPlayer.Dispose();
     }
 

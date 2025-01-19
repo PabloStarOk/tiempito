@@ -78,6 +78,7 @@ builder.Services.AddTransient<IPacketDeserializer, PacketDeserializer>();
 #if LINUX
 if (OperatingSystem.IsLinux())
 {
+    builder.Services.AddLinuxNotificationsDbus();
     builder.Services.AddTransient<ISystemAsyncIconLoader, LinuxSystemIconLoader>();
     builder.Services.AddSingleton<ISystemSoundPlayer, LinuxSystemSoundPlayer>();
     builder.Services.AddTransient<ISystemNotifier, LinuxNotifier>();
