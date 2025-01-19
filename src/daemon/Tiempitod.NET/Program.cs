@@ -3,6 +3,7 @@ using Microsoft.Extensions.Options;
 using Salaros.Configuration;
 using System.IO.Pipes;
 using System.Text;
+using System.Text.Json;
 using Tiempito.IPC.NET.Packets;
 using Tiempitod.NET;
 using Tiempitod.NET.Commands;
@@ -64,6 +65,11 @@ builder.Services.AddSingleton(new NamedPipeServerStream(
     pipeConfig.PipeDirection,
     pipeConfig.PipeMaxInstances));
 
+var jsonSerializerOptions = new JsonSerializerOptions()
+{
+    TypeInfoResolver = IpcSerializerContext.Default
+};
+builder.Services.AddSingleton(jsonSerializerOptions);
 builder.Services.AddTransient<IAsyncPacketHandler, PipePacketHandler>();
 builder.Services.AddTransient<IPacketSerializer, PacketSerializer>();
 builder.Services.AddTransient<IPacketDeserializer, PacketDeserializer>();

@@ -7,9 +7,16 @@ namespace Tiempito.IPC.NET.Packets;
 /// </summary>
 public class PacketSerializer : IPacketSerializer
 {
+    private readonly JsonSerializerOptions _serializerOptions;
+    
+    public PacketSerializer(JsonSerializerOptions serializerOptions)
+    {
+        _serializerOptions = serializerOptions;
+    }
+    
     public Packet Serialize(object obj)
     {
-        string serializedObject = JsonSerializer.Serialize(obj);
+        string serializedObject = JsonSerializer.Serialize(obj, _serializerOptions);
         return new Packet(serializedObject.Length, serializedObject);
     }
 }

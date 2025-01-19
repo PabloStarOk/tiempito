@@ -10,11 +10,13 @@ namespace Tiempito.IPC.NET.Packets;
 public class PipePacketHandler : IAsyncPacketHandler
 {
     private readonly Encoding _encoding;
+    private readonly JsonSerializerOptions _serializerOptions;
     private const int HeaderSegmentMultiplier = 256;
-    
-    public PipePacketHandler(Encoding encoding)
+
+    public PipePacketHandler(Encoding encoding, JsonSerializerOptions serializerOptions)
     {
         _encoding = encoding;
+        _serializerOptions = serializerOptions;
     }
 
     /// <summary>
@@ -39,7 +41,8 @@ public class PipePacketHandler : IAsyncPacketHandler
         if (!ioStream.CanWrite)
             throw new NotSupportedException("Stream doesn't support write operations.");
         
-        byte[] payload = _encoding.GetBytes(JsonSerializer.Serialize(packet));
+        string serializedPacket = JsonSerializer.Serialize(packet, _serializerOptions);
+        byte[] payload = _encoding.GetBytes(serializedPacket);
         var header = new byte[2];
         
         // Write header.
@@ -88,7 +91,7 @@ public class PipePacketHandler : IAsyncPacketHandler
         }
 
         string dataString = _encoding.GetString(payload);
-        var packet = JsonSerializer.Deserialize<Packet>(dataString);
+        var packet = JsonSerializer.Deserialize<Packet>(dataString, _serializerOptions);
         
         if (packet == null)
             throw new InvalidOperationException("Received packet is null.");
