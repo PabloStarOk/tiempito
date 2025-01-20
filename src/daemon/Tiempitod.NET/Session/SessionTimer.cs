@@ -49,6 +49,13 @@ public class SessionTimer : ISessionTimer
         
         return _sessionStorage.RemoveSession(SessionStatus.Executing, sessionId);
     }
+
+    public Session[] StopAll()
+    {
+        List<Session> tempSessions = [];
+        tempSessions.AddRange(_timers.Keys.Select(Stop));
+        return tempSessions.ToArray();
+    }
     
     /// <summary>
     /// Updates the elapsed time of a session and invokes the

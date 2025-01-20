@@ -25,6 +25,7 @@ public interface ISessionTimer
     /// </summary>
     public event EventHandler<TimeSpan> OnDelayElapsed;
     
+    // TODO: Make async methods.
     /// <summary>
     /// Starts a timer for a session.
     /// </summary>
@@ -38,4 +39,10 @@ public interface ISessionTimer
     /// <param name="sessionId">ID of the session to stop its timer.</param>
     /// <returns>The modified session with the current cycle and states.</returns>
     public Session Stop(string sessionId);
+
+    /// <summary>
+    /// Stops all timers.
+    /// </summary>
+    /// <returns></returns>
+    public Session[] StopAll();
 }

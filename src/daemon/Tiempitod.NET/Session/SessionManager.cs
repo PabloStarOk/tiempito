@@ -58,6 +58,7 @@ public sealed class SessionManager : DaemonService, ISessionManager
         _sessionTimer.OnDelayElapsed -= DelayProgressHandler;
         _sessionTimer.OnSessionStarted -= SessionStartedHandler;
         _sessionTimer.OnSessionCompleted -= SessionCompletedHandler;
+        _sessionTimer.StopAll();
     }
     
     public OperationResult StartSession(string sessionId = "", string sessionConfigId = "")
