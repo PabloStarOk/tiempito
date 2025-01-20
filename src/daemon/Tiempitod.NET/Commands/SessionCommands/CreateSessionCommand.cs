@@ -37,6 +37,11 @@ public class CreateSessionCommand : ICommand
         if (!int.TryParse(targetCyclesString, out int targetCycles))
             return Task.FromResult(new OperationResult(Success: false, Message: "Target cycles number provided is not recognized."));
         
+        if (!_arguments.TryGetValue("delay-times", out string? delayTimesString))
+            return Task.FromResult(new OperationResult(Success: false, Message: "Focus duration was not provided."));
+        if (!TryParseDuration(delayTimesString, out TimeSpan delayBetweenTimes))
+            return Task.FromResult(new OperationResult(Success: false, Message: "Focus duration time is not recognized."));
+        
         if (!_arguments.TryGetValue("focus-duration", out string? focusDurationString))
             return Task.FromResult(new OperationResult(Success: false, Message: "Focus duration was not provided."));
         if (!TryParseDuration(focusDurationString, out TimeSpan focusDuration))
@@ -53,6 +58,7 @@ public class CreateSessionCommand : ICommand
             (
                 sessionId,
                 targetCycles,
+                delayBetweenTimes,
                 focusDuration,
                 breakDuration
             )
@@ -106,6 +112,9 @@ public class CreateSessionCommand : ICommand
 
         if (timeString == null)
             return false;
+
+        if (timeString == "0")
+            return true;
         
         if (TryExtractTimeUnit(timeString, SessionDurationSymbol.Millisecond, out int parsedTime))
         {

@@ -8,6 +8,7 @@ public struct Session
     // Immutable data.
     public string Id { get; }
     public int TargetCycles { get; }
+    public TimeSpan DelayBetweenTimes { get; }
     public TimeSpan FocusDuration { get; }
     public TimeSpan BreakDuration { get; }
     
@@ -21,13 +22,15 @@ public struct Session
     /// Instantiates a new <see cref="Session"/>.
     /// </summary>
     /// <param name="id">ID of the session.</param>
+    /// <param name="delayBetweenTimes">Delay between times.</param>
     /// <param name="targetCycles">Number of cycles to complete.</param>
     /// <param name="focusDuration">Duration of the focus times.</param>
     /// <param name="breakDuration">Duration of the break times.</param>
-    public Session(string id, int targetCycles, TimeSpan focusDuration, TimeSpan breakDuration)
+    public Session(string id, int targetCycles, TimeSpan delayBetweenTimes, TimeSpan focusDuration, TimeSpan breakDuration)
     {
         Id = id;
         TargetCycles = targetCycles;
+        DelayBetweenTimes = delayBetweenTimes;
         FocusDuration = focusDuration;
         BreakDuration = breakDuration;
     }

@@ -42,6 +42,7 @@ public sealed class SessionManager : DaemonService, ISessionManager
     {
         _progress.ProgressChanged += ProgressEventHandler;
         _sessionTimer.OnTimeCompleted += TimeCompletedHandler;
+        _sessionTimer.OnDelayElapsed += DelayProgressHandler;
         _sessionTimer.OnSessionStarted += SessionStartedHandler;
         _sessionTimer.OnSessionCompleted += SessionCompletedHandler;
     }
@@ -54,6 +55,7 @@ public sealed class SessionManager : DaemonService, ISessionManager
         
         _progress.ProgressChanged -= ProgressEventHandler;
         _sessionTimer.OnTimeCompleted -= TimeCompletedHandler;
+        _sessionTimer.OnDelayElapsed -= DelayProgressHandler;
         _sessionTimer.OnSessionStarted -= SessionStartedHandler;
         _sessionTimer.OnSessionCompleted -= SessionCompletedHandler;
     }
@@ -80,7 +82,7 @@ public sealed class SessionManager : DaemonService, ISessionManager
             return new OperationResult(Success: false, Message: "There's already a started session with the same ID.");
         
         var sessionToStart = new Session(
-            sessionId, configSession.TargetCycles,
+            sessionId, configSession.TargetCycles, configSession.DelayBetweenTimes,
             configSession.FocusDuration, configSession.BreakDuration);
         
         _timerTokenSource = RegenerateTokenSource(_timerTokenSource);
@@ -189,6 +191,17 @@ public sealed class SessionManager : DaemonService, ISessionManager
         }
         
         _notificationManager.NotifyAsync(summary, body, NotificationSoundType.TimeCompleted).Forget();
+    }
+
+    /// <summary>
+    /// Notifies to the user of a second elapsed in the delay
+    /// between times.
+    /// </summary>
+    /// <param name="sender">Sender of the event.</param>
+    /// <param name="time">Elapsed time.</param>
+    private void DelayProgressHandler(object? sender, TimeSpan time)
+    {
+        Logger.LogInformation("Delay: {Delay}", time); // TODO: Replace with stdout.
     }
 
     /// <summary>

@@ -33,6 +33,10 @@ public class ModifySessionCommand : ICommand
             || !int.TryParse(targetCyclesString, out int targetCycles))
             targetCycles = currentSessionConfig.TargetCycles;
         
+        if (!_arguments.TryGetValue("delay-times", out string? delayTimesString)
+            || !TryParseDuration(delayTimesString, out TimeSpan delayBetweenTimes))
+            delayBetweenTimes = currentSessionConfig.DelayBetweenTimes;
+        
         if (!_arguments.TryGetValue("focus-duration", out string? focusDurationString)
             || !TryParseDuration(focusDurationString, out TimeSpan focusDuration))
             focusDuration = currentSessionConfig.FocusDuration;
@@ -47,6 +51,7 @@ public class ModifySessionCommand : ICommand
             (
                 sessionId,
                 targetCycles,
+                delayBetweenTimes,
                 focusDuration,
                 breakDuration
             )
@@ -100,6 +105,9 @@ public class ModifySessionCommand : ICommand
 
         if (timeString == null)
             return false;
+        
+        if (timeString == "0")
+            return true;
         
         if (TryExtractTimeUnit(timeString, SessionDurationSymbol.Millisecond, out int parsedTime))
         {

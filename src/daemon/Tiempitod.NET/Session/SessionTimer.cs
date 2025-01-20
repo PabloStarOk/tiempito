@@ -1,5 +1,3 @@
-using Timer = System.Threading.Timer;
-
 namespace Tiempitod.NET.Session;
 
 /// <summary>
@@ -10,11 +8,13 @@ public class SessionTimer : ISessionTimer
     private readonly IProgress<Session> _timeProgress;
     private readonly ISessionStorage _sessionStorage;
     private readonly Dictionary<string, Timer> _timers = [];
+    private readonly Dictionary<string, TimeSpan> _sessionsDelays = [];
     private readonly TimeSpan _interval;
     
     public event EventHandler<TimeType>? OnTimeCompleted;
     public event EventHandler? OnSessionStarted;
     public event EventHandler<Session>? OnSessionCompleted;
+    public event EventHandler<TimeSpan>? OnDelayElapsed;
     
     /// <summary>
     /// Instantiates a <see cref="SessionTimer"/>.
@@ -44,10 +44,12 @@ public class SessionTimer : ISessionTimer
     public Session Stop(string sessionId)
     {
         _timers.Remove(sessionId, out Timer? timer);
+        _sessionsDelays.Remove(sessionId);
         timer?.Dispose();
+        
         return _sessionStorage.RemoveSession(SessionStatus.Executing, sessionId);
     }
-
+    
     /// <summary>
     /// Updates the elapsed time of a session and invokes the
     /// <see cref="OnTimeCompleted"/> event.
@@ -56,6 +58,9 @@ public class SessionTimer : ISessionTimer
     private void TimerCallback(string sessionId)
     {
         Session session = _sessionStorage.RunningSessions[sessionId];
+        
+        if (IsOnDelay(session))
+            return;
         
         // Add elapsed second.
         session.Elapsed += _interval;
@@ -74,6 +79,10 @@ public class SessionTimer : ISessionTimer
         if (session.TargetCycles > 0 // 0 means infinite cycles. 
             && session.CurrentCycle >= session.TargetCycles)
             CompleteSession(session.Id);
+        
+        // Add delay if exists.
+        if (session.DelayBetweenTimes > TimeSpan.Zero)
+            _sessionsDelays.Add(sessionId, TimeSpan.Zero);
     }
 
     /// <summary>
@@ -84,8 +93,9 @@ public class SessionTimer : ISessionTimer
     private void CompleteSession(string sessionId)
     {
         _timers.Remove(sessionId, out Timer? timer);
+        _sessionsDelays.Remove(sessionId);
         timer?.Dispose();
-
+        
         Session finishedSession = _sessionStorage.RemoveSession(SessionStatus.Executing, sessionId);
         OnSessionCompleted?.Invoke(this, finishedSession);
     }
@@ -119,5 +129,27 @@ public class SessionTimer : ISessionTimer
         return session.CurrentTimeType is TimeType.Focus 
             ? session.FocusDuration 
             : session.BreakDuration;
+    }
+
+    /// <summary>
+    /// Checks if a session is on a delay between times.
+    /// </summary>
+    /// <param name="session">Session to check.</param>
+    /// <returns>True if it's on a delay, false otherwise.</returns>
+    private bool IsOnDelay(Session session)
+    {
+        if (!_sessionsDelays.TryGetValue(session.Id, out TimeSpan delay))
+            return false;
+
+        if (delay >= session.DelayBetweenTimes)
+        {
+            _sessionsDelays.Remove(session.Id);
+            return false;
+        }
+        
+        delay += _interval;
+        OnDelayElapsed?.Invoke(this, delay);
+        _sessionsDelays[session.Id] = delay;
+        return true;
     }
 }

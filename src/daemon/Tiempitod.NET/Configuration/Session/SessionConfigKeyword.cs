@@ -11,6 +11,11 @@ public enum SessionConfigKeyword
     TargetCycles,
 
     /// <summary>
+    /// Delay to start the next time after the last one has been completed.
+    /// </summary>
+    DelayBetweenTimes,
+    
+    /// <summary>
     /// The duration of focus periods.
     /// </summary>
     FocusDuration,

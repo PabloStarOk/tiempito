@@ -9,7 +9,7 @@ public interface ISessionTimer
     /// Raised when a focus or break time is completed in a session.
     /// </summary>
     public event EventHandler<TimeType> OnTimeCompleted;
-
+    
     /// <summary>
     /// Raised when a session is started.
     /// </summary>
@@ -19,6 +19,11 @@ public interface ISessionTimer
     /// Raised when a session is completed.
     /// </summary>
     public event EventHandler<Session> OnSessionCompleted;
+    
+    /// <summary>
+    /// Raised when a second has elapsed in a delay between times.
+    /// </summary>
+    public event EventHandler<TimeSpan> OnDelayElapsed;
     
     /// <summary>
     /// Starts a timer for a session.

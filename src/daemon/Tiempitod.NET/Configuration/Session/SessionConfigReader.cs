@@ -63,6 +63,7 @@ public class SessionConfigReader : ISessionConfigReader
     {
         string id = configSection.SectionName.ToLower().Replace(prefixSectionName.ToLower(), "");
         var targetCyclesStr = string.Empty;
+        var delayBetweenTimesStr = string.Empty;
         var focusDurationStr = string.Empty;
         var breakDurationStr = string.Empty;
         
@@ -78,6 +79,10 @@ public class SessionConfigReader : ISessionConfigReader
                     targetCyclesStr = configKeyValue.Content;
                     if (string.IsNullOrWhiteSpace(targetCyclesStr))
                         return null;
+                    continue;
+                
+                case SessionConfigKeyword.DelayBetweenTimes: // Optional
+                    delayBetweenTimesStr = configKeyValue.Content;
                     continue;
                 
                 case SessionConfigKeyword.FocusDuration:
@@ -100,12 +105,17 @@ public class SessionConfigReader : ISessionConfigReader
         // Parse string values.
         if (!int.TryParse(targetCyclesStr, out int targetCycles))
             return null;
+
+        TimeSpan delayBetweenTimes = TimeSpan.Zero;
+        if (!string.IsNullOrWhiteSpace(delayBetweenTimesStr))
+            TryParseDuration(delayBetweenTimesStr, out delayBetweenTimes);
+        
         if (!TryParseDuration(focusDurationStr, out TimeSpan focusDuration))
             return null;
         if (!TryParseDuration(breakDurationStr, out TimeSpan breakDuration))
             return null;
         
-        return new SessionConfig(id, targetCycles, focusDuration, breakDuration);
+        return new SessionConfig(id, targetCycles, delayBetweenTimes, focusDuration, breakDuration);
     }
     
     /// <summary>
@@ -138,6 +148,10 @@ public class SessionConfigReader : ISessionConfigReader
     private static bool TryParseDuration(string timeString, out TimeSpan duration)
     {
         duration = TimeSpan.Zero;
+        
+        if (timeString == "0")
+            return true;
+        
         if (TryExtractTimeUnit(timeString, SessionDurationSymbol.Millisecond, out int parsedTime))
         {
             duration = TimeSpan.FromMilliseconds(parsedTime);
