@@ -24,13 +24,15 @@ public class SessionConfigWriter : ISessionConfigWriter
     {
         string sectionName = prefixSectionName + sessionConfig.Id;
         var targetCycles = sessionConfig.TargetCycles.ToString();
+        var delayBetweenTimes = sessionConfig.DelayBetweenTimes.TotalSeconds.ToString(CultureInfo.InvariantCulture) + "s";
         // BUG: Saving as minutes when are in seconds will cause saving floats which are not gonna be parsed when loading configs again.
         string focusDuration = sessionConfig.FocusDuration.TotalMinutes.ToString(CultureInfo.InvariantCulture) + "m";
         string breakDuration = sessionConfig.BreakDuration.TotalMinutes.ToString(CultureInfo.InvariantCulture) + "m";
         
-        bool wasWritten = _configParser.SetValue(sectionName, "TargetCycles", targetCycles)
-            && _configParser.SetValue(sectionName, "FocusDuration", focusDuration)
-            && _configParser.SetValue(sectionName, "BreakDuration", breakDuration);
+        bool wasWritten = _configParser.SetValue(sectionName, SessionConfigKeyword.TargetCycles.ToString(), targetCycles)
+            && _configParser.SetValue(sectionName, SessionConfigKeyword.DelayBetweenTimes.ToString(), delayBetweenTimes)
+            && _configParser.SetValue(sectionName, SessionConfigKeyword.FocusDuration.ToString(), focusDuration)
+            && _configParser.SetValue(sectionName, SessionConfigKeyword.BreakDuration.ToString(), breakDuration);
 
         return wasWritten && _configParser.Save();
     }
