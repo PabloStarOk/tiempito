@@ -5,12 +5,15 @@ namespace Tiempitod.NET;
 /// </summary>
 public class DaemonWorker : BackgroundService
 {
+    private readonly IHostApplicationLifetime _appLifetime;
     private readonly ILogger<DaemonWorker> _logger;
     private readonly TimeProvider _timeProvider;
     private readonly IEnumerable<DaemonService> _daemonServices;
-
-    public DaemonWorker(ILogger<DaemonWorker> logger, TimeProvider timeProvider, IEnumerable<DaemonService> daemonServices)
+    private bool _isExiting;
+    
+    public DaemonWorker(IHostApplicationLifetime appLifetime, ILogger<DaemonWorker> logger, TimeProvider timeProvider, IEnumerable<DaemonService> daemonServices)
     {
+        _appLifetime = appLifetime;
         _logger = logger;
         _timeProvider = timeProvider;
         _daemonServices = daemonServices;
@@ -27,19 +30,21 @@ public class DaemonWorker : BackgroundService
                 continue;
             
             _logger.LogCritical("Couldn't start a service, daemon exiting. Service: {Service}", service);
-                
-            Exit(1);
+            Exit();
             return Task.CompletedTask;
         }
-        
-        while (!stoppingToken.IsCancellationRequested) ;
-        
-        Exit(0);
+
+        stoppingToken.Register(Exit);
         return Task.CompletedTask;
     }
 
-    private void Exit(int exitCode)
+    private void Exit()
     {
+        if (_isExiting)
+            return;
+
+        _isExiting = true;
+        
         foreach (DaemonService service in _daemonServices)
         {
             if (!service.StopService())
@@ -49,6 +54,6 @@ public class DaemonWorker : BackgroundService
         if (_logger.IsEnabled(LogLevel.Information))
             _logger.LogInformation("tiempitod stopped at: {Time}", _timeProvider.GetUtcNow());
         
-        Environment.Exit(exitCode);
+        _appLifetime.StopApplication();
     }
 }
