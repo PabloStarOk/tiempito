@@ -59,7 +59,7 @@ builder.Services.Configure<NotificationConfig>(builder.Configuration.GetSection(
 
 // Add configuration dependencies.
 PipeConfig pipeConfig = builder.Services.BuildServiceProvider().GetService<IOptions<PipeConfig>>()?.Value!;
-builder.Services.AddTransient<Encoding>(_ => Activator.CreateInstance(pipeConfig.GetEncodingType()) as Encoding ?? Encoding.UTF8);
+builder.Services.AddTransient(_ => pipeConfig.GetEncoding());
 builder.Services.AddSingleton(new NamedPipeServerStream(
     pipeConfig.PipeName,
     pipeConfig.PipeDirection,

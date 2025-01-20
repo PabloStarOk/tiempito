@@ -21,18 +21,17 @@ public class PipeConfig
     /// Gets the encoding type according based in the current configuration.
     /// </summary>
     /// <returns>An Encoding type.</returns>
-    public Type GetEncodingType()
+    public Encoding GetEncoding()
     {
         string formattedEncoding = PipeEncoding.ToLower().Replace("-", "");
 
         return formattedEncoding switch
         {
-            "utf8" => typeof(UTF8Encoding),
-            "utf7" => typeof(UTF7Encoding),
-            "ascii" => typeof(ASCIIEncoding),
-            "utf32" => typeof(UTF32Encoding),
-            "unicode" => typeof(UnicodeEncoding),
-            _ => typeof(UTF8Encoding)
+            "utf8" => new UTF8Encoding(),
+            "ascii" => new ASCIIEncoding(),
+            "utf32" => new UTF32Encoding(),
+            "unicode" => new UnicodeEncoding(),
+            _ => new UTF8Encoding()
         };
     }
 }
