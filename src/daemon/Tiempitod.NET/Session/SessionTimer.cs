@@ -31,12 +31,13 @@ public class SessionTimer : ISessionTimer
     public void Start(Session session, CancellationToken cancellationToken)
     {
         cancellationToken.Register(() => Stop(session.Id));
-
+        
         if (!_sessionStorage.AddSession(SessionStatus.Executing, session))
             return;
         
         var timer = new Timer(_ => TimerCallback(session.Id), null, 1000, 1000);
-        OnSessionStarted?.Invoke(this, EventArgs.Empty);
+        if (session.Status is not SessionStatus.Paused)
+            OnSessionStarted?.Invoke(this, EventArgs.Empty);
         _timers.Add(session.Id, timer);
     }
 
