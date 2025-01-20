@@ -56,6 +56,8 @@ public class SessionTimer : ISessionTimer
     private void TimerCallback(string sessionId)
     {
         Session session = _sessionStorage.RunningSessions[sessionId];
+        
+        // Add elapsed second.
         session.Elapsed += _interval;
         _sessionStorage.UpdateSession(SessionStatus.Executing, session);
         _timeProgress.Report(session);
@@ -63,16 +65,15 @@ public class SessionTimer : ISessionTimer
         if (session.Elapsed < GetTargetDuration(session))
             return;
 
+        // Time completed
         OnTimeCompleted?.Invoke(this, session.CurrentTimeType);
         session = SwitchTime(session);
-
-        if (session.CurrentCycle >= session.TargetCycles)
-        {
-            CompleteSession(session.Id);
-            return;
-        }
-
         _sessionStorage.UpdateSession(SessionStatus.Executing, session);
+        
+        // Session completed
+        if (session.TargetCycles > 0 // 0 means infinite cycles. 
+            && session.CurrentCycle >= session.TargetCycles)
+            CompleteSession(session.Id);
     }
 
     /// <summary>
