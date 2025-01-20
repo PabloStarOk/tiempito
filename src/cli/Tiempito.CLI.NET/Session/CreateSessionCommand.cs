@@ -32,6 +32,13 @@ public class CreateSessionCommand : Command
         };
         targetCyclesOption.AddAlias("-t");
         
+        var delayOption = new Option<string>("--delay-between-times", "Delay before starting a time after another has been completed.")
+        {
+            Arity = ArgumentArity.ExactlyOne,
+            IsRequired = false
+        };
+        delayOption.AddAlias("-d");
+        
         var focusDurationOption = new Option<string>("--focus-duration", "The duration of a focus time.")
         {
             Arity = ArgumentArity.ExactlyOne,
@@ -49,11 +56,13 @@ public class CreateSessionCommand : Command
         sessionIdOption.IsRequired = true;
         AddOption(sessionIdOption);
         AddOption(targetCyclesOption);
+        AddOption(delayOption);
         AddOption(focusDurationOption);
         AddOption(breakDurationOption);
         this.SetHandler(CommandHandler, 
             sessionIdOption,
             targetCyclesOption, 
+            delayOption,
             focusDurationOption,
             breakDurationOption);
     }
@@ -63,14 +72,21 @@ public class CreateSessionCommand : Command
     /// </summary>
     /// <param name="sessionId">ID of the new configuration session.</param>
     /// <param name="targetCycles">Target cycles to complete.</param>
+    /// <param name="delayBetweenTimes">Delay before starting a time after another has been completed.</param>
     /// <param name="focusDuration">Duration of the focus time.</param>
     /// <param name="breakDuration">Duration of the break time.</param>
-    private async Task CommandHandler(string sessionId, string targetCycles, string focusDuration, string breakDuration)
+    private async Task CommandHandler(
+        string sessionId, string targetCycles,
+        string delayBetweenTimes, string focusDuration, 
+        string breakDuration)
     {
+        delayBetweenTimes = !string.IsNullOrWhiteSpace(delayBetweenTimes) ? delayBetweenTimes : "0s";
+        
         var arguments = new Dictionary<string, string>
         {
             { "session-id", sessionId },
             { "target-cycles", targetCycles },
+            { "delay-times", delayBetweenTimes },
             { "focus-duration", focusDuration },
             { "break-duration", breakDuration },
         };

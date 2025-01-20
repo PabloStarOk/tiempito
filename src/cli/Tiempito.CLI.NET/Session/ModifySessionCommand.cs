@@ -32,6 +32,13 @@ public class ModifySessionCommand : Command
         };
         targetCyclesOption.AddAlias("-t");
         
+        var delayOption = new Option<string>("--delay-between-times", "Delay before starting a time after another has been completed.")
+        {
+            Arity = ArgumentArity.ExactlyOne,
+            IsRequired = false
+        };
+        delayOption.AddAlias("-d");
+        
         var focusDurationOption = new Option<string>("--focus-duration", "The duration of a focus time.")
         {
             Arity = ArgumentArity.ExactlyOne,
@@ -49,11 +56,13 @@ public class ModifySessionCommand : Command
         sessionIdOption.IsRequired = true;
         AddOption(sessionIdOption);
         AddOption(targetCyclesOption);
+        AddOption(delayOption);
         AddOption(focusDurationOption);
         AddOption(breakDurationOption);
         this.SetHandler(CommandHandler, 
             sessionIdOption,
-            targetCyclesOption, 
+            targetCyclesOption,
+            delayOption,
             focusDurationOption,
             breakDurationOption);
     }
@@ -63,14 +72,19 @@ public class ModifySessionCommand : Command
     /// </summary>
     /// <param name="sessionId">ID of the configuration session to modify.</param>
     /// <param name="targetCycles">New target cycles to complete.</param>
+    /// <param name="delayBetweenTimes">Delay before starting a time after another has been completed.</param>
     /// <param name="focusDuration">New duration of the focus time.</param>
     /// <param name="breakDuration">New duration of the break time.</param>
-    private async Task CommandHandler(string sessionId, string targetCycles, string focusDuration, string breakDuration)
+    private async Task CommandHandler(
+        string sessionId, string targetCycles,
+        string delayBetweenTimes, string focusDuration,
+        string breakDuration)
     {
         var arguments = new Dictionary<string, string>
         {
             { "session-id", sessionId },
             { "target-cycles", targetCycles },
+            { "delay-times", delayBetweenTimes },
             { "focus-duration", focusDuration },
             { "break-duration", breakDuration },
         };
