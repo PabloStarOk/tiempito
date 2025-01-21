@@ -28,15 +28,25 @@ public class StartSessionCommand : Command
         _commandParent = commandParent;
         
         sessionIdOption.IsRequired = false;
-        AddOption(sessionIdOption);
+        
 
         var sessionConfigIdOption = new Option<string>("--config-id", "ID of the session configuration.")
         {
             Arity = ArgumentArity.ZeroOrOne
         };
         sessionConfigIdOption.AddAlias("-ci");
+        
+        var interactiveOption = new Option<bool>("--tty", "Redirects the progress of the session to the current process.")
+        {
+            Arity = ArgumentArity.ZeroOrOne,
+            IsRequired = false
+        };
+        interactiveOption.AddAlias("-t");
+        
+        AddOption(sessionIdOption);
         AddOption(sessionConfigIdOption);
-        this.SetHandler(CommandHandler, sessionIdOption, sessionConfigIdOption);
+        AddOption(interactiveOption);
+        this.SetHandler(CommandHandler, sessionIdOption, sessionConfigIdOption, interactiveOption);
     }
     
     /// <summary>
@@ -44,13 +54,14 @@ public class StartSessionCommand : Command
     /// </summary>
     /// <param name="sessionId">ID of the session to use.</param>
     /// <param name="sessionConfigId">ID of the config to use for the new session.</param>
-    private async Task CommandHandler(string sessionId, string sessionConfigId)
+    /// <param name="tty">If the session's progress is redirected to the current process.</param>
+    private async Task CommandHandler(string sessionId, string sessionConfigId, bool tty)
     {
         var arguments = new Dictionary<string, string>
         {
             { "session-id", sessionId },
             { "session-config-id", sessionConfigId }
         };
-        await _asyncCommandExecutor.ExecuteAsync(_commandParent, subcommand: Name, arguments);
+        await _asyncCommandExecutor.ExecuteAsync(_commandParent, subcommand: Name, arguments, tty);
     }
 }

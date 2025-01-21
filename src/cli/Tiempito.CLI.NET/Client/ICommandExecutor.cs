@@ -12,6 +12,7 @@ public interface IAsyncCommandExecutor
     /// <param name="command">Command parent.</param>
     /// <param name="subcommand">Subcommand of the parent.</param>
     /// <param name="args">Arguments of the command.</param>
+    /// <param name="tty">If the server's named pipe output is redirected to the process.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    public Task ExecuteAsync(string command, string subcommand, IReadOnlyDictionary<string, string> args);
+    public Task ExecuteAsync(string command, string subcommand, IReadOnlyDictionary<string, string> args, bool tty = false);
 }

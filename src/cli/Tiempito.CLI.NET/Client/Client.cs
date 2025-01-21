@@ -13,6 +13,7 @@ public class Client : IClient
     private readonly IAsyncPacketHandler _packetHandler;
     private readonly IPacketSerializer _packetSerializer;
     private readonly IPacketDeserializer _packetDeserializer;
+    private readonly TextReader _pipeStandardIn;
     private const int ConnectionTimeout = 3000;
     
     /// <summary>
@@ -22,16 +23,19 @@ public class Client : IClient
     /// <param name="packetHandler">Handler of packets.</param>
     /// <param name="packetSerializer">Serializer of packets.</param>
     /// <param name="packetDeserializer">Deserializer of packets.</param>
+    /// <param name="pipeStandardIn">Standard input of the named pipe.</param>
     public Client(
         NamedPipeClientStream pipeClient,
         IAsyncPacketHandler packetHandler,
         IPacketSerializer packetSerializer,
-        IPacketDeserializer packetDeserializer)
+        IPacketDeserializer packetDeserializer,
+        TextReader pipeStandardIn)
     {
         _pipeClient = pipeClient;
         _packetHandler = packetHandler;
         _packetSerializer = packetSerializer;
         _packetDeserializer = packetDeserializer;
+        _pipeStandardIn = pipeStandardIn;
     }
     
     /// <summary>
@@ -40,10 +44,8 @@ public class Client : IClient
     /// <param name="request">Request to send to the daemon.</param>
     public async Task SendRequestAsync(Request request)
     {
-        await _pipeClient.ConnectAsync(ConnectionTimeout);
-        
         if (!_pipeClient.IsConnected)
-            return;
+            await _pipeClient.ConnectAsync(ConnectionTimeout);
 
         Packet outgoingPacket = _packetSerializer.Serialize(request);
         await _packetHandler.WritePacketAsync(_pipeClient, outgoingPacket);
@@ -65,5 +67,10 @@ public class Client : IClient
             throw new InvalidOperationException("Response not recognized.");
         
         return _packetDeserializer.Deserialize<Response>(incomingPacket);
+    }
+
+    public async Task<string> ReadPipeStdInAsync()
+    {
+        return await _pipeStandardIn.ReadLineAsync() ?? string.Empty;
     }
 }

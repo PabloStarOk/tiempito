@@ -24,8 +24,8 @@ public class CommandExecutor : IAsyncCommandExecutor
         _stdOut = stdOut;
         _stdErr = stdErr;
     }
-    
-    public async Task ExecuteAsync(string command, string subcommand, IReadOnlyDictionary<string, string> args)
+
+    public async Task ExecuteAsync(string command, string subcommand, IReadOnlyDictionary<string, string> args, bool tty = false)
     {
         // Send request.
         try
@@ -47,7 +47,30 @@ public class CommandExecutor : IAsyncCommandExecutor
         try
         {
             Response response = await _client.ReceiveResponseAsync();
-            await _stdOut.WriteLineAsync(response.Message);
+            
+            switch (response.StatusCode)
+            {
+                case ResponseStatusCode.Ok:
+                    await _stdOut.WriteLineAsync(response.Message);
+                    break;
+                    
+                case ResponseStatusCode.BadRequest:
+                case ResponseStatusCode.Error:
+                    await _stdErr.WriteLineAsync(response.Message);
+                    return;
+                
+                default:
+                    throw new InvalidOperationException("Response status code unrecognized.");
+            }
+            
+            
+            if (tty)
+                Console.CancelKeyPress += (_, _) => tty = false;
+            while (tty)
+            {
+                string message = await _client.ReadPipeStdInAsync();
+                await _stdOut.WriteLineAsync(message);
+            }
         }
         catch (Exception ex)
         {

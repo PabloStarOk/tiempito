@@ -19,4 +19,10 @@ public interface IClient
     /// </summary>
     /// <returns>A task with the response from the daemon.</returns>
     public Task<Response> ReceiveResponseAsync();
+
+    /// <summary>
+    /// Reads the standard input.
+    /// </summary>
+    /// <returns>The incoming message as a string.</returns>
+    public Task<string> ReadPipeStdInAsync();
 }

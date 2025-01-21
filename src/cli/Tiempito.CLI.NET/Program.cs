@@ -26,7 +26,8 @@ IPacketSerializer packetSerializer = new PacketSerializer(jsonSerializerOptions)
 IPacketDeserializer packetDeserializer = new PacketDeserializer(jsonSerializerOptions);
 
 var pipeClient = new NamedPipeClientStream(".", "tiempito-pipe", PipeDirection.InOut); // TODO: Read config of the host.
-IClient client = new Client(pipeClient, packetHandler, packetSerializer, packetDeserializer);
+var pipeStdIn = new StreamReader(pipeClient);
+IClient client = new Client(pipeClient, packetHandler, packetSerializer, packetDeserializer, pipeStdIn);
 IAsyncCommandExecutor asyncCommandExecutor = new CommandExecutor(client, Console.Out, Console.Error);
 
 Command sessionCommand = new SessionCommand(asyncCommandExecutor).GetCommand();
