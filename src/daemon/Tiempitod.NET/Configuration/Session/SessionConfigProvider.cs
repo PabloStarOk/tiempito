@@ -57,9 +57,9 @@ public class SessionConfigProvider : DaemonService, ISessionConfigProvider
         if (!wasWritten)
             return new OperationResult(false, "Session configuration was not saved.");
         
-        // Add or update 
-        if (!_sessionConfigs.TryAdd(sessionConfig.Id, sessionConfig))
-            _sessionConfigs[sessionConfig.Id] = sessionConfig;
+        // Add or update
+        if (!_sessionConfigs.TryAdd(sessionConfig.Id.ToLower(), sessionConfig)) // TODO: Unify letter case management for sessionId.
+            _sessionConfigs[sessionConfig.Id.ToLower()] = sessionConfig; // TODO: Unify letter case management for sessionId.
 
         return new OperationResult(true, "Session configuration was saved.");
     }
