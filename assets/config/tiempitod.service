@@ -1,16 +1,10 @@
+# File at ~/.config/systemd/user/tiempitod.service
 [Unit]
-Description=tiempito daemon
+Description=Tiempito daemon
 
 [Service]
-ExecStart=/path/to/daemon
+ExecStart=/path/to/daemon-bin
 Environment=DOTNET_ENVIRONMENT=Production
-User=<user>
-Group=<group>
-StandardOutput=journal
-StandardError=journal
-Environment=DISPLAY=:0
-Environment=XDG_RUNTIME_DIR=<$XDG_RUNTIME_DIR>
-Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=<$XDG_RUNTIME_DIR>/bus
 
 [Install]
 WantedBy=default.target
