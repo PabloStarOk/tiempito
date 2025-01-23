@@ -101,6 +101,7 @@ public class StandardOutMessageProcessor : IStandardOutSink, IStandardOutQueue, 
             }
         }
         catch (OperationCanceledException) { }
+        catch (IOException) { }
     }
     
     /// <summary>
