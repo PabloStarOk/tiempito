@@ -12,7 +12,6 @@
         <AssemblyVersion>1.0.0</AssemblyVersion>
         <NeutralLanguage>en-US</NeutralLanguage>
         <ApplicationIcon>..\..\..\assets\icon\icon.ico</ApplicationIcon>
-        <PublishAot>true</PublishAot>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug-Linux' ">
@@ -36,6 +35,7 @@
         <Optimize>true</Optimize>
         <DebugSymbols>false</DebugSymbols>
         <DebugType>none</DebugType>
+        <PublishAot>true</PublishAot>
     </PropertyGroup>
     
     <PropertyGroup Condition=" '$(Configuration)' == 'Release-Windows' ">
