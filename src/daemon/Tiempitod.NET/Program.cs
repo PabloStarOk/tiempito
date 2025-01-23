@@ -88,7 +88,9 @@ var serverPipe = new NamedPipeServerStream
 (
     pipeConfig.PipeName,
     pipeConfig.PipeDirection,
-    pipeConfig.PipeMaxInstances
+    pipeConfig.PipeMaxInstances,
+    PipeTransmissionMode.Message,
+    PipeOptions.Asynchronous
 );
 builder.Services.AddSingleton(serverPipe);
 

@@ -2,6 +2,7 @@
 using System.CommandLine.Builder;
 using System.CommandLine.Parsing;
 using System.IO.Pipes;
+using System.Security.Principal;
 using System.Text;
 using System.Text.Json;
 using Tiempito.CLI.NET.Client;
@@ -25,7 +26,11 @@ IAsyncPacketHandler packetHandler = new PipePacketHandler(Encoding.UTF8, jsonSer
 IPacketSerializer packetSerializer = new PacketSerializer(jsonSerializerOptions);
 IPacketDeserializer packetDeserializer = new PacketDeserializer(jsonSerializerOptions);
 
-var pipeClient = new NamedPipeClientStream(".", "tiempito-pipe", PipeDirection.InOut); // TODO: Read config of the host.
+var pipeClient = new NamedPipeClientStream(
+    ".",
+    "tiempito-pipe",
+    PipeDirection.InOut,
+    PipeOptions.Asynchronous); // TODO: Read config of the host.
 var pipeStdIn = new StreamReader(pipeClient);
 IClient client = new Client(pipeClient, packetHandler, packetSerializer, packetDeserializer, pipeStdIn);
 IAsyncCommandExecutor asyncCommandExecutor = new CommandExecutor(client, Console.Out, Console.Error);
