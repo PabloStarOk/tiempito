@@ -17,23 +17,27 @@ public class Server : DaemonService, IServer
     private readonly IAsyncPacketHandler _asyncPacketHandler;
     private readonly IPacketSerializer _packetSerializer;
     private readonly IPacketDeserializer _packetDeserializer;
+    private readonly IStandardOutSink _stdOutSink;
     private CancellationTokenSource _sendMessageTokenSource;
     private CancellationTokenSource _readMessageTokenSource;
     private readonly int _maxRestartAttempts;
     private string _currentConnectedUser = string.Empty;
     private int _currentRestartAttempts;
+    
     public event EventHandler<Request>? RequestReceived;
 
     public Server(
         ILogger<Server> logger,
         IOptions<PipeConfig> daemonConfigOptions,
         NamedPipeServerStream pipeServer,
+        IStandardOutSink stdOutSink,
         IAsyncPacketHandler asyncPacketHandler,
         IPacketSerializer packetSerializer,
         IPacketDeserializer packetDeserializer) : base(logger)
     {
         _pipeConfig = daemonConfigOptions.Value;
         _pipeServer = pipeServer;
+        _stdOutSink = stdOutSink;
         _asyncPacketHandler = asyncPacketHandler;
         _packetSerializer = packetSerializer;
         _packetDeserializer = packetDeserializer;
@@ -130,19 +134,22 @@ public class Server : DaemonService, IServer
             {
                 if (!_pipeServer.IsConnected)
                     await ConnectAsync(cancellationToken);
-
+                
                 // Handle client requests
                 Packet incomingPacket = await ReceiveRequestsAsync(cancellationToken);
                 
                 // A length lower than zero means a client disconnection.
-                if (incomingPacket.Length < 0)
+                if (incomingPacket.Length < 0) // TODO: Replace with a termination request.
                 {
-                    Disconnect();
+                    await DisconnectAsync();
                     continue;
                 }
 
                 var request = _packetDeserializer.Deserialize<Request>(incomingPacket);
                 RequestReceived?.Invoke(this, request);
+                
+                if (request.RedirectProgress)
+                    _stdOutSink.Start(cancellationToken);
             }
         }
         catch (Exception ex)
@@ -173,8 +180,9 @@ public class Server : DaemonService, IServer
     /// <summary>
     /// Disconnects from the current connected client.
     /// </summary>
-    private void Disconnect()
+    private async Task DisconnectAsync()
     {
+        await _stdOutSink.StopAsync();
         _pipeServer.Disconnect();
         Logger.LogInformation("Command server disconnected from client {User}", _currentConnectedUser);
         _currentConnectedUser = string.Empty;

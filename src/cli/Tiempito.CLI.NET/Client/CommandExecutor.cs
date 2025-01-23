@@ -30,7 +30,7 @@ public class CommandExecutor : IAsyncCommandExecutor
         // Send request.
         try
         {
-            var request = new Request(command, subcommand, args);
+            var request = new Request(command, subcommand, args, tty);
             await _client.SendRequestAsync(request);
         }
         catch (TimeoutException)
@@ -62,7 +62,6 @@ public class CommandExecutor : IAsyncCommandExecutor
                 default:
                     throw new InvalidOperationException("Response status code unrecognized.");
             }
-            
             
             if (tty)
                 Console.CancelKeyPress += (_, _) => tty = false;

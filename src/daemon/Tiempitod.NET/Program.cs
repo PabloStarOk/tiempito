@@ -60,11 +60,6 @@ builder.Services.Configure<NotificationConfig>(builder.Configuration.GetSection(
 // Add configuration dependencies.
 PipeConfig pipeConfig = builder.Services.BuildServiceProvider().GetService<IOptions<PipeConfig>>()?.Value!;
 builder.Services.AddTransient(_ => pipeConfig.GetEncoding());
-builder.Services.AddSingleton(new NamedPipeServerStream(
-    pipeConfig.PipeName,
-    pipeConfig.PipeDirection,
-    pipeConfig.PipeMaxInstances));
-
 var jsonSerializerOptions = new JsonSerializerOptions()
 {
     TypeInfoResolver = IpcSerializerContext.Default
@@ -88,6 +83,24 @@ if (OperatingSystem.IsWindowsVersionAtLeast(10,0,10240))
     builder.Services.AddTransient<ISystemNotifier, WindowsNotifier>();
 #endif
 
+// Add server named pipe.
+var serverPipe = new NamedPipeServerStream
+(
+    pipeConfig.PipeName,
+    pipeConfig.PipeDirection,
+    pipeConfig.PipeMaxInstances
+);
+builder.Services.AddSingleton(serverPipe);
+
+// Add stdout handler
+TextWriter pipeStdOut = new StreamWriter(serverPipe);
+builder.Services.AddSingleton(pipeStdOut);
+var stdOutProcessor = new StandardOutMessageProcessor([], pipeStdOut);
+builder.Services.AddSingleton(stdOutProcessor);
+builder.Services.AddSingleton<IStandardOutSink>(stdOutProcessor);
+builder.Services.AddSingleton<IStandardOutQueue>(stdOutProcessor);
+
+// Add time provider.
 builder.Services.AddSingleton(TimeProvider.System);
     
 var sessionProgress = new Progress<Session>();

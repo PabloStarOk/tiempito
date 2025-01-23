@@ -4,6 +4,7 @@ using Tiempitod.NET.Configuration.Notifications;
 using Tiempitod.NET.Configuration.Session;
 using Tiempitod.NET.Extensions;
 using Tiempitod.NET.Notifications;
+using Tiempitod.NET.Server;
 
 namespace Tiempitod.NET.Session;
 
@@ -18,6 +19,7 @@ public sealed class SessionManager : DaemonService, ISessionManager
     private readonly INotificationManager _notificationManager;
     private readonly ISessionStorage _sessionStorage;
     private readonly ISessionTimer _sessionTimer;
+    private readonly IStandardOutQueue _standardOutQueue;
     private CancellationTokenSource _timerTokenSource;
     
     public SessionManager(
@@ -27,7 +29,8 @@ public sealed class SessionManager : DaemonService, ISessionManager
         INotificationManager notificationManager,
         Progress<Session> progress,
         ISessionStorage sessionStorage,
-        ISessionTimer sessionTimer) : base(logger)
+        ISessionTimer sessionTimer,
+        IStandardOutQueue standardOutQueue) : base(logger)
     {
         _sessionConfigProvider = sessionConfigProvider;
         _notificationConfig = notificationOptions.Value;
@@ -36,6 +39,7 @@ public sealed class SessionManager : DaemonService, ISessionManager
         _sessionTimer = sessionTimer;
         _sessionStorage = sessionStorage;
         _timerTokenSource = new CancellationTokenSource();
+        _standardOutQueue = standardOutQueue;
     }
 
     protected override void OnStartService()
@@ -107,8 +111,6 @@ public sealed class SessionManager : DaemonService, ISessionManager
         Session pausedSession = _sessionTimer.Stop(sessionId);
         _sessionStorage.AddSession(SessionStatus.Paused, pausedSession);
         
-        Logger.LogWarning("Session paused at time {Time}", DateTimeOffset.Now); // TODO: Replace with stdout.
-        
         return new OperationResult(Success: true, Message: "Session paused.");
     }
 
@@ -126,8 +128,6 @@ public sealed class SessionManager : DaemonService, ISessionManager
         
         Session resumedSession = _sessionStorage.RemoveSession(SessionStatus.Paused, sessionId);
         _sessionTimer.Start(resumedSession, _timerTokenSource.Token);
-        
-        Logger.LogWarning("Continuing session at time {Time}", DateTimeOffset.Now); // TODO: Replace with stdout.
         
         return new OperationResult(Success: true, Message: "Session resumed.");
     }
@@ -152,7 +152,6 @@ public sealed class SessionManager : DaemonService, ISessionManager
                 : _sessionStorage.RemoveSession(SessionStatus.Paused, sessionId);
         _sessionStorage.AddSession(SessionStatus.Cancelled, cancelledSession);
         
-        Logger.LogWarning("Session cancelled at {Time}", DateTimeOffset.Now); // TODO: Replace with stdout.
         return new OperationResult(Success: true, Message: "Session cancelled.");
     }
     
@@ -163,7 +162,8 @@ public sealed class SessionManager : DaemonService, ISessionManager
     /// <param name="session">Session subject of the report.</param>
     private void ProgressEventHandler(object? sender, Session session)
     {
-        Logger.LogInformation("Session {SessionId}: {ElapsedTime}", session.Id, session.Elapsed); // TODO: Replace with stdout.
+        var message = $"{session.CurrentTimeType.ToString()} time: {session.Elapsed}";
+        _standardOutQueue.QueueMessage(message);
     }
     
     /// <summary>
@@ -174,9 +174,11 @@ public sealed class SessionManager : DaemonService, ISessionManager
     /// <param name="timeType">A <see cref="TimeType"/> which represents the time completed.</param>
     private void TimeCompletedHandler(object? sender, TimeType timeType)
     {
-        Logger.LogInformation("{TimeType} time was completed.", timeType.ToString()); // TODO: Replace with stdout.
+        var message = $"{timeType.ToString()} time completed.";
+        _standardOutQueue.QueueMessage(message);
+        
         _notificationManager.CloseLastNotificationAsync();
-
+        
         string summary;
         string body;
 
@@ -202,7 +204,8 @@ public sealed class SessionManager : DaemonService, ISessionManager
     /// <param name="time">Elapsed time.</param>
     private void DelayProgressHandler(object? sender, TimeSpan time)
     {
-        Logger.LogInformation("Delay: {Delay}", time); // TODO: Replace with stdout.
+        var message = $"Elapsed delay time: {time}";
+        _standardOutQueue.QueueMessage(message);
     }
 
     /// <summary>
@@ -229,7 +232,9 @@ public sealed class SessionManager : DaemonService, ISessionManager
     private void SessionCompletedHandler(object? sender, Session session)
     {
         _sessionStorage.AddSession(SessionStatus.Finished, session);
-        Logger.LogInformation("Session was completed."); // TODO: Replace with stdout.
+        
+        var message = $"Session with id {session.Id} was completed";
+        _standardOutQueue.QueueMessage(message);
         
         _notificationManager.CloseLastNotificationAsync();
         _notificationManager.NotifyAsync(
