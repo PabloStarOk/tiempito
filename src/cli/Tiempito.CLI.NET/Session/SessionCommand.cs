@@ -10,6 +10,7 @@ public class SessionCommand
 {
     private readonly IAsyncCommandExecutor _asyncCommandExecutor;
     private readonly Option<string> _sessionIdOption;
+    private readonly Option<bool> _interactiveOption;
     
     /// <summary>
     /// Instantiates a <see cref="SessionCommand"/>
@@ -23,6 +24,13 @@ public class SessionCommand
             Arity = ArgumentArity.ExactlyOne
         };
         _sessionIdOption.AddAlias("-i");
+        
+        _interactiveOption = new Option<bool>("--tty", "Redirects the progress of the session to the current process.")
+        {
+            Arity = ArgumentArity.ZeroOrOne,
+            IsRequired = false
+        };
+        _interactiveOption.AddAlias("-t");
     }
 
     /// <summary>
@@ -38,7 +46,7 @@ public class SessionCommand
         sessionCommand.AddCommand(new ModifySessionCommand(_asyncCommandExecutor, sessionCommand.Name, _sessionIdOption));
         
         sessionCommand.AddCommand(new StartSessionCommand(
-            _asyncCommandExecutor, sessionCommand.Name, _sessionIdOption,
+            _asyncCommandExecutor, sessionCommand.Name, _sessionIdOption, _interactiveOption,
             "start", "Starts a new session."));
         
         sessionCommand.AddCommand(new GenericSessionCommand(
@@ -51,7 +59,7 @@ public class SessionCommand
         
         sessionCommand.AddCommand(new GenericSessionCommand(
             _asyncCommandExecutor, sessionCommand.Name, _sessionIdOption,
-            "resume", "Resumes a paused session."));
+            "resume", "Resumes a paused session.", _interactiveOption));
         
         return sessionCommand;
     }

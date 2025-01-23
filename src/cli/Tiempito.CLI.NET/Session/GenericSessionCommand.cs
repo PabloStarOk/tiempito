@@ -19,16 +19,24 @@ public class GenericSessionCommand : Command
     /// <param name="sessionIdOption">Session id option.</param>
     /// <param name="name">Name of the command.</param>
     /// <param name="description">Description of the command.</param>
+    /// <param name="interactiveOption">Optional interactive option to keep connection with server.</param>
     public GenericSessionCommand(
         IAsyncCommandExecutor asyncCommandExecutor,
         string commandParent, Option<string> sessionIdOption,
-        string name, string description) : base(name, description)
+        string name, string description, Option<bool>? interactiveOption = null) : base(name, description)
     {
         _asyncCommandExecutor = asyncCommandExecutor;
         _commandParent = commandParent;
         
         sessionIdOption.IsRequired = false;
         AddOption(sessionIdOption);
+        
+        if (interactiveOption != null)
+        {
+            AddOption(interactiveOption);
+            this.SetHandler(CommandHandler, sessionIdOption, interactiveOption);
+            return;
+        }
         this.SetHandler(CommandHandler, sessionIdOption);
     }
     
@@ -43,5 +51,19 @@ public class GenericSessionCommand : Command
             { "session-id", sessionId }
         };
         await _asyncCommandExecutor.ExecuteAsync(_commandParent, subcommand: Name, arguments);
+    }
+    
+    /// <summary>
+    /// Sends the request to manage a tiempito session.
+    /// </summary>
+    /// <param name="sessionId">ID of the session to use.</param>
+    /// <param name="interactiveOption">If the session's progress is redirected to the current process.</param>
+    private async Task CommandHandler(string sessionId, bool interactiveOption)
+    {
+        var arguments = new Dictionary<string, string>
+        {
+            { "session-id", sessionId }
+        };
+        await _asyncCommandExecutor.ExecuteAsync(_commandParent, subcommand: Name, arguments, interactiveOption);
     }
 }
