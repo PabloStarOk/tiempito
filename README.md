@@ -1,14 +1,6 @@
-<header style="display: flex; justify-content: center; align-items: center; padding-bottom: 1rem;">
-    <img src="./assets/icon/icon.svg" alt="A clock icon with a gradient color" width="100">
-    <h1 style="background: linear-gradient(90deg, #FF67A7 0%, #FC8E50 100%);
-            background-clip: text;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;">
-            Tiempito
-    <h1>
-</header>
+<img src="./assets/icon/icon.svg" alt="A clock icon with a gradient color" width="100" />
 
----
+# Tiempito
 
 "Tiempito" is a customizable timer designed to help you focus on work or study tasks while taking regular breaks to boost productivity. It's built with .NET and uses a daemon to run and a CLI for user interaction.
 
@@ -27,10 +19,33 @@
 - A Worker service project for the daemon/background service.
 - A Console application project for the CLI.
 
-## Target OS
+## Supported OS
 
-- Linux.
+App was tested in the following operating systems.
+
 - Windows.
+  - Windows 11.
+- Linux
+  - Arch Linux.
+  - Fedora Workstation.
+  - Ubuntu.
+  - Linux Mint.
+
+## Install/Uninstall
+
+### Linux
+
+Go to releases and download the linux-x64 zip file.
+
+Decompress it in a directory and in the terminal execute the bash script.
+
+``` bash
+# To install
+./install.sh
+
+# To uninstall
+./uninstall.sh
+```
 
 ## Acknowledgements
 
