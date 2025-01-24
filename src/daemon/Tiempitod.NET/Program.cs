@@ -2,7 +2,6 @@ using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
 using Salaros.Configuration;
 using System.IO.Pipes;
-using System.Text;
 using System.Text.Json;
 using Tiempito.IPC.NET.Packets;
 using Tiempitod.NET;
@@ -89,7 +88,7 @@ var serverPipe = new NamedPipeServerStream
     pipeConfig.PipeName,
     pipeConfig.PipeDirection,
     pipeConfig.PipeMaxInstances,
-    PipeTransmissionMode.Message,
+    PipeTransmissionMode.Byte,
     PipeOptions.Asynchronous
 );
 builder.Services.AddSingleton(serverPipe);
