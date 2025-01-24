@@ -6,6 +6,10 @@ namespace Tiempitod.NET.Session;
 public enum SessionStatus
 {
     /// <summary>
+    /// A session recently initialized.
+    /// </summary>
+    None,
+    /// <summary>
     /// A session that is executing.
     /// </summary>
     Executing,

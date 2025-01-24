@@ -1,0 +1,10 @@
+# File at ~/.config/systemd/user/tiempitod.service
+[Unit]
+Description=Tiempito daemon
+
+[Service]
+ExecStart=/path/to/daemon-bin
+Environment=DOTNET_ENVIRONMENT=Production
+
+[Install]
+WantedBy=default.target

@@ -1,107 +1,245 @@
+using Microsoft.Extensions.Options;
+using System.Collections.ObjectModel;
+using Tiempitod.NET.Configuration.Notifications;
+using Tiempitod.NET.Configuration.Session;
+using Tiempitod.NET.Extensions;
+using Tiempitod.NET.Notifications;
+using Tiempitod.NET.Server;
+
 namespace Tiempitod.NET.Session;
 
-// TODO: Introduce configuration.
 /// <summary>
 /// A concrete class to manage sessions.
 /// </summary>
-public sealed class SessionManager : ISessionManager
+public sealed class SessionManager : DaemonService, ISessionManager
 {
-    private readonly ILogger<SessionManager> _logger;
-    private readonly IProgress<Session> _progress;
-    private Session _session;
+    private readonly ISessionConfigProvider _sessionConfigProvider;
+    private readonly NotificationConfig _notificationConfig;
+    private readonly Progress<Session> _progress;
+    private readonly INotificationManager _notificationManager;
+    private readonly ISessionStorage _sessionStorage;
+    private readonly ISessionTimer _sessionTimer;
+    private readonly IStandardOutQueue _standardOutQueue;
+    private CancellationTokenSource _timerTokenSource;
     
-    public SessionManager(ILogger<SessionManager> logger, IProgress<Session> progress) 
+    public SessionManager(
+        ILogger<SessionManager> logger,
+        ISessionConfigProvider sessionConfigProvider,
+        IOptions<NotificationConfig> notificationOptions,
+        INotificationManager notificationManager,
+        Progress<Session> progress,
+        ISessionStorage sessionStorage,
+        ISessionTimer sessionTimer,
+        IStandardOutQueue standardOutQueue) : base(logger)
     {
-        _logger = logger;
+        _sessionConfigProvider = sessionConfigProvider;
+        _notificationConfig = notificationOptions.Value;
         _progress = progress;
+        _notificationManager = notificationManager;
+        _sessionTimer = sessionTimer;
+        _sessionStorage = sessionStorage;
+        _timerTokenSource = new CancellationTokenSource();
+        _standardOutQueue = standardOutQueue;
+    }
+
+    protected override void OnStartService()
+    {
+        _progress.ProgressChanged += ProgressEventHandler;
+        _sessionTimer.OnTimeCompleted += TimeCompletedHandler;
+        _sessionTimer.OnDelayElapsed += DelayProgressHandler;
+        _sessionTimer.OnSessionStarted += SessionStartedHandler;
+        _sessionTimer.OnSessionCompleted += SessionCompletedHandler;
     }
     
-    public async Task StartSessionAsync(CancellationToken stoppingToken)
+    protected override void OnStopService()
     {
-        _session = new Session(TimeType.Focus, TimeSpan.Zero, TimeSpan.Zero);
+        if (!_timerTokenSource.IsCancellationRequested)
+            _timerTokenSource.Cancel();
+        _timerTokenSource.Dispose();
         
-        _logger.LogInformation("Starting session at {time}", DateTimeOffset.Now);
+        _progress.ProgressChanged -= ProgressEventHandler;
+        _sessionTimer.OnTimeCompleted -= TimeCompletedHandler;
+        _sessionTimer.OnDelayElapsed -= DelayProgressHandler;
+        _sessionTimer.OnSessionStarted -= SessionStartedHandler;
+        _sessionTimer.OnSessionCompleted -= SessionCompletedHandler;
+        _sessionTimer.StopAll();
+    }
+    
+    public OperationResult StartSession(string sessionId = "", string sessionConfigId = "")
+    {
+        // Try to get the config
+        SessionConfig configSession;
+        if (string.IsNullOrWhiteSpace(sessionConfigId))
+            configSession = _sessionConfigProvider.DefaultSessionConfig;
+        else if (_sessionConfigProvider.SessionConfigs.TryGetValue(sessionConfigId.ToLower(), out SessionConfig foundSessionConfig)) // TODO: Unify letter case management for sessionId.
+            configSession = foundSessionConfig;
+        else
+            return new OperationResult(Success: false, Message: $"Session configuration with ID '{sessionConfigId}' was not found");
+
+        // Use session config ID in empty string case
+        if (string.IsNullOrWhiteSpace(sessionId))
+            sessionId = configSession.Id;
         
-        for (var i = 0; i < 5; i++)
-        {
-            if (stoppingToken.IsCancellationRequested)
-                break;
-            
-            await StartCycleAsync(stoppingToken);
-        }
+        // Verify if the session id already exists.
+        ReadOnlyDictionary<string, Session> startedSessions = 
+            _sessionStorage.RunningSessions.Concat(_sessionStorage.PausedSessions).ToDictionary().AsReadOnly();
+        if (startedSessions.ContainsKey(sessionId))
+            return new OperationResult(Success: false, Message: "There's already a started session with the same ID.");
         
-        if (stoppingToken.IsCancellationRequested)
-        {
-            _logger.LogWarning("Canceling session at {time}", DateTimeOffset.Now);
-            _session.Status = SessionStatus.Cancelled;
-            return;
-        }
+        var sessionToStart = new Session(
+            sessionId, configSession.TargetCycles, configSession.DelayBetweenTimes,
+            configSession.FocusDuration, configSession.BreakDuration);
         
-        _session.Status = SessionStatus.Finished;
-        _logger.LogInformation("Finishing session at {time}", DateTimeOffset.Now);
+        _timerTokenSource = RegenerateTokenSource(_timerTokenSource);
+        _sessionTimer.Start(sessionToStart, _timerTokenSource.Token);
+        
+        return new OperationResult(Success: true, Message: "Session started.");
     }
 
-    public void PauseSession()
+    public OperationResult PauseSession(string sessionId = "")
     {
-        _session.Status = SessionStatus.Paused;
-        _logger.LogWarning("Pausing session at time {time}", DateTimeOffset.Now);
+        if (_sessionStorage.RunningSessions.Count < 1 )
+            return new OperationResult(Success: false, Message: "There are no running sessions to pause.");
+        
+        if (!string.IsNullOrWhiteSpace(sessionId) 
+            && !_sessionStorage.RunningSessions.ContainsKey(sessionId))
+            return new OperationResult(Success: false, Message: $"Running session with ID '{sessionId}' was not found.");
+        
+        if (string.IsNullOrWhiteSpace(sessionId))
+            sessionId = _sessionStorage.RunningSessions.First().Value.Id;
+        
+        Session pausedSession = _sessionTimer.Stop(sessionId);
+        _sessionStorage.AddSession(SessionStatus.Paused, pausedSession);
+        
+        return new OperationResult(Success: true, Message: "Session paused.");
     }
 
-    public void ContinueSession()
+    public OperationResult ResumeSession(string sessionId = "")
     {
-        _session.Status = SessionStatus.Executing;
-        _logger.LogWarning("Continuing session at time {time}", DateTimeOffset.Now);
+        if (_sessionStorage.PausedSessions.Count < 1 )
+            return new OperationResult(Success: false, Message: "There are no paused sessions to resume.");
+        
+        if (!string.IsNullOrWhiteSpace(sessionId) 
+            && !_sessionStorage.PausedSessions.ContainsKey(sessionId))
+            return new OperationResult(Success: false, Message: $"Paused session with ID '{sessionId}' was not found.");
+        
+        if (string.IsNullOrWhiteSpace(sessionId))
+            sessionId = _sessionStorage.PausedSessions.First().Value.Id;
+        
+        Session resumedSession = _sessionStorage.RemoveSession(SessionStatus.Paused, sessionId);
+        _sessionTimer.Start(resumedSession, _timerTokenSource.Token);
+        
+        return new OperationResult(Success: true, Message: "Session resumed.");
+    }
+
+    public OperationResult CancelSession(string sessionId = "")
+    {
+        ReadOnlyDictionary<string, Session> startedSessions = 
+            _sessionStorage.RunningSessions.Concat(_sessionStorage.PausedSessions).ToDictionary().AsReadOnly();
+        
+        if (startedSessions.Count < 1)
+            return new OperationResult(Success: false, Message: "There are no sessions to cancel.");
+        
+        if (!string.IsNullOrWhiteSpace(sessionId) 
+            && !startedSessions.ContainsKey(sessionId))
+            return new OperationResult(Success: false, Message: $"Started session with ID '{sessionId}' was not found.");
+        
+        if (string.IsNullOrWhiteSpace(sessionId))
+            sessionId = startedSessions.First().Value.Id;
+
+        Session cancelledSession = startedSessions[sessionId].Status is SessionStatus.Executing 
+                ? _sessionTimer.Stop(sessionId)
+                : _sessionStorage.RemoveSession(SessionStatus.Paused, sessionId);
+        _sessionStorage.AddSession(SessionStatus.Cancelled, cancelledSession);
+        
+        return new OperationResult(Success: true, Message: "Session cancelled.");
     }
     
     /// <summary>
-    /// Starts a cycle that executes one focus time and one break time.
+    /// Notifies to the user of the elapsed time in the stdout.
     /// </summary>
-    /// <param name="stoppingToken">Token to stop the operation.</param>
-    private async Task StartCycleAsync(CancellationToken stoppingToken)
+    /// <param name="sender">Sender of the report.</param>
+    /// <param name="session">Session subject of the report.</param>
+    private void ProgressEventHandler(object? sender, Session session)
     {
-        if (!stoppingToken.IsCancellationRequested)
-            await StartTimeAsync(TimeType.Focus, TimeSpan.FromSeconds(30), stoppingToken);
-        
-        if (!stoppingToken.IsCancellationRequested)
-            await StartTimeAsync(TimeType.Break, TimeSpan.FromSeconds(30), stoppingToken);
-        
-        if (!stoppingToken.IsCancellationRequested)
-            _session.CurrentCycle += 1;
+        var message = $"{session.CurrentTimeType.ToString()} time: {session.Elapsed}";
+        _standardOutQueue.QueueMessage(message);
     }
     
     /// <summary>
-    /// Starts a focus or break time.
+    /// Notifies to the user in the stdout and with system notifications when
+    /// a time is completed.
     /// </summary>
-    /// <param name="timeType">Current type of time (focus or break) of the session.</param>
-    /// <param name="duration">Duration of the current time</param>
-    /// <param name="stoppingToken">Token to stop the operation.</param>
-    private async Task StartTimeAsync(TimeType timeType, TimeSpan duration, CancellationToken stoppingToken)
+    /// <param name="sender">Sender of the event.</param>
+    /// <param name="timeType">A <see cref="TimeType"/> which represents the time completed.</param>
+    private void TimeCompletedHandler(object? sender, TimeType timeType)
     {
-        _session.CurrentTimeType = timeType;
-        _session.Duration = duration;
-        _session.Elapsed = TimeSpan.Zero;
-        TimeSpan interval = TimeSpan.FromSeconds(1);
+        var message = $"{timeType.ToString()} time completed.";
+        _standardOutQueue.QueueMessage(message);
+        
+        _notificationManager.CloseLastNotificationAsync();
+        
+        string summary;
+        string body;
 
-        while (_session.Elapsed < duration)
+        if (timeType is TimeType.Focus)
         {
-            if (stoppingToken.IsCancellationRequested)
-                break;
-            
-            if (_session.Status is SessionStatus.Paused)
-                continue;
-
-            try
-            {
-                await Task.Delay(interval, stoppingToken);
-            }
-            catch
-            {
-                break;
-            }
-            
-            _session.Elapsed += interval; 
-            _progress.Report(_session);
-            _logger.LogInformation("Time is {elapsed}", _session.Elapsed);
+            summary = _notificationConfig.FocusCompletedSummary;
+            body = _notificationConfig.FocusCompletedBody;
         }
+        else
+        {
+            summary = _notificationConfig.BreakCompletedSummary;
+            body = _notificationConfig.BreakCompletedBody;
+        }
+        
+        _notificationManager.NotifyAsync(summary, body, NotificationSoundType.TimeCompleted).Forget();
+    }
+
+    /// <summary>
+    /// Notifies to the user of a second elapsed in the delay
+    /// between times.
+    /// </summary>
+    /// <param name="sender">Sender of the event.</param>
+    /// <param name="time">Elapsed time.</param>
+    private void DelayProgressHandler(object? sender, TimeSpan time)
+    {
+        var message = $"Elapsed delay time: {time}";
+        _standardOutQueue.QueueMessage(message);
+    }
+
+    /// <summary>
+    /// Notifies to the user with the stdout and system notifications when
+    /// a session is started.
+    /// </summary>
+    /// <param name="e">Empty arguments of the invoked event.</param>
+    /// <param name="sender">Sender of the event.</param>
+    private void SessionStartedHandler(object? sender, EventArgs e)
+    {
+        _notificationManager.CloseLastNotificationAsync();
+        _notificationManager.NotifyAsync(
+            summary: _notificationConfig.SessionStartedSummary,
+            body: _notificationConfig.SessionStartedBody,
+            NotificationSoundType.SessionStarted).Forget();
+    }
+    
+    /// <summary>
+    /// Notifies to the user in the stdout and with system notifications when
+    /// a session is completed.
+    /// </summary>
+    /// <param name="sender">Sender of the event.</param>
+    /// <param name="session">The completed <see cref="Session"/>.</param>
+    private void SessionCompletedHandler(object? sender, Session session)
+    {
+        _sessionStorage.AddSession(SessionStatus.Finished, session);
+        
+        var message = $"Session with id {session.Id} was completed";
+        _standardOutQueue.QueueMessage(message);
+        
+        _notificationManager.CloseLastNotificationAsync();
+        _notificationManager.NotifyAsync(
+            summary: _notificationConfig.SessionFinishedSummary,
+            body: _notificationConfig.SessionFinishedBody,
+            NotificationSoundType.SessionFinished).Forget();
     }
 }

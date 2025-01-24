@@ -1,5 +1,3 @@
-using Tiempitod.NET.Commands;
-
 namespace Tiempitod.NET;
 
 /// <summary>
@@ -7,34 +5,55 @@ namespace Tiempitod.NET;
 /// </summary>
 public class DaemonWorker : BackgroundService
 {
+    private readonly IHostApplicationLifetime _appLifetime;
     private readonly ILogger<DaemonWorker> _logger;
-    private readonly ICommandListener _commandListener;
-    private readonly ICommandHandler _commandHandler;
-
-    public DaemonWorker(ILogger<DaemonWorker> logger, ICommandListener commandListener, ICommandHandler commandHandler)
+    private readonly TimeProvider _timeProvider;
+    private readonly IEnumerable<DaemonService> _daemonServices;
+    private bool _isExiting;
+    
+    public DaemonWorker(IHostApplicationLifetime appLifetime, ILogger<DaemonWorker> logger, TimeProvider timeProvider, IEnumerable<DaemonService> daemonServices)
     {
+        _appLifetime = appLifetime;
         _logger = logger;
-        _commandListener = commandListener;
-        _commandHandler = commandHandler;
+        _timeProvider = timeProvider;
+        _daemonServices = daemonServices;
     }
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
         if (_logger.IsEnabled(LogLevel.Information))
-            _logger.LogInformation("tiempitod running at: {time}", DateTimeOffset.Now);
+            _logger.LogInformation("tiempitod running at: {Time}", _timeProvider.GetUtcNow());
         
-        _commandListener.CommandReceived += async (_, command) => await _commandHandler.HandleCommandAsync(command, stoppingToken);
-        _commandListener.Start();
-        
-        while (!stoppingToken.IsCancellationRequested)
+        foreach (DaemonService service in _daemonServices)
         {
+            if (service.StartService())
+                continue;
             
+            _logger.LogCritical("Couldn't start a service, daemon exiting. Service: {Service}", service);
+            Exit();
+            return Task.CompletedTask;
+        }
+
+        stoppingToken.Register(Exit);
+        return Task.CompletedTask;
+    }
+
+    private void Exit()
+    {
+        if (_isExiting)
+            return;
+
+        _isExiting = true;
+        
+        foreach (DaemonService service in _daemonServices)
+        {
+            if (!service.StopService())
+                _logger.LogCritical("Couldn't stop a service. Service: {Service}", service);
         }
         
-        await _commandListener.StopAsync();
-        _commandHandler.Dispose();
-        
         if (_logger.IsEnabled(LogLevel.Information))
-            _logger.LogInformation("tiempitod stopping at: {time}", DateTimeOffset.Now);
+            _logger.LogInformation("tiempitod stopped at: {Time}", _timeProvider.GetUtcNow());
+        
+        _appLifetime.StopApplication();
     }
 }
