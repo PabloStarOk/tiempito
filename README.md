@@ -19,10 +19,17 @@
 - A Worker service project for the daemon/background service.
 - A Console application project for the CLI.
 
-## Target OS
+## Supported OS
 
-- Linux.
+App was tested in the following operating systems.
+
 - Windows.
+  - Windows 11.
+- Linux
+  - Arch Linux.
+  - Fedora Workstation.
+  - Ubuntu.
+  - Linux Mint.
 
 ## Install/Uninstall
 
