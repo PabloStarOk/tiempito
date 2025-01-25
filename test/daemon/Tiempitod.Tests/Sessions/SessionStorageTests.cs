@@ -7,10 +7,18 @@ namespace Tiempitod.Tests.Sessions;
 [Trait("Sessions", "Unit")]
 public class SessionStorageTests
 {
-    private readonly SessionStorage _storage = new(new Mock<ILogger<SessionStorage>>().Object);
-    private Session _session = new("Sample",
-        1, TimeSpan.Zero,
-        TimeSpan.Zero, TimeSpan.Zero);
+    private readonly SessionStorage _sessionStorage;
+    private Session _session;
+
+    public SessionStorageTests()
+    {
+        var loggerMock = new Mock<ILogger<SessionStorage>>();
+        _sessionStorage = new SessionStorage(loggerMock.Object);
+        
+        _session = new Session(id: "TestSession",
+            targetCycles: 1, delayBetweenTimes: TimeSpan.Zero,
+            focusDuration: TimeSpan.Zero, breakDuration: TimeSpan.Zero);
+    }
     
     [Theory]
     [InlineData(SessionStatus.Executing)]
@@ -21,7 +29,7 @@ public class SessionStorageTests
         SessionStatus status)
     {
         // Act
-        bool result = _storage.AddSession(status, _session);
+        bool result = _sessionStorage.AddSession(status, _session);
         
         // Assert
         IReadOnlyDictionary<string, Session> dictionary = GetDictionary(status);
@@ -40,12 +48,12 @@ public class SessionStorageTests
         SessionStatus status)
     {
         // Arrange
-        _storage.AddSession(status, _session);
+        _sessionStorage.AddSession(status, _session);
         TimeSpan time = TimeSpan.FromSeconds(10);
         var newSession = new Session(_session.Id, 20, time, time, time);
         
         // Act
-        bool result = _storage.AddSession(status, newSession);
+        bool result = _sessionStorage.AddSession(status, newSession);
         
         // Assert
         IReadOnlyDictionary<string, Session> dictionary = GetDictionary(status);
@@ -66,11 +74,11 @@ public class SessionStorageTests
     {
         // Arrange
         int newElapsedTime = GenerateNonZeroInt();
-        _storage.AddSession(status, _session);
+        _sessionStorage.AddSession(status, _session);
         
         // Act
         _session.Elapsed += TimeSpan.FromSeconds(newElapsedTime);
-        _storage.UpdateSession(status, _session);
+        _sessionStorage.UpdateSession(status, _session);
         
         // Assert
         IReadOnlyDictionary<string, Session> dictionary = GetDictionary(status);
@@ -85,11 +93,11 @@ public class SessionStorageTests
     {
         // Arrange
         int newElapsedTime = GenerateNonZeroInt();
-        _storage.AddSession(status, _session);
+        _sessionStorage.AddSession(status, _session);
         
         // Act
         _session.Elapsed += TimeSpan.FromSeconds(newElapsedTime);
-        _storage.UpdateSession(falseStatus, _session);
+        _sessionStorage.UpdateSession(falseStatus, _session);
         
         // Assert
         IReadOnlyDictionary<string, Session> dictionary = GetDictionary(status);
@@ -105,16 +113,26 @@ public class SessionStorageTests
         SessionStatus status)
     {
         // Arrange
-        _storage.AddSession(status, _session);
+        _sessionStorage.AddSession(status, _session);
         
         // Act
-        _storage.RemoveSession(status, _session.Id);
+        _sessionStorage.RemoveSession(status, _session.Id);
         
         // Assert
         IReadOnlyDictionary<string, Session> dictionary = GetDictionary(status);
         Assert.False(dictionary.ContainsKey(_session.Id), "Session was not removed.");
     }
     
+    /// <summary>
+    /// Returns a random integer with a minimum value of 1.
+    /// </summary>
+    /// <returns>An integer.</returns>
+    private static int GenerateNonZeroInt() => Random.Shared.Next(1, int.MaxValue);
+    
+    /// <summary>
+    /// Get a pair of <see cref="SessionStatus"/> that excludes mutually.
+    /// </summary>
+    /// <returns>An object with two <see cref="SessionStatus"/>.</returns>
     public static IEnumerable<object[]> InvalidStatusPairs()
     {
         SessionStatus[] allStatuses = Enum.GetValues(typeof(SessionStatus)).Cast<SessionStatus>().ToArray();
@@ -131,16 +149,20 @@ public class SessionStorageTests
         }
     }
     
-    private static int GenerateNonZeroInt() => Random.Shared.Next(1, int.MaxValue);
-    
+    /// <summary>
+    /// Gets the dictionary of the session storage.
+    /// </summary>
+    /// <param name="status">Status of the session.</param>
+    /// <returns>A <see cref="IReadOnlyDictionary{TKey,TValue}"/>.</returns>
+    /// <exception cref="NotImplementedException">If the given status is <see cref="SessionStatus.None"/>.</exception>
     private IReadOnlyDictionary<string, Session> GetDictionary(SessionStatus status)
     {
         return status switch
         {
-            SessionStatus.Executing => _storage.RunningSessions,
-            SessionStatus.Cancelled => _storage.CancelledSessions,
-            SessionStatus.Paused => _storage.PausedSessions,
-            SessionStatus.Finished => _storage.FinishedSessions,
+            SessionStatus.Executing => _sessionStorage.RunningSessions,
+            SessionStatus.Cancelled => _sessionStorage.CancelledSessions,
+            SessionStatus.Paused => _sessionStorage.PausedSessions,
+            SessionStatus.Finished => _sessionStorage.FinishedSessions,
             _ => throw new NotImplementedException("Passed a wrong data case.")
         };
     }
