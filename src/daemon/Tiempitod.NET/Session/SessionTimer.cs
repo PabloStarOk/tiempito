@@ -5,9 +5,10 @@ namespace Tiempitod.NET.Session;
 /// </summary>
 public class SessionTimer : ISessionTimer
 {
+    private readonly TimeProvider _timeProvider;
     private readonly IProgress<Session> _timeProgress;
     private readonly ISessionStorage _sessionStorage;
-    private readonly Dictionary<string, Timer> _timers = [];
+    private readonly Dictionary<string, ITimer> _timers = [];
     private readonly Dictionary<string, TimeSpan> _sessionsDelays = [];
     private readonly TimeSpan _interval;
     
@@ -19,13 +20,18 @@ public class SessionTimer : ISessionTimer
     /// <summary>
     /// Instantiates a <see cref="SessionTimer"/>.
     /// </summary>
+    /// <param name="timeProvider">Provider of time to create timers.</param>
     /// <param name="timeProgress">Reporter of progress.</param>
     /// <param name="sessionStorage">Storage of sessions.</param>
-    public SessionTimer(IProgress<Session> timeProgress, ISessionStorage sessionStorage)
+    /// <param name="interval">Interval of time to use for the timers.</param>
+    public SessionTimer(
+        TimeProvider timeProvider, IProgress<Session> timeProgress,
+        ISessionStorage sessionStorage, [FromKeyedServices("TimingInterval")] TimeSpan interval)
     {
+        _timeProvider = timeProvider;
         _timeProgress = timeProgress;
         _sessionStorage = sessionStorage;
-        _interval = TimeSpan.FromSeconds(1);
+        _interval = interval;
     }
     
     public void Start(Session session, CancellationToken cancellationToken)
@@ -35,7 +41,7 @@ public class SessionTimer : ISessionTimer
         if (!_sessionStorage.AddSession(SessionStatus.Executing, session))
             return;
         
-        var timer = new Timer(_ => TimerCallback(session.Id), null, 1000, 1000);
+        ITimer timer = _timeProvider.CreateTimer(_ => TimerCallback(session.Id), null, _interval, _interval);
         if (session.Status is not SessionStatus.Paused)
             OnSessionStarted?.Invoke(this, EventArgs.Empty);
         _timers.Add(session.Id, timer);
@@ -43,7 +49,7 @@ public class SessionTimer : ISessionTimer
 
     public Session Stop(string sessionId)
     {
-        _timers.Remove(sessionId, out Timer? timer);
+        _timers.Remove(sessionId, out ITimer? timer);
         _sessionsDelays.Remove(sessionId);
         timer?.Dispose();
         
@@ -99,7 +105,7 @@ public class SessionTimer : ISessionTimer
     /// <param name="sessionId">ID of the session to complete.</param>
     private void CompleteSession(string sessionId)
     {
-        _timers.Remove(sessionId, out Timer? timer);
+        _timers.Remove(sessionId, out ITimer? timer);
         _sessionsDelays.Remove(sessionId);
         timer?.Dispose();
         
