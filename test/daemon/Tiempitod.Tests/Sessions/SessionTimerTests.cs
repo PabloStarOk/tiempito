@@ -102,11 +102,21 @@ public class SessionTimerTests : IDisposable
         Assert.NotEmpty(stoppedSessions);
         Assert.Equal(targetSessions, stoppedSessions);
     }
-
+    
+    [Fact]
+    public void SessionTimer_should_RemoveSessions_when_TokenIsCancelled()
+    {
+        SetupMethods(runningSessions: true, addSession: true, updateSession: true,
+            removeSession: true, timeProgressReport: true); // RemoveSession() must be verified.
+        _sessionTimer.Start(_session, _tokenSource.Token);
+        _fakeTimeProvider.Advance(_interval);
+        
+        _tokenSource.Cancel();
+    }
+    
     [Fact]
     public void SessionTimer_should_Report_when_SessionIsRunning()
     {
-        _sessionStorageMock.Setup(s => s.AddSession(SessionStatus.Executing, _session)).Returns(true);
         SetupMethods(runningSessions: true, addSession: true, updateSession: true, 
             timeProgressReport: true);
         _sessionTimer.Start(_session, _tokenSource.Token);
@@ -176,9 +186,42 @@ public class SessionTimerTests : IDisposable
         
         Assert.True(eventRaised);
     }
+    
+    [Fact]
+    public void SessionTimer_should_NotRaiseOnSessionCompleted_when_TargetCyclesIsZero()
+    { 
+        var testSession = new Session(_session.Id, 0, _delayBetweenTimes, _focusDuration, _breakDuration)
+        {
+            CurrentCycle = 1,
+            Elapsed = _focusDuration
+        };
 
-    // TODO: TEST: OnSessionCompleted must not be raised if TargetCycles property is 0.
-    // TODO: TEST: OnDelayElapsed must not be raised if DelayBetweenTimes property is 0.
+        _sessionStorageMock.Setup(s => s.RunningSessions[testSession.Id]).Returns(testSession);
+        _sessionStorageMock.Setup(s => s.AddSession(SessionStatus.Executing, testSession)).Returns(true);
+        SetupMethods(updateSession: true, timeProgressReport: true);
+        _sessionTimer.Start(testSession, _tokenSource.Token);
+        
+        _sessionTimer.OnSessionCompleted += (_, _) => Assert.Fail();
+        _fakeTimeProvider.Advance(_focusDuration);
+    }
+    
+    [Fact]
+    public void SessionTimer_should_NotRaiseOnDelayElapsed_when_DelayIsZero()
+    {
+        TimeSpan delayBetweenTimes = TimeSpan.Zero;
+        var testSession = new Session(_session.Id, TargetCycles, delayBetweenTimes, _focusDuration, _breakDuration)
+        {
+            Elapsed = _focusDuration // Focus time is completed.
+        };
+
+        _sessionStorageMock.Setup(s => s.RunningSessions[testSession.Id]).Returns(testSession);
+        _sessionStorageMock.Setup(s => s.AddSession(SessionStatus.Executing, testSession)).Returns(true);
+        SetupMethods(updateSession: true, timeProgressReport: true);
+        _sessionTimer.Start(testSession, _tokenSource.Token);
+        
+        _sessionTimer.OnDelayElapsed += (_, _) => Assert.Fail();
+        _fakeTimeProvider.Advance(_focusDuration);
+    }
     
     /// <summary>
     /// Set up the methods according to the given booleans.
