@@ -98,10 +98,10 @@ OperationResult ResumeSession();
 
 All success operations must check the session was resumed.
 
-- [ ] Should return a success operation result when session is resumed.
-- [ ] Should return a success operation result when session ID is not provided but exists a session to resume.
-- [ ] Should return a failed operation result when there are no sessions.
-- [ ] Should return a failed operation result when session ID is not found.
+- [X] Should resume a paused session when ID is specified.
+- [X] Should resume a paused session when ID is not provided but exists a session that can be resumed.
+- [X] Should return a failed operation result when session ID is not found.
+- [X] Should return a failed operation result when there are no sessions.
 
 #### CancelSession
 

@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
+using System.Runtime.InteropServices;
 using Tiempitod.NET;
 using Tiempitod.NET.Configuration.Notifications;
 using Tiempitod.NET.Configuration.Session;
@@ -197,6 +198,54 @@ public class SessionManagerTests : IDisposable
         OperationResult operationResult = _sessionManager.PauseSession(anotherId);
      
         Assert.False(operationResult.Success);
+    }
+    
+    #endregion
+    
+    #region ResumeSession
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void ResumeSession_should_ResumePausedSession(
+        bool sessionIdSpecified)
+    {
+        Session session = SessionProvider.CreateRandom();
+        Dictionary<string, Session> pausedSessions = CreateSessionsDictionary(session);
+        string sessionId = sessionIdSpecified ? session.Id : string.Empty;
+
+        _sessionStorageMock.Setup(m => m.PausedSessions).Returns(pausedSessions);
+        _sessionStorageMock.Setup(m => m.RemoveSession(SessionStatus.Paused, session.Id)).Returns(session);
+        _sessionTimerMock.Setup(m => m.Start(session, It.IsAny<CancellationToken>()));
+
+        OperationResult operationResult = _sessionManager.ResumeSession(sessionId);
+        
+        Assert.True(operationResult.Success);
+    }
+
+    [Fact]
+    public void ResumeSession_should_ReturnFailedOperation_when_IdNotFound()
+    {
+        Session session = SessionProvider.CreateRandom();
+        Dictionary<string, Session> pausedSessions = CreateSessionsDictionary(session);
+        var falseSessionId = "AnotherId";
+        
+        _sessionStorageMock.Setup(m => m.PausedSessions).Returns(pausedSessions);
+
+        OperationResult operationResult = _sessionManager.ResumeSession(falseSessionId);
+        
+        Assert.False(operationResult.Success);
+    }
+
+    [Fact]
+    public void ResumeSession_should_ReturnFailedOperation_when_ThereAreNoSessions()
+    {
+        _sessionStorageMock.Setup(m => m.PausedSessions)
+            .Returns(new Dictionary<string, Session>());
+
+        OperationResult operationResult = _sessionManager.ResumeSession();
+        
+        Assert.False(operationResult.Success, operationResult.Message);
     }
     
     #endregion
