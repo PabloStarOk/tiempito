@@ -1,6 +1,8 @@
 # Tests for daemon
 
-## Session Storage
+## Sessions
+
+### Session Storage
 
 ``` csharp
 bool AddSession();
@@ -14,7 +16,7 @@ Session RemoveSession();
 - [X] `UpdateSession` mustn't update nor add a session if it doesn't exist in the dictionary.
 - [X] `RemoveSession` must remove a session from a dictionary.
 
-## Session Timer
+### Session Timer
 
 ``` csharp
 IProgress<Session> _timeProgress;
@@ -41,3 +43,83 @@ Session[] StopAll();
 - [X] `OnSessionCompleted` must not be raised if TargetCycles property is 0.
 - [X] `OnDelayElapsed` is raised when a second is elapsed in a delay between times.
 - [X] `OnDelayElapsed` must not be raised if DelayBetweenTimes property is 0.
+
+### SessionManager
+
+#### StartService
+
+``` csharp
+void StartService();
+```
+
+- [X] Should subscribe to the events.
+
+#### StopService
+
+``` csharp
+void StopService();
+```
+
+- [X] Should unsubscribe from the events and stop all timers.
+
+### StartSession
+
+``` csharp
+OperationResult StartSession();
+```
+
+All success operations must check the session was started.
+
+- [X] Should start a session with the ID and config specified.
+- [X] Should start a session with the the default config when config ID is not specified.
+- [X] Should start a session with the ID of the config when session ID is not specified.
+- [X] Should start a session with the ID of the config when nor session ID and config ID are specified.
+- [X] Should return a failed operation result when config ID was not found.
+- [X] Should return a failed operation result when session with the same ID already exists.
+
+### PauseSession
+
+``` csharp
+OperationResult PauseSession();
+```
+
+All success operations must check the session was paused.
+
+- [X] Should return a success operation result when session is paused.
+- [X] Should return a success operation result when session ID is not provided but exists a session to pause.
+- [X] Should return a failed operation result when there are no sessions to pause.
+- [X] Should return a failed operation result when session ID is not found.
+
+### ResumeSession
+
+``` csharp
+OperationResult ResumeSession();
+```
+
+All success operations must check the session was resumed.
+
+- [ ] Should return a success operation result when session is resumed.
+- [ ] Should return a success operation result when session ID is not provided but exists a session to resume.
+- [ ] Should return a failed operation result when there are no sessions.
+- [ ] Should return a failed operation result when session ID is not found.
+
+### CancelSession
+
+``` csharp
+OperationResult CancelSession();
+```
+
+All success operations must check the session was cancelled.
+
+- [ ] Should return a success operation result when session is cancelled.
+- [ ] Should return a success operation result when session ID is not provided but exists a session to cancel.
+- [ ] Should return a failed operation result when there are no active sessions.
+- [ ] Should return a failed operation result when session ID is not found.
+
+### Event Handlers
+
+- [ ] `SessionManager` should report and notify when a session is started.
+- [ ] `SessionManager` should report and notify when a session is completed.
+- [ ] `SessionManager` should report progress of the running session.
+- [ ] `SessionManager` should report and notify when a time is completed.
+- [ ] `SessionManager` should report when a second of delay is elapsed.
