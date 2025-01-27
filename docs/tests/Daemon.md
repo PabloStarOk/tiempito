@@ -120,8 +120,8 @@ All success operations must check the session was cancelled.
 
 #### Event Handlers
 
-- [ ] `SessionManager` should report and notify when a session is started.
-- [ ] `SessionManager` should report and notify when a session is completed.
-- [ ] `SessionManager` should report progress of the running session.
-- [ ] `SessionManager` should report and notify when a time is completed.
-- [ ] `SessionManager` should report when a second of delay is elapsed.
+- [X] `SessionManager` should report and notify when a session is started.
+- [X] `SessionManager` should report and notify when a session is completed.
+- [ ] `SessionManager` should send messages to the standard output of the client about the current running sessions.
+- [X] `SessionManager` should report and notify when a time is completed.
+- [X] `SessionManager` should report when a second of delay is elapsed.

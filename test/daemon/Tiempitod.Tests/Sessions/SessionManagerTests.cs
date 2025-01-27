@@ -16,9 +16,7 @@ public class SessionManagerTests : IDisposable
 {
     private readonly SessionManager _sessionManager;
     private readonly MockRepository _mockRepository;
-    private readonly Mock<ILogger<SessionManager>> _loggerMock;
     private readonly Mock<ISessionConfigProvider> _sessionConfigProviderMock;
-    private readonly Mock<IOptions<NotificationConfig>> _notificationOptionsMock;
     private readonly Mock<INotificationManager> _notificationManagerMock;
     private readonly Progress<Session> _progress;
     private readonly Mock<ISessionStorage> _sessionStorageMock;
@@ -30,9 +28,9 @@ public class SessionManagerTests : IDisposable
     {
         _mockRepository = new MockRepository(MockBehavior.Strict);
         
-        _loggerMock = _mockRepository.Create<ILogger<SessionManager>>();
+        Mock<ILogger<SessionManager>> loggerMock = _mockRepository.Create<ILogger<SessionManager>>();
         _sessionConfigProviderMock = _mockRepository.Create<ISessionConfigProvider>();
-        _notificationOptionsMock = _mockRepository.Create<IOptions<NotificationConfig>>();
+        Mock<IOptions<NotificationConfig>> notificationOptionsMock = _mockRepository.Create<IOptions<NotificationConfig>>();
         _notificationManagerMock = _mockRepository.Create<INotificationManager>();
         _progress = new Progress<Session>();
         _sessionStorageMock = _mockRepository.Create<ISessionStorage>();
@@ -40,12 +38,12 @@ public class SessionManagerTests : IDisposable
         _stdOutQueueMock = _mockRepository.Create<IStandardOutQueue>();
 
         _notificationConfig = new NotificationConfig();
-        _notificationOptionsMock.Setup(n => n.Value).Returns(_notificationConfig);
+        notificationOptionsMock.Setup(n => n.Value).Returns(_notificationConfig);
         
         _sessionManager = new SessionManager(
-            _loggerMock.Object,
+            loggerMock.Object,
             _sessionConfigProviderMock.Object,
-            _notificationOptionsMock.Object,
+            notificationOptionsMock.Object,
             _notificationManagerMock.Object,
             _progress,
             _sessionStorageMock.Object,
@@ -327,6 +325,87 @@ public class SessionManagerTests : IDisposable
         OperationResult operationResult = _sessionManager.CancelSession(falseSessionId);
         
         Assert.False(operationResult.Success);
+    }
+    
+    #endregion
+    
+    #region Events Handlers
+
+    [Fact]
+    public void SessionManager_should_ReportAndNotify_when_SessionIsStarted()
+    {
+        _notificationManagerMock.Setup(m => m.CloseLastNotificationAsync()).Returns(Task.CompletedTask);
+        _notificationManagerMock.Setup(m => m.NotifyAsync(
+            _notificationConfig.SessionStartedSummary,
+            _notificationConfig.SessionStartedBody,
+            NotificationSoundType.SessionStarted)).Returns(Task.CompletedTask);
+        _sessionManager.StartService();
+        
+        _sessionTimerMock.Raise(m => m.OnSessionStarted += null,
+            _sessionTimerMock.Object, EventArgs.Empty);
+    }
+    
+    [Fact]
+    public void SessionManager_should_ReportAndNotify_when_SessionIsCompleted()
+    {
+        Session sessionEventArg = SessionProvider.CreateRandom();
+        
+        _sessionStorageMock.Setup(m => m.AddSession(SessionStatus.Finished, sessionEventArg)).Returns(true);
+        _stdOutQueueMock.Setup(m => m.QueueMessage(It.IsAny<string>()));
+        _notificationManagerMock.Setup(m => m.CloseLastNotificationAsync()).Returns(Task.CompletedTask);
+        _notificationManagerMock.Setup(m => m.NotifyAsync(
+            _notificationConfig.SessionFinishedSummary,
+            _notificationConfig.SessionFinishedBody,
+            NotificationSoundType.SessionFinished)).Returns(Task.CompletedTask);
+        _sessionManager.StartService();
+        
+        _sessionTimerMock.Raise(m => m.OnSessionCompleted += null,
+            _sessionTimerMock.Object, sessionEventArg);
+    }
+
+    // [Fact] TODO: Test fails when all solution tests are executed together.
+    // public void SessionManager_should_SendMessagesToStdOut_when_SessionIsRunning()
+    // {
+    //     Session sessionReport = SessionProvider.CreateRandom();
+    //
+    //     _stdOutQueueMock.Setup(m => m.QueueMessage(It.IsAny<string>())).Verifiable(Times.Once);
+    //     _sessionManager.StartService();
+    //
+    //     IProgress<Session> progress = _progress;
+    //     progress.Report(sessionReport);
+    // }
+
+    [Theory]
+    [InlineData(TimeType.Focus)]
+    [InlineData(TimeType.Break)]
+    public void SessionManager_should_ReportAndNotify_when_TimeIsCompleted(
+        TimeType timeTypeCompleted)
+    {
+        // Arrange
+        string summary = timeTypeCompleted is TimeType.Focus 
+            ? _notificationConfig.FocusCompletedSummary : _notificationConfig.BreakCompletedSummary;
+        string body = timeTypeCompleted is TimeType.Focus 
+            ? _notificationConfig.FocusCompletedBody : _notificationConfig.BreakCompletedBody;
+        
+        _stdOutQueueMock.Setup(m => m.QueueMessage(It.IsAny<string>()));
+        _notificationManagerMock.Setup(m => m.CloseLastNotificationAsync()).Returns(Task.CompletedTask);
+        _notificationManagerMock.Setup(m => m.NotifyAsync(
+            summary, body, NotificationSoundType.TimeCompleted)).Returns(Task.CompletedTask);
+        _sessionManager.StartService();
+        
+        // Act
+        _sessionTimerMock.Raise(m => m.OnTimeCompleted += null,
+            _sessionTimerMock.Object, timeTypeCompleted);
+    }
+    
+    [Fact]
+    public void SessionManager_should_SendMessagesToStdOut_when_OnSessionDelayElapsed()
+    {
+        _stdOutQueueMock.Setup(m => m.QueueMessage(It.IsAny<string>()));
+        _sessionManager.StartService();
+
+        _sessionTimerMock.Raise(m => m.OnDelayElapsed += null,
+            _sessionTimerMock.Object, TimeSpan.Zero);
     }
     
     #endregion
