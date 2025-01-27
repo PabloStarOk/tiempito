@@ -62,7 +62,7 @@ void StopService();
 
 - [X] Should unsubscribe from the events and stop all timers.
 
-### StartSession
+#### StartSession
 
 ``` csharp
 OperationResult StartSession();
@@ -77,7 +77,7 @@ All success operations must check the session was started.
 - [X] Should return a failed operation result when config ID was not found.
 - [X] Should return a failed operation result when session with the same ID already exists.
 
-### PauseSession
+#### PauseSession
 
 ``` csharp
 OperationResult PauseSession();
@@ -90,7 +90,7 @@ All success operations must check the session was paused.
 - [X] Should return a failed operation result when there are no sessions to pause.
 - [X] Should return a failed operation result when session ID is not found.
 
-### ResumeSession
+#### ResumeSession
 
 ``` csharp
 OperationResult ResumeSession();
@@ -103,7 +103,7 @@ All success operations must check the session was resumed.
 - [ ] Should return a failed operation result when there are no sessions.
 - [ ] Should return a failed operation result when session ID is not found.
 
-### CancelSession
+#### CancelSession
 
 ``` csharp
 OperationResult CancelSession();
@@ -116,7 +116,7 @@ All success operations must check the session was cancelled.
 - [ ] Should return a failed operation result when there are no active sessions.
 - [ ] Should return a failed operation result when session ID is not found.
 
-### Event Handlers
+#### Event Handlers
 
 - [ ] `SessionManager` should report and notify when a session is started.
 - [ ] `SessionManager` should report and notify when a session is completed.
