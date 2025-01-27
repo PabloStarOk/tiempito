@@ -250,6 +250,76 @@ public class SessionManagerTests : IDisposable
     
     #endregion
     
+    #region CancelSession
+    
+    [Theory]
+    [InlineData(true, true)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(false, false)]
+    public void CancelSession_should_CancelSession(
+        bool sessionIdSpecified, bool isSessionRunning)
+    {
+        // Arrange
+        Session session = SessionProvider.CreateRandom();
+        string sessionId = sessionIdSpecified ? session.Id : string.Empty;
+        Dictionary<string, Session> runningSessions = CreateSessionsDictionary();
+        Dictionary<string, Session> pausedSessions = CreateSessionsDictionary();
+        if (isSessionRunning)
+        {
+            session.Status = SessionStatus.Executing;
+            runningSessions = CreateSessionsDictionary(session);
+            _sessionTimerMock.Setup(m => m.Stop(session.Id)).Returns(session);
+        }
+        else
+        {
+            session.Status = SessionStatus.Paused;
+            pausedSessions = CreateSessionsDictionary(session);
+            _sessionStorageMock.Setup(m => m.RemoveSession(SessionStatus.Paused, session.Id)).Returns(session);
+        }
+        _sessionStorageMock.Setup(m => m.RunningSessions).Returns(runningSessions);
+        _sessionStorageMock.Setup(m => m.PausedSessions).Returns(pausedSessions);
+        _sessionStorageMock.Setup(m => m.AddSession(SessionStatus.Cancelled, session)).Returns(true);
+
+        // Act
+        OperationResult operationResult = _sessionManager.CancelSession(sessionId);
+        
+        // Assert
+        Assert.True(operationResult.Success);
+    }
+
+    [Fact]
+    public void CancelSession_should_ReturnFailedOperation_when_IdNotFound()
+    {
+        var falseSessionId = "AnotherId";
+        Session session = SessionProvider.CreateRandom("FooSession");
+        Dictionary<string, Session> runningSessions = CreateSessionsDictionary(session);
+        Dictionary<string, Session> pausedSessions = CreateSessionsDictionary(); 
+
+        _sessionStorageMock.Setup(m => m.RunningSessions).Returns(runningSessions);
+        _sessionStorageMock.Setup(m => m.PausedSessions).Returns(pausedSessions);
+        
+        OperationResult operationResult = _sessionManager.CancelSession(falseSessionId);
+        
+        Assert.False(operationResult.Success);
+    }
+    
+    [Fact]
+    public void CancelSession_should_ReturnFailedOperation_when_ThereAreNoSession()
+    {
+        Dictionary<string, Session> runningSessions = CreateSessionsDictionary();
+        Dictionary<string, Session> pausedSessions = CreateSessionsDictionary(); 
+
+        _sessionStorageMock.Setup(m => m.RunningSessions).Returns(runningSessions);
+        _sessionStorageMock.Setup(m => m.PausedSessions).Returns(pausedSessions);
+        
+        OperationResult operationResult = _sessionManager.CancelSession();
+        
+        Assert.False(operationResult.Success);
+    }
+    
+    #endregion
+    
     #region Helpers
     
     /// <summary>

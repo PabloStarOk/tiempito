@@ -111,10 +111,12 @@ OperationResult CancelSession();
 
 All success operations must check the session was cancelled.
 
-- [ ] Should return a success operation result when session is cancelled.
-- [ ] Should return a success operation result when session ID is not provided but exists a session to cancel.
-- [ ] Should return a failed operation result when there are no active sessions.
-- [ ] Should return a failed operation result when session ID is not found.
+- [X] Should cancel a running session when ID is specified.
+- [X] Should cancel a paused session when ID is specified.
+- [X] Should cancel a running session when ID is not provided but exists a session that can be cancelled.
+- [X] Should cancel a paused session when ID is not provided but exists a session that can be cancelled.
+- [X] Should return a failed operation result when session ID is not found.
+- [X] Should return a failed operation result when there are no active sessions.
 
 #### Event Handlers
 
