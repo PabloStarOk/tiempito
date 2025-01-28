@@ -1,56 +1,49 @@
 using Tiempitod.NET.Configuration.Session;
 
-namespace Tiempitod.NET.Commands.SessionCommands;
+namespace Tiempitod.NET.Commands.Configuration;
 
-/// <summary>
-/// Represents a command to create a new session configuration.
-/// </summary>
-public class CreateSessionCommand : ICommand
+public class ModifySessionCommand : ICommand
 {
     private readonly ISessionConfigProvider _sessionConfigProvider;
     private readonly IReadOnlyDictionary<string, string> _arguments;
     
     /// <summary>
-    /// Instantiates a <see cref="CreateSessionCommand"/>.
+    /// Instantiates a <see cref="ModifySessionCommand"/>.
     /// </summary>
     /// <param name="sessionConfigProvider">Provider of session configurations.</param>
     /// <param name="arguments">Arguments of the command.</param>
-    public CreateSessionCommand(
+    public ModifySessionCommand(
         ISessionConfigProvider sessionConfigProvider,
         IReadOnlyDictionary<string, string> arguments)
     {
         _sessionConfigProvider = sessionConfigProvider;
         _arguments = arguments;
     }
-
+    
     public Task<OperationResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         // TODO: Implement command request parser to create a CommandRequest model to encapsulate validation logic.
         if (!_arguments.TryGetValue("session-id", out string? sessionId))
             return Task.FromResult(new OperationResult(Success: false, Message: "Session id was not provided."));
         
-        if (_sessionConfigProvider.SessionConfigs.TryGetValue(sessionId.ToLower(), out _))
-            return Task.FromResult(new OperationResult(Success: false, Message: $"Session with id '{sessionId}' already exists."));
+        if (!_sessionConfigProvider.SessionConfigs.TryGetValue(sessionId.ToLower(), out SessionConfig currentSessionConfig))
+            return Task.FromResult(new OperationResult(Success: false, Message: $"Session with id '{sessionId}' doesn't exist."));
+
+        if (!_arguments.TryGetValue("target-cycles", out string? targetCyclesString)
+            || !int.TryParse(targetCyclesString, out int targetCycles))
+            targetCycles = currentSessionConfig.TargetCycles;
         
-        if (!_arguments.TryGetValue("target-cycles", out string? targetCyclesString))
-            return Task.FromResult(new OperationResult(Success: false, Message: "Target cycles was not provided."));
-        if (!int.TryParse(targetCyclesString, out int targetCycles))
-            return Task.FromResult(new OperationResult(Success: false, Message: "Target cycles number provided is not recognized."));
+        if (!_arguments.TryGetValue("delay-times", out string? delayTimesString)
+            || !TryParseDuration(delayTimesString, out TimeSpan delayBetweenTimes))
+            delayBetweenTimes = currentSessionConfig.DelayBetweenTimes;
         
-        if (!_arguments.TryGetValue("delay-times", out string? delayTimesString))
-            return Task.FromResult(new OperationResult(Success: false, Message: "Focus duration was not provided."));
-        if (!TryParseDuration(delayTimesString, out TimeSpan delayBetweenTimes))
-            return Task.FromResult(new OperationResult(Success: false, Message: "Focus duration time is not recognized."));
+        if (!_arguments.TryGetValue("focus-duration", out string? focusDurationString)
+            || !TryParseDuration(focusDurationString, out TimeSpan focusDuration))
+            focusDuration = currentSessionConfig.FocusDuration;
         
-        if (!_arguments.TryGetValue("focus-duration", out string? focusDurationString))
-            return Task.FromResult(new OperationResult(Success: false, Message: "Focus duration was not provided."));
-        if (!TryParseDuration(focusDurationString, out TimeSpan focusDuration))
-            return Task.FromResult(new OperationResult(Success: false, Message: "Focus duration time is not recognized."));
-        
-        if (!_arguments.TryGetValue("break-duration", out string? breakDurationString))
-            return Task.FromResult(new OperationResult(Success: false, Message: "Focus duration was not provided."));
-        if (!TryParseDuration(breakDurationString, out TimeSpan breakDuration))
-            return Task.FromResult(new OperationResult(Success: false, Message: "Focus duration time is not recognized."));
+        if (!_arguments.TryGetValue("break-duration", out string? breakDurationString) 
+            || !TryParseDuration(breakDurationString, out TimeSpan breakDuration))
+            breakDuration = currentSessionConfig.BreakDuration;
         
         OperationResult operationResult = _sessionConfigProvider.SaveSessionConfig
         (
@@ -71,7 +64,7 @@ public class CreateSessionCommand : ICommand
     /// <summary>
     /// Maps enums <see cref="SessionDurationSymbol"/> to a string representing that unit in lower case.
     /// </summary>
-    private readonly static  Dictionary<SessionDurationSymbol, string> TimeUnitSymbolsMap = new()
+    private readonly static Dictionary<SessionDurationSymbol, string> TimeUnitSymbolsMap = new()
     {
         { SessionDurationSymbol.Millisecond, "ms" },
         { SessionDurationSymbol.Second, "s" },
@@ -112,7 +105,7 @@ public class CreateSessionCommand : ICommand
 
         if (timeString == null)
             return false;
-
+        
         if (timeString == "0")
             return true;
         

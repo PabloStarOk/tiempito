@@ -1,9 +1,8 @@
 using Tiempito.IPC.NET.Messages;
-using Tiempitod.NET.Commands.ConfigCommands;
 using Tiempitod.NET.Configuration.User;
 using Tiempitod.NET.Exceptions;
 
-namespace Tiempitod.NET.Commands;
+namespace Tiempitod.NET.Commands.Configuration;
 
 // TODO: This class can be refactored along with SessionCommandsHandler to provide only the CreateCommand method.
 /// <summary>

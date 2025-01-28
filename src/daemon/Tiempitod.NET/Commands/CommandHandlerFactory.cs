@@ -1,3 +1,5 @@
+using Tiempitod.NET.Commands.Configuration;
+using Tiempitod.NET.Commands.SessionManagement;
 using Tiempitod.NET.Configuration.Session;
 using Tiempitod.NET.Configuration.User;
 using Tiempitod.NET.Exceptions;

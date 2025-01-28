@@ -1,6 +1,6 @@
 using Tiempitod.NET.Configuration.User;
 
-namespace Tiempitod.NET.Commands.ConfigCommands;
+namespace Tiempitod.NET.Commands.Configuration;
 
 /// <summary>
 /// Represents the subcommand to modify parameters of the user's configuration.

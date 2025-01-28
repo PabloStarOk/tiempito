@@ -1,6 +1,6 @@
 using Tiempitod.NET.Session;
 
-namespace Tiempitod.NET.Commands.SessionCommands;
+namespace Tiempitod.NET.Commands.SessionManagement;
 
 /// <summary>
 /// Command that starts a session.
