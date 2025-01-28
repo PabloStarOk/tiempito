@@ -1,29 +1,30 @@
 using System.CommandLine;
 using Tiempito.CLI.NET.Client;
 
-namespace Tiempito.CLI.NET.Session;
+namespace Tiempito.CLI.NET.Config;
 
 /// <summary>
 /// Represents the command to create a new session configuration.
 /// </summary>
-public class CreateSessionCommand : Command
+public class CreateSessionConfigCommand : Command
 {
     private readonly IAsyncCommandExecutor _asyncCommandExecutor;
     private readonly string _commandParent;
     
     /// <summary>
-    /// Instantiates a <see cref="CreateSessionCommand"/>.
+    /// Instantiates a <see cref="CreateSessionConfigCommand"/>.
     /// </summary>
     /// <param name="asyncCommandExecutor">An asynchronous executor of commands.</param>
     /// <param name="commandParent">Command parent of this command.</param>
     /// <param name="sessionIdOption">ID option of the new session configuration.</param>
-    public CreateSessionCommand(
+    public CreateSessionConfigCommand(
         IAsyncCommandExecutor asyncCommandExecutor,
         string commandParent, Option<string> sessionIdOption) 
-        : base("create", "Creates a new session configuration.")
+        : base("create-session-config", "Creates a new session configuration.")
     {
         _asyncCommandExecutor = asyncCommandExecutor;
         _commandParent = commandParent;
+        this.AddAlias("create-session");
         
         var targetCyclesOption = new Option<string>("--target-cycles", "Target cycles to complete.")
         {
@@ -70,13 +71,13 @@ public class CreateSessionCommand : Command
     /// <summary>
     /// Sends the request to create a new configuration session.
     /// </summary>
-    /// <param name="sessionId">ID of the new configuration session.</param>
+    /// <param name="sessionConfigId">ID of the new configuration session.</param>
     /// <param name="targetCycles">Target cycles to complete.</param>
     /// <param name="delayBetweenTimes">Delay before starting a time after another has been completed.</param>
     /// <param name="focusDuration">Duration of the focus time.</param>
     /// <param name="breakDuration">Duration of the break time.</param>
     private async Task CommandHandler(
-        string sessionId, string targetCycles,
+        string sessionConfigId, string targetCycles,
         string delayBetweenTimes, string focusDuration, 
         string breakDuration)
     {
@@ -84,7 +85,7 @@ public class CreateSessionCommand : Command
         
         var arguments = new Dictionary<string, string>
         {
-            { "session-id", sessionId },
+            { "session-config-id", sessionConfigId },
             { "target-cycles", targetCycles },
             { "delay-times", delayBetweenTimes },
             { "focus-duration", focusDuration },
