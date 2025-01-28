@@ -5,54 +5,43 @@ namespace Tiempitod.NET.Commands.Configuration;
 /// <summary>
 /// Represents a command to create a new session configuration.
 /// </summary>
-public class CreateSessionCommand : ICommand
+/// <param name="sessionConfigProvider">Provider of session configurations.</param>
+/// <param name="arguments">Arguments of the command.</param>
+public readonly struct CreateSessionConfigCommand(
+    ISessionConfigProvider sessionConfigProvider,
+    IReadOnlyDictionary<string, string> arguments)
+    : ICommand
 {
-    private readonly ISessionConfigProvider _sessionConfigProvider;
-    private readonly IReadOnlyDictionary<string, string> _arguments;
-    
-    /// <summary>
-    /// Instantiates a <see cref="CreateSessionCommand"/>.
-    /// </summary>
-    /// <param name="sessionConfigProvider">Provider of session configurations.</param>
-    /// <param name="arguments">Arguments of the command.</param>
-    public CreateSessionCommand(
-        ISessionConfigProvider sessionConfigProvider,
-        IReadOnlyDictionary<string, string> arguments)
-    {
-        _sessionConfigProvider = sessionConfigProvider;
-        _arguments = arguments;
-    }
-
     public Task<OperationResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         // TODO: Implement command request parser to create a CommandRequest model to encapsulate validation logic.
-        if (!_arguments.TryGetValue("session-id", out string? sessionId))
+        if (!arguments.TryGetValue("session-id", out string? sessionId))
             return Task.FromResult(new OperationResult(Success: false, Message: "Session id was not provided."));
         
-        if (_sessionConfigProvider.SessionConfigs.TryGetValue(sessionId.ToLower(), out _))
+        if (sessionConfigProvider.SessionConfigs.TryGetValue(sessionId.ToLower(), out _))
             return Task.FromResult(new OperationResult(Success: false, Message: $"Session with id '{sessionId}' already exists."));
         
-        if (!_arguments.TryGetValue("target-cycles", out string? targetCyclesString))
+        if (!arguments.TryGetValue("target-cycles", out string? targetCyclesString))
             return Task.FromResult(new OperationResult(Success: false, Message: "Target cycles was not provided."));
         if (!int.TryParse(targetCyclesString, out int targetCycles))
             return Task.FromResult(new OperationResult(Success: false, Message: "Target cycles number provided is not recognized."));
         
-        if (!_arguments.TryGetValue("delay-times", out string? delayTimesString))
+        if (!arguments.TryGetValue("delay-times", out string? delayTimesString))
             return Task.FromResult(new OperationResult(Success: false, Message: "Focus duration was not provided."));
         if (!TryParseDuration(delayTimesString, out TimeSpan delayBetweenTimes))
             return Task.FromResult(new OperationResult(Success: false, Message: "Focus duration time is not recognized."));
         
-        if (!_arguments.TryGetValue("focus-duration", out string? focusDurationString))
+        if (!arguments.TryGetValue("focus-duration", out string? focusDurationString))
             return Task.FromResult(new OperationResult(Success: false, Message: "Focus duration was not provided."));
         if (!TryParseDuration(focusDurationString, out TimeSpan focusDuration))
             return Task.FromResult(new OperationResult(Success: false, Message: "Focus duration time is not recognized."));
         
-        if (!_arguments.TryGetValue("break-duration", out string? breakDurationString))
+        if (!arguments.TryGetValue("break-duration", out string? breakDurationString))
             return Task.FromResult(new OperationResult(Success: false, Message: "Focus duration was not provided."));
         if (!TryParseDuration(breakDurationString, out TimeSpan breakDuration))
             return Task.FromResult(new OperationResult(Success: false, Message: "Focus duration time is not recognized."));
         
-        OperationResult operationResult = _sessionConfigProvider.SaveSessionConfig
+        OperationResult operationResult = sessionConfigProvider.SaveSessionConfig
         (
             new SessionConfig
             (

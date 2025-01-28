@@ -2,50 +2,42 @@ using Tiempitod.NET.Configuration.Session;
 
 namespace Tiempitod.NET.Commands.Configuration;
 
-public class ModifySessionCommand : ICommand
+/// <summary>
+/// Represents the command to modify an existing session configuration.
+/// </summary>
+/// <param name="sessionConfigProvider">Provider of session configurations.</param>
+/// <param name="arguments">Arguments of the command.</param>
+public readonly struct ModifySessionConfigCommand(
+    ISessionConfigProvider sessionConfigProvider,
+    IReadOnlyDictionary<string, string> arguments)
+    : ICommand
 {
-    private readonly ISessionConfigProvider _sessionConfigProvider;
-    private readonly IReadOnlyDictionary<string, string> _arguments;
-    
-    /// <summary>
-    /// Instantiates a <see cref="ModifySessionCommand"/>.
-    /// </summary>
-    /// <param name="sessionConfigProvider">Provider of session configurations.</param>
-    /// <param name="arguments">Arguments of the command.</param>
-    public ModifySessionCommand(
-        ISessionConfigProvider sessionConfigProvider,
-        IReadOnlyDictionary<string, string> arguments)
-    {
-        _sessionConfigProvider = sessionConfigProvider;
-        _arguments = arguments;
-    }
-    
     public Task<OperationResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         // TODO: Implement command request parser to create a CommandRequest model to encapsulate validation logic.
-        if (!_arguments.TryGetValue("session-id", out string? sessionId))
+        if (!arguments.TryGetValue("session-id", out string? sessionId))
             return Task.FromResult(new OperationResult(Success: false, Message: "Session id was not provided."));
         
-        if (!_sessionConfigProvider.SessionConfigs.TryGetValue(sessionId.ToLower(), out SessionConfig currentSessionConfig))
+        if (!sessionConfigProvider.SessionConfigs.TryGetValue(sessionId.ToLower(), out SessionConfig currentSessionConfig))
             return Task.FromResult(new OperationResult(Success: false, Message: $"Session with id '{sessionId}' doesn't exist."));
 
-        if (!_arguments.TryGetValue("target-cycles", out string? targetCyclesString)
+        if (!arguments.TryGetValue("target-cycles", out string? targetCyclesString)
             || !int.TryParse(targetCyclesString, out int targetCycles))
             targetCycles = currentSessionConfig.TargetCycles;
         
-        if (!_arguments.TryGetValue("delay-times", out string? delayTimesString)
+        if (!arguments.TryGetValue("delay-times", out string? delayTimesString)
             || !TryParseDuration(delayTimesString, out TimeSpan delayBetweenTimes))
             delayBetweenTimes = currentSessionConfig.DelayBetweenTimes;
         
-        if (!_arguments.TryGetValue("focus-duration", out string? focusDurationString)
+        if (!arguments.TryGetValue("focus-duration", out string? focusDurationString)
             || !TryParseDuration(focusDurationString, out TimeSpan focusDuration))
             focusDuration = currentSessionConfig.FocusDuration;
         
-        if (!_arguments.TryGetValue("break-duration", out string? breakDurationString) 
+        if (!arguments.TryGetValue("break-duration", out string? breakDurationString) 
             || !TryParseDuration(breakDurationString, out TimeSpan breakDuration))
             breakDuration = currentSessionConfig.BreakDuration;
         
-        OperationResult operationResult = _sessionConfigProvider.SaveSessionConfig
+        OperationResult operationResult = sessionConfigProvider.SaveSessionConfig
         (
             new SessionConfig
             (

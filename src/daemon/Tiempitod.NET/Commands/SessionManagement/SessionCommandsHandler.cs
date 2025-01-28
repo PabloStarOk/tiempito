@@ -61,8 +61,8 @@ public class SessionCommandsHandler : ICommandHandler
             "pause" => new PauseSessionCommand(_sessionManager, args),
             "resume" => new ResumeSessionCommand(_sessionManager, args),
             "cancel" => new CancelSessionCommand(_sessionManager, args),
-            "create" => new CreateSessionCommand(_sessionConfigProvider, args),
-            "modify" => new ModifySessionCommand(_sessionConfigProvider, args),
+            "create" => new CreateSessionConfigCommand(_sessionConfigProvider, args),
+            "modify" => new ModifySessionConfigCommand(_sessionConfigProvider, args),
             _ => throw new CommandNotFoundException(request.SubcommandType)
         };
     }

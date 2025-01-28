@@ -3,22 +3,18 @@ using Tiempitod.NET.Session;
 namespace Tiempitod.NET.Commands.SessionManagement;
 
 /// <summary>
-/// Command that cancels the current active session.
+/// Represents a command to cancel a session.
 /// </summary>
-public class CancelSessionCommand : ICommand
+/// <param name="sessionManager">The session manager to handle the session cancellation.</param>
+/// <param name="arguments">The arguments containing the session ID.</param>
+public readonly struct CancelSessionCommand(
+    ISessionManager sessionManager,
+    IReadOnlyDictionary<string, string> arguments)
+    : ICommand
 {
-    private readonly ISessionManager _sessionManager;
-    private readonly IReadOnlyDictionary<string, string> _arguments;
-   
-    public CancelSessionCommand(ISessionManager sessionManager, IReadOnlyDictionary<string, string> arguments)
-    {
-        _sessionManager = sessionManager;
-        _arguments = arguments;
-    }
-   
     public Task<OperationResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
-        _arguments.TryGetValue("session-id", out string? sessionId);
-        return Task.FromResult(_sessionManager.CancelSession(sessionId ?? string.Empty));
+        arguments.TryGetValue("session-id", out string? sessionId);
+        return Task.FromResult(sessionManager.CancelSession(sessionId ?? string.Empty));
     }
 }
