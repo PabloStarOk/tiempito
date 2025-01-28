@@ -15,7 +15,7 @@ public readonly struct CreateSessionConfigCommand(
     public Task<OperationResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         // TODO: Implement command request parser to create a CommandRequest model to encapsulate validation logic.
-        if (!arguments.TryGetValue("session-id", out string? sessionId))
+        if (!arguments.TryGetValue("session-config-id", out string? sessionId))
             return Task.FromResult(new OperationResult(Success: false, Message: "Session id was not provided."));
         
         if (sessionConfigProvider.SessionConfigs.TryGetValue(sessionId.ToLower(), out _))

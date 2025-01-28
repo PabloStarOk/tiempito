@@ -39,9 +39,9 @@ public class ConfigCommandsCreator : CommandCreator
                 return new EnableConfigCommand(_userConfigProvider, args);
             case "disable":
                 return new DisableConfigCommand(_userConfigProvider, args);
-            case "create":
+            case "create-session-config":
                 return new CreateSessionConfigCommand(_sessionConfigProvider, args);
-            case "modify":
+            case "modify-session-config":
                 return new ModifySessionConfigCommand(_sessionConfigProvider, args);
             default:
                 _logger.LogError("Unrecognized subcommand was sent to the daemon: {SubcommandType}", subcommandType);
