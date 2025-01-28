@@ -6,6 +6,8 @@ using System.Text.Json;
 using Tiempito.IPC.NET.Packets;
 using Tiempitod.NET;
 using Tiempitod.NET.Commands;
+using Tiempitod.NET.Commands.Configuration;
+using Tiempitod.NET.Commands.SessionManagement;
 using Tiempitod.NET.Configuration;
 using Tiempitod.NET.Configuration.AppFilesystem;
 using Tiempitod.NET.Configuration.Notifications;
@@ -103,7 +105,14 @@ builder.Services.AddSingleton<IStandardOutQueue>(stdOutProcessor);
 
 // Add time provider.
 builder.Services.AddSingleton(TimeProvider.System);
-    
+
+// Server dependencies
+builder.Services.AddSingleton<CommandCreator, ConfigCommandsCreator>();
+builder.Services.AddSingleton<CommandCreator, SessionCommandsCreator>();
+builder.Services.AddSingleton<IRequestHandler, RequestHandler>();
+builder.Services.AddSingleton<IServer, Server>();
+
+// Session service dependencies
 var sessionProgress = new Progress<Session>();
 builder.Services.AddSingleton(sessionProgress);
 builder.Services.AddSingleton<IProgress<Session>>(sessionProgress);
@@ -111,21 +120,15 @@ builder.Services.AddSingleton<ISessionStorage, SessionStorage>();
 builder.Services.AddKeyedSingleton(typeof(TimeSpan), "TimingInterval", (_, _) => TimeSpan.FromSeconds(1));
 builder.Services.AddSingleton<ISessionTimer, SessionTimer>();
 
-builder.Services.AddSingleton<Server>();
-builder.Services.AddSingleton<RequestOrchestrator>();
 builder.Services.AddSingleton<SessionManager>();
 builder.Services.AddSingleton<NotificationManager>();
 
-builder.Services.AddSingleton<IServer>(sp => sp.GetService<Server>()!);
-builder.Services.AddSingleton<ICommandHandlerFactory, CommandHandlerFactory>();
 builder.Services.AddSingleton<ISessionManager>(sp => sp.GetService<SessionManager>()!);
 builder.Services.AddSingleton<INotificationManager>(sp => sp.GetService<NotificationManager>()!);
 
 builder.Services.AddSingleton<DaemonService>(sp => sp.GetService<UserConfigFileCreator>()!);
 builder.Services.AddSingleton<DaemonService>(sp => sp.GetService<UserConfigProvider>()!);
 builder.Services.AddSingleton<DaemonService>(sp => sp.GetService<SessionConfigProvider>()!);
-builder.Services.AddSingleton<DaemonService>(sp => sp.GetService<Server>()!);
-builder.Services.AddSingleton<DaemonService>(sp => sp.GetService<RequestOrchestrator>()!);
 builder.Services.AddSingleton<DaemonService>(sp => sp.GetService<SessionManager>()!);
 builder.Services.AddSingleton<DaemonService>(sp => sp.GetService<NotificationManager>()!);
 
