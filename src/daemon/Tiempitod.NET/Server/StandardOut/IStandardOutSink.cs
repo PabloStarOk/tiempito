@@ -1,4 +1,4 @@
-namespace Tiempitod.NET.Server;
+namespace Tiempitod.NET.Server.StandardOut;
 
 /// <summary>
 /// Defines a sink which queues messages to be sent to standard output

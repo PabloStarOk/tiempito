@@ -41,9 +41,6 @@ public class SessionCommand
     public Command GetCommand()
     {
         var sessionCommand = new Command(name: "session", description: "Manage sessions.");
-
-        sessionCommand.AddCommand(new CreateSessionCommand(_asyncCommandExecutor, sessionCommand.Name, _sessionIdOption));
-        sessionCommand.AddCommand(new ModifySessionCommand(_asyncCommandExecutor, sessionCommand.Name, _sessionIdOption));
         
         sessionCommand.AddCommand(new StartSessionCommand(
             _asyncCommandExecutor, sessionCommand.Name, _sessionIdOption, _interactiveOption,

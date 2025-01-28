@@ -9,7 +9,8 @@ namespace Tiempito.CLI.NET.Config;
 public class ConfigCommand
 {
     private readonly IAsyncCommandExecutor _asyncCommandExecutor;
-    private readonly Option<string> _defaultSessionIdOption;
+    private readonly Option<string> _sessionConfigIdOption;
+    private readonly Option<string> _defaultSessionConfigIdOption;
     private readonly Argument<string> _featureArgument;
 
     /// <summary>
@@ -19,16 +20,26 @@ public class ConfigCommand
     public ConfigCommand(IAsyncCommandExecutor asyncCommandExecutor)
     {
         _asyncCommandExecutor = asyncCommandExecutor;
-        _defaultSessionIdOption = new Option<string>("--default-session", "Sets the default session configuration to use.")
+        // Set config command
+        _defaultSessionConfigIdOption = new Option<string>("--default-config", "Sets the default session configuration to use specifying its ID.")
         {
             Arity = ArgumentArity.ExactlyOne
         };
-        _defaultSessionIdOption.AddAlias("-d");
+        _defaultSessionConfigIdOption.AddAlias("-d");
         
+        // Feature commands
         _featureArgument = new Argument<string>("feature", "Feature to enable or disable.")
         {
             Arity = ArgumentArity.ExactlyOne
         };
+        
+        // Session config commands
+        _sessionConfigIdOption = new Option<string>("--config-id", "ID of the session configuration.")
+        {
+            Arity = ArgumentArity.ExactlyOne,
+            IsRequired = true
+        };
+        _sessionConfigIdOption.AddAlias("-ci");
     }
 
     /// <summary>
@@ -39,7 +50,7 @@ public class ConfigCommand
     {
         var configCommand = new Command("config", "Modifies the user's configuration.");
         
-        configCommand.AddCommand(new SetConfigCommand(_asyncCommandExecutor, configCommand.Name, _defaultSessionIdOption));
+        configCommand.AddCommand(new SetConfigCommand(_asyncCommandExecutor, configCommand.Name, _defaultSessionConfigIdOption));
         
         configCommand.AddCommand(new GenericFeatureConfigCommand(
             _asyncCommandExecutor, configCommand.Name, _featureArgument,
@@ -48,6 +59,9 @@ public class ConfigCommand
         configCommand.AddCommand(new GenericFeatureConfigCommand(
             _asyncCommandExecutor, configCommand.Name, _featureArgument,
             "disable", "Disables a specified feature in the user's configuration."));
+        
+        configCommand.AddCommand(new CreateSessionConfigCommand(_asyncCommandExecutor, configCommand.Name, _sessionConfigIdOption));
+        configCommand.AddCommand(new ModifySessionConfigCommand(_asyncCommandExecutor, configCommand.Name, _sessionConfigIdOption));
         
         return configCommand;
     }

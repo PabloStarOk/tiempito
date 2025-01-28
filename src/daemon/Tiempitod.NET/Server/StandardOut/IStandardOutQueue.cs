@@ -1,4 +1,4 @@
-namespace Tiempitod.NET.Server;
+namespace Tiempitod.NET.Server.StandardOut;
 
 /// <summary>
 /// Defines a writer to send messages to the

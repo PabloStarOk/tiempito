@@ -1,5 +1,3 @@
-using Tiempito.IPC.NET.Messages;
-
 namespace Tiempitod.NET.Server;
 
 /// <summary>
@@ -7,11 +5,20 @@ namespace Tiempitod.NET.Server;
 /// </summary>
 public interface IServer
 {
-    public event EventHandler<Request> RequestReceived;
-
     /// <summary>
-    /// Sends a response to the current connected client.
+    /// Event raised when server execution fails due to a critical error.
     /// </summary>
-    /// <returns>A Task representing the operation.</returns>
-    public Task SendResponseAsync(Response response);
+    public event EventHandler? OnFailed;
+    
+    /// <summary>
+    /// Starts the server.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    public Task StartAsync(CancellationToken cancellationToken);
+    
+    /// <summary>
+    /// Stops the server.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    public Task StopAsync();
 }

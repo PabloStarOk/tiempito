@@ -6,6 +6,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tiempito.CLI.NET", "src\cli
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tiempito.IPC.NET", "src\lib\Tiempito.IPC.NET\Tiempito.IPC.NET.csproj", "{73DFDB5F-2E39-4C40-BA04-C9279C9FF0A6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tiempitod.Tests", "test\daemon\Tiempitod.Tests\Tiempitod.Tests.csproj", "{6D07B78F-D1B5-4C15-B210-0FFE063D3552}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug-Windows|Any CPU = Debug-Windows|Any CPU
@@ -38,5 +40,13 @@ Global
 		{C00A0339-2ED8-464E-BA68-AA473956CD67}.Release-Windows|Any CPU.Build.0 = Release-Windows|Any CPU
 		{C00A0339-2ED8-464E-BA68-AA473956CD67}.Debug-Linux|Any CPU.ActiveCfg = Debug-Linux|Any CPU
 		{C00A0339-2ED8-464E-BA68-AA473956CD67}.Debug-Linux|Any CPU.Build.0 = Debug-Linux|Any CPU
+		{6D07B78F-D1B5-4C15-B210-0FFE063D3552}.Debug-Windows|Any CPU.ActiveCfg = Debug|Any CPU
+		{6D07B78F-D1B5-4C15-B210-0FFE063D3552}.Debug-Windows|Any CPU.Build.0 = Debug|Any CPU
+		{6D07B78F-D1B5-4C15-B210-0FFE063D3552}.Release-Linux|Any CPU.ActiveCfg = Debug|Any CPU
+		{6D07B78F-D1B5-4C15-B210-0FFE063D3552}.Release-Linux|Any CPU.Build.0 = Debug|Any CPU
+		{6D07B78F-D1B5-4C15-B210-0FFE063D3552}.Release-Windows|Any CPU.ActiveCfg = Debug|Any CPU
+		{6D07B78F-D1B5-4C15-B210-0FFE063D3552}.Release-Windows|Any CPU.Build.0 = Debug|Any CPU
+		{6D07B78F-D1B5-4C15-B210-0FFE063D3552}.Debug-Linux|Any CPU.ActiveCfg = Debug|Any CPU
+		{6D07B78F-D1B5-4C15-B210-0FFE063D3552}.Debug-Linux|Any CPU.Build.0 = Debug|Any CPU
 	EndGlobalSection
 EndGlobal
