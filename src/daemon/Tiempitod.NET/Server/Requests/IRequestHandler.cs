@@ -1,6 +1,6 @@
 using Tiempito.IPC.NET.Messages;
 
-namespace Tiempitod.NET.Server;
+namespace Tiempitod.NET.Server.Requests;
 
 /// <summary>
 /// Defines a handler of requests.

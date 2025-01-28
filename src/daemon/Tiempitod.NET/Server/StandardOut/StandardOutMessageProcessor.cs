@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 
-namespace Tiempitod.NET.Server;
+namespace Tiempitod.NET.Server.StandardOut;
 
 /// <summary>
 /// Process all messages that must be sent to the standard output of the current

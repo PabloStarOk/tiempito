@@ -4,7 +4,7 @@ using Tiempitod.NET.Configuration.Notifications;
 using Tiempitod.NET.Configuration.Session;
 using Tiempitod.NET.Extensions;
 using Tiempitod.NET.Notifications;
-using Tiempitod.NET.Server;
+using Tiempitod.NET.Server.StandardOut;
 
 namespace Tiempitod.NET.Session;
 

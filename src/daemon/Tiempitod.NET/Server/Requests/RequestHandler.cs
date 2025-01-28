@@ -2,7 +2,7 @@ using Tiempito.IPC.NET.Messages;
 
 using Tiempitod.NET.Commands;
 
-namespace Tiempitod.NET.Server;
+namespace Tiempitod.NET.Server.Requests;
 
 /// <summary>
 /// Handles incoming requests.

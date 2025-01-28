@@ -16,6 +16,8 @@ using Tiempitod.NET.Configuration.Session;
 using Tiempitod.NET.Configuration.User;
 using Tiempitod.NET.Notifications;
 using Tiempitod.NET.Server;
+using Tiempitod.NET.Server.Requests;
+using Tiempitod.NET.Server.StandardOut;
 #if LINUX
 using Tiempitod.NET.Notifications.Linux;
 #elif WINDOWS10_0_17763_0_OR_GREATER
