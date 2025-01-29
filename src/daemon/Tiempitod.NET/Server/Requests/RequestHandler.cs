@@ -1,6 +1,7 @@
 using Tiempito.IPC.NET.Messages;
 
 using Tiempitod.NET.Commands;
+using Tiempitod.NET.Common;
 
 namespace Tiempitod.NET.Server.Requests;
 

@@ -1,4 +1,4 @@
-namespace Tiempitod.NET;
+namespace Tiempitod.NET.Common;
 
 /// <summary>
 /// Represents an the result of an operation of a daemon service.

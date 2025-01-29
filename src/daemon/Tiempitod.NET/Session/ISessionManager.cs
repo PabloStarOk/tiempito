@@ -1,3 +1,5 @@
+using Tiempitod.NET.Common;
+
 namespace Tiempitod.NET.Session;
 
 /// <summary>
