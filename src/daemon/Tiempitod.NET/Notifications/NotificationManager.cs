@@ -1,4 +1,6 @@
 using Microsoft.Extensions.Options;
+
+using Tiempitod.NET.Common;
 using Tiempitod.NET.Configuration.AppFilesystem;
 using Tiempitod.NET.Configuration.Notifications;
 using Tiempitod.NET.Configuration.User;
@@ -11,7 +13,7 @@ namespace Tiempitod.NET.Notifications;
 /// <summary>
 /// Concrete class to display or close notifications.
 /// </summary>
-public class NotificationManager : DaemonService, INotificationManager
+public class NotificationManager : Service, INotificationManager
 {
     private readonly ISystemNotifier _systemNotifier;
     private readonly IAppFilesystemPathProvider _appFilesystemPathProvider;
@@ -48,36 +50,24 @@ public class NotificationManager : DaemonService, INotificationManager
         _appIconFilePath = appFilesystemPathProvider.ApplicationIconPath;
     }
 
-    protected override void OnStartService()
+    protected async override Task<bool> OnStartServiceAsync()
     {
 #if LINUX
-        Task.Run
-        (
-            async () =>
-            {
-                try
-                {
-                    if (!Path.Exists(_appIconFilePath))
-                        return;
-                    NotificationImageData appImgData = await _systemAsyncIconLoader.LoadAsync(_appIconFilePath);
-                    _baseNotification.Hints.TryAdd("image-data", appImgData.GetVariantValue());
-                }
-                catch (Exception ex)
-                {
-                    Logger.LogError(ex, "Application's icon couldn't be loaded.");
-                }
-            }
-        );
-        
+        if (!Path.Exists(_appIconFilePath))
+            return false;
+        NotificationImageData appImgData = await _systemAsyncIconLoader.LoadAsync(_appIconFilePath);
+        _baseNotification.Hints.TryAdd("image-data", appImgData.GetVariantValue());
         _baseNotification.Hints.TryAdd("category", VariantValue.String("im"));
 #elif WINDOWS10_0_17763_0_OR_GREATER
         _baseNotification.Icon = _appIconFilePath;
 #endif
+        return true;
     }
 
-    protected override void OnStopService()
+    protected override Task<bool> OnStopServiceAsync()
     {
         _systemNotifier.CleanUp();
+        return Task.FromResult(true);
     }
     
     public async Task NotifyAsync(string summary, string body, NotificationSoundType notificationSoundType)

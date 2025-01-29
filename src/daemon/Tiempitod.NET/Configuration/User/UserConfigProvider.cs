@@ -1,6 +1,8 @@
+using Tiempitod.NET.Common;
+
 namespace Tiempitod.NET.Configuration.User;
 
-public class UserConfigProvider : DaemonService, IUserConfigProvider
+public class UserConfigProvider : Service, IUserConfigProvider
 {
     private readonly IUserConfigReader _userConfigReader;
     private readonly IUserConfigWriter _userConfigWriter;
@@ -23,9 +25,15 @@ public class UserConfigProvider : DaemonService, IUserConfigProvider
         _userConfigWriter = userConfigWriter;
     }
 
-    protected override void OnStartService()
+    protected override Task<bool> OnStartServiceAsync()
     {
         UserConfig = _userConfigReader.Read();
+        return Task.FromResult(true);
+    }
+
+    protected override Task<bool> OnStopServiceAsync()
+    {
+        return Task.FromResult(true);
     }
 
     public OperationResult SaveUserConfig(UserConfig userConfig)

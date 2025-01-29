@@ -8,6 +8,7 @@ using Tiempitod.NET;
 using Tiempitod.NET.Commands;
 using Tiempitod.NET.Commands.Configuration;
 using Tiempitod.NET.Commands.SessionManagement;
+using Tiempitod.NET.Common;
 using Tiempitod.NET.Configuration;
 using Tiempitod.NET.Configuration.AppFilesystem;
 using Tiempitod.NET.Configuration.Notifications;
@@ -128,11 +129,11 @@ builder.Services.AddSingleton<NotificationManager>();
 builder.Services.AddSingleton<ISessionManager>(sp => sp.GetService<SessionManager>()!);
 builder.Services.AddSingleton<INotificationManager>(sp => sp.GetService<NotificationManager>()!);
 
-builder.Services.AddSingleton<DaemonService>(sp => sp.GetService<UserConfigFileCreator>()!);
-builder.Services.AddSingleton<DaemonService>(sp => sp.GetService<UserConfigProvider>()!);
-builder.Services.AddSingleton<DaemonService>(sp => sp.GetService<SessionConfigProvider>()!);
-builder.Services.AddSingleton<DaemonService>(sp => sp.GetService<SessionManager>()!);
-builder.Services.AddSingleton<DaemonService>(sp => sp.GetService<NotificationManager>()!);
+builder.Services.AddSingleton<Service>(sp => sp.GetService<UserConfigFileCreator>()!);
+builder.Services.AddSingleton<Service>(sp => sp.GetService<UserConfigProvider>()!);
+builder.Services.AddSingleton<Service>(sp => sp.GetService<SessionConfigProvider>()!);
+builder.Services.AddSingleton<Service>(sp => sp.GetService<SessionManager>()!);
+builder.Services.AddSingleton<Service>(sp => sp.GetService<NotificationManager>()!);
 
 builder.Services.AddHostedService<DaemonWorker>();
 

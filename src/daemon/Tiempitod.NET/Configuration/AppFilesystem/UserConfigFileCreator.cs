@@ -1,11 +1,13 @@
 using Microsoft.Extensions.FileProviders;
 
+using Tiempitod.NET.Common;
+
 namespace Tiempitod.NET.Configuration.AppFilesystem;
 
 /// <summary>
 /// Creates the default user's configuration file.
 /// </summary>
-public class UserConfigFileCreator : DaemonService
+public class UserConfigFileCreator : Service
 {
     private readonly IFileProvider _userDirectoryFileProvider;
     
@@ -20,11 +22,17 @@ public class UserConfigFileCreator : DaemonService
         _userDirectoryFileProvider = userDirectoryFileProvider;
     }
 
-    protected override void OnStartService()
+    protected override Task<bool> OnStartServiceAsync()
     {
         CreateFile(AppConfigConstants.UserConfigFileName);
+        return Task.FromResult(true);
     }
-    
+
+    protected override Task<bool> OnStopServiceAsync()
+    {
+        return Task.FromResult(true);
+    }
+
     /// <summary>
     /// Creates a file in the user's config directory with the given name.
     /// </summary>
@@ -37,6 +45,6 @@ public class UserConfigFileCreator : DaemonService
             return;
         
         File.Create(fileInfo.PhysicalPath).Dispose();
-        Logger.LogInformation("User config filed was created at {Path}", fileInfo.PhysicalPath);
+        _logger.LogInformation("User config filed was created at {Path}", fileInfo.PhysicalPath);
     }
 }

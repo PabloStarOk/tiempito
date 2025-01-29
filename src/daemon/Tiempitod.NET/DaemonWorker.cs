@@ -1,3 +1,4 @@
+using Tiempitod.NET.Common;
 using Tiempitod.NET.Server;
 
 namespace Tiempitod.NET;
@@ -11,7 +12,7 @@ public class DaemonWorker : BackgroundService
     private readonly ILogger<DaemonWorker> _logger;
     private readonly TimeProvider _timeProvider;
     private readonly IServer _server;
-    private readonly IEnumerable<DaemonService> _daemonServices;
+    private readonly IEnumerable<Service> _daemonServices;
     private bool _isExiting;
     
     public DaemonWorker(
@@ -19,7 +20,7 @@ public class DaemonWorker : BackgroundService
         ILogger<DaemonWorker> logger,
         TimeProvider timeProvider,
         IServer server,
-        IEnumerable<DaemonService> daemonServices)
+        IEnumerable<Service> daemonServices)
     {
         _appLifetime = appLifetime;
         _logger = logger;
@@ -33,32 +34,55 @@ public class DaemonWorker : BackgroundService
         if (_logger.IsEnabled(LogLevel.Information))
             _logger.LogInformation("tiempitod running at: {Time}", _timeProvider.GetUtcNow());
 
-        _server.OnFailed += ServerOnFailedHandler; 
+        _server.OnFailed += OnFailedServerHandler;
         await _server.StartAsync(stoppingToken);
-        
-        foreach (DaemonService service in _daemonServices)
+
+        foreach (Service service in _daemonServices)
         {
-            if (service.StartService())
+            if (await service.StartServiceAsync())
                 continue;
-            
+
             _logger.LogCritical("Couldn't start a service, daemon exiting. Service: {Service}", service);
-            Exit();
+            await ExitAsync();
         }
 
-        stoppingToken.Register(Exit);
+        stoppingToken.Register
+        (
+            () =>
+            {
+                if (_isExiting)
+                    return;
+                
+                ThreadPool.QueueUserWorkItem
+                (
+                    async void (_) =>
+                    {
+                        try
+                        {
+                            await ExitAsync();
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Error occurred while shutting down daemon.");
+                        }
+                    }
+                );
+            }
+        );
     }
 
-    private void Exit()
+    private async Task ExitAsync()
     {
         if (_isExiting)
             return;
 
         _isExiting = true;
-
-        _server.StopAsync();
-        foreach (DaemonService service in _daemonServices)
+        
+        await _server.StopAsync();
+        foreach (Service service in _daemonServices)
         {
-            if (!service.StopService())
+            bool stoppedSuccessful = await service.StopServiceAsync();
+            if (!stoppedSuccessful)
                 _logger.LogCritical("Couldn't stop a service. Service: {Service}", service);
         }
         
@@ -67,10 +91,10 @@ public class DaemonWorker : BackgroundService
         
         _appLifetime.StopApplication();
     }
-
-    private void ServerOnFailedHandler(object? sender, EventArgs e)
+    
+    private async Task OnFailedServerHandler(object? sender)
     {
-        _server.OnFailed -= ServerOnFailedHandler;
-        Exit();
+        _server.OnFailed -= OnFailedServerHandler;
+        await ExitAsync();
     }
 }

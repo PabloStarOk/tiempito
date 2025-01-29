@@ -26,7 +26,7 @@ public class Server : IServer
     private string _currentConnectedUser = string.Empty;
     private int _currentRestartAttempts;
 
-    public event EventHandler? OnFailed;
+    public event IServer.AsyncEventHandler? OnFailed;
     
     public Server(
         ILogger<Server> logger,
@@ -69,14 +69,13 @@ public class Server : IServer
     /// <summary>
     /// Restarts the server.
     /// </summary>
-    private Task RestartAsync(CancellationToken cancellationToken)
+    private async Task RestartAsync(CancellationToken cancellationToken)
     {
         _currentRestartAttempts++;
         if (_maxRestartAttempts > 0 && _currentRestartAttempts > _maxRestartAttempts)
         {
             _logger.LogError("Maximum restart attempts reached, command server will not restart.");
-            OnFailed?.Invoke(this, EventArgs.Empty);
-            return Task.CompletedTask;
+            if (OnFailed is not null) await OnFailed(this);
         }
         
         if (_pipeServer.IsConnected)
@@ -84,7 +83,6 @@ public class Server : IServer
         
         Task.Run(() => RunAsync(cancellationToken), cancellationToken).Forget();
         _logger.LogCritical("Command server restarted.");
-        return Task.CompletedTask;
     }
 
     /// <summary>

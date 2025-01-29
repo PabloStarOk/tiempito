@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Options;
 using System.Collections.ObjectModel;
+using Tiempitod.NET.Common;
 using Tiempitod.NET.Configuration.Notifications;
 using Tiempitod.NET.Configuration.Session;
 using Tiempitod.NET.Extensions;
@@ -11,7 +12,7 @@ namespace Tiempitod.NET.Session;
 /// <summary>
 /// A concrete class to manage sessions.
 /// </summary>
-public sealed class SessionManager : DaemonService, ISessionManager
+public sealed class SessionManager : Service, ISessionManager
 {
     private readonly ISessionConfigProvider _sessionConfigProvider;
     private readonly NotificationConfig _notificationConfig;
@@ -42,19 +43,20 @@ public sealed class SessionManager : DaemonService, ISessionManager
         _standardOutQueue = standardOutQueue;
     }
 
-    protected override void OnStartService()
+    protected override Task<bool> OnStartServiceAsync()
     {
         _progress.ProgressChanged += ProgressEventHandler;
         _sessionTimer.OnTimeCompleted += TimeCompletedHandler;
         _sessionTimer.OnDelayElapsed += DelayProgressHandler;
         _sessionTimer.OnSessionStarted += SessionStartedHandler;
         _sessionTimer.OnSessionCompleted += SessionCompletedHandler;
+        return Task.FromResult(true);
     }
     
-    protected override void OnStopService()
+    protected async override Task<bool> OnStopServiceAsync()
     {
         if (!_timerTokenSource.IsCancellationRequested)
-            _timerTokenSource.Cancel();
+            await _timerTokenSource.CancelAsync();
         _timerTokenSource.Dispose();
         
         _progress.ProgressChanged -= ProgressEventHandler;
@@ -63,6 +65,7 @@ public sealed class SessionManager : DaemonService, ISessionManager
         _sessionTimer.OnSessionStarted -= SessionStartedHandler;
         _sessionTimer.OnSessionCompleted -= SessionCompletedHandler;
         _sessionTimer.StopAll();
+        return true;
     }
     
     public OperationResult StartSession(string sessionId = "", string sessionConfigId = "")

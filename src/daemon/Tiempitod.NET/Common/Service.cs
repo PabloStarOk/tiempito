@@ -1,61 +1,57 @@
-namespace Tiempitod.NET;
+namespace Tiempitod.NET.Common;
 
 /// <summary>
-/// Defines a top level service used required by the daemon.
+/// Defines a top level service required in the Daemon.
 /// </summary>
-public abstract class DaemonService(ILogger<DaemonService> logger)
+public abstract class Service(ILogger<Service> logger)
 {
-    protected readonly ILogger<DaemonService> Logger = logger;
+    protected readonly ILogger<Service> _logger = logger;
 
     /// <summary>
     /// Starts the service and catch any exception raised.
     /// </summary>
     /// <returns>True if the service was started successfully, false otherwise.</returns>
-    public bool StartService()
+    public async Task<bool> StartServiceAsync()
     {
         try
         {
-            OnStartService();
+            return await OnStartServiceAsync();
         }
         catch (Exception ex)
         {
-            Logger.LogCritical(ex, "Exception occurred while starting {Service} daemon service at {Time}", this, DateTimeOffset.Now);
+            _logger.LogCritical(ex, "Exception occurred while starting {Service} daemon service at {Time}", this, DateTimeOffset.Now);
             return false;
         }
-        
-        return true;
     }
     
     /// <summary>
     /// Stops the service and catch any exception raised.
     /// </summary>
     /// <returns>True if the service was stopped successfully, false otherwise.</returns>
-    public bool StopService()
+    public async Task<bool> StopServiceAsync()
     {
         try
         {
-            OnStopService();
+            return await OnStopServiceAsync();
         }
         catch (Exception ex)
         {
-            Logger.LogCritical(ex, "Exception occurred while stopping {Service} at {Time}", this, DateTimeOffset.Now);
+            _logger.LogCritical(ex, "Exception occurred while stopping {Service} at {Time}", this, DateTimeOffset.Now);
             return false;
         }
-        
-        return true;
     }
 
     /// <summary>
     /// Executed after daemon is started.
     /// Empty body if some services doesn't need initialize anything.
     /// </summary>
-    protected virtual void OnStartService() { }
+    protected abstract Task<bool> OnStartServiceAsync();
 
     /// <summary>
     /// Executed before daemon is stopped.
     /// Empty body if services doesn't need to clean up anything.
     /// </summary>
-    protected virtual void OnStopService() { }
+    protected abstract Task<bool> OnStopServiceAsync();
 
     /// <summary>
     /// Regenerates a cancellation token source managed by the daemon service.

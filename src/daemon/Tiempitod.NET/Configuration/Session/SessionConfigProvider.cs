@@ -1,3 +1,4 @@
+using Tiempitod.NET.Common;
 using Tiempitod.NET.Configuration.User;
 
 namespace Tiempitod.NET.Configuration.Session;
@@ -5,7 +6,7 @@ namespace Tiempitod.NET.Configuration.Session;
 /// <summary>
 /// Provides access to user's configuration and custom defined session configurations.
 /// </summary>
-public class SessionConfigProvider : DaemonService, ISessionConfigProvider
+public class SessionConfigProvider : Service, ISessionConfigProvider
 {
     private readonly IUserConfigProvider _userConfigProvider;
     private readonly ISessionConfigReader _sessionConfigReader;
@@ -36,16 +37,18 @@ public class SessionConfigProvider : DaemonService, ISessionConfigProvider
         _defaultSessionChangedHandler = (_, _) => SetDefaultUserSessionConfig();
     }
 
-    protected override void OnStartService()
+    protected override Task<bool> OnStartServiceAsync()
     {
         _userConfigProvider.OnUserConfigChanged += _defaultSessionChangedHandler; 
         LoadSessionConfigs();
         SetDefaultUserSessionConfig();
+        return Task.FromResult(true);
     }
 
-    protected override void OnStopService()
+    protected override Task<bool> OnStopServiceAsync()
     { 
         _userConfigProvider.OnUserConfigChanged -= _defaultSessionChangedHandler;
+        return Task.FromResult(true);
     }
 
     // TODO: Make method asynchronous.

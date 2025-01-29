@@ -57,12 +57,12 @@ public class SessionManagerTests : IDisposable
         _mockRepository.VerifyAll();
     }
     
-    #region DaemonService Methods
+    #region Service Methods
 
     [Fact]
     public void StartService_should_SubscribeToEvents()
     {
-        _sessionManager.StartService();
+        _sessionManager.StartServiceAsync();
         _sessionTimerMock.VerifyAdd(m => m.OnTimeCompleted += It.IsAny<EventHandler<TimeType>>(), Times.Once);
         _sessionTimerMock.VerifyAdd(m => m.OnDelayElapsed += It.IsAny<EventHandler<TimeSpan>>(), Times.Once);
         _sessionTimerMock.VerifyAdd(m => m.OnSessionStarted += It.IsAny<EventHandler>(), Times.Once);
@@ -74,7 +74,7 @@ public class SessionManagerTests : IDisposable
     {
         _sessionTimerMock.Setup(m => m.StopAll()).Returns([]);
         
-        _sessionManager.StopService();
+        _sessionManager.StopServiceAsync();
         
         _sessionTimerMock.VerifyAdd(m => m.OnTimeCompleted += It.IsAny<EventHandler<TimeType>>(), Times.Never);
         _sessionTimerMock.VerifyAdd(m => m.OnDelayElapsed += It.IsAny<EventHandler<TimeSpan>>(), Times.Never);
@@ -339,7 +339,7 @@ public class SessionManagerTests : IDisposable
             _notificationConfig.SessionStartedSummary,
             _notificationConfig.SessionStartedBody,
             NotificationSoundType.SessionStarted)).Returns(Task.CompletedTask);
-        _sessionManager.StartService();
+        _sessionManager.StartServiceAsync();
         
         _sessionTimerMock.Raise(m => m.OnSessionStarted += null,
             _sessionTimerMock.Object, EventArgs.Empty);
@@ -357,7 +357,7 @@ public class SessionManagerTests : IDisposable
             _notificationConfig.SessionFinishedSummary,
             _notificationConfig.SessionFinishedBody,
             NotificationSoundType.SessionFinished)).Returns(Task.CompletedTask);
-        _sessionManager.StartService();
+        _sessionManager.StartServiceAsync();
         
         _sessionTimerMock.Raise(m => m.OnSessionCompleted += null,
             _sessionTimerMock.Object, sessionEventArg);
@@ -369,7 +369,7 @@ public class SessionManagerTests : IDisposable
     //     Session sessionReport = SessionProvider.CreateRandom();
     //
     //     _stdOutQueueMock.Setup(m => m.QueueMessage(It.IsAny<string>())).Verifiable(Times.Once);
-    //     _sessionManager.StartService();
+    //     _sessionManager.StartServiceAsync();
     //
     //     IProgress<Session> progress = _progress;
     //     progress.Report(sessionReport);
@@ -391,7 +391,7 @@ public class SessionManagerTests : IDisposable
         _notificationManagerMock.Setup(m => m.CloseLastNotificationAsync()).Returns(Task.CompletedTask);
         _notificationManagerMock.Setup(m => m.NotifyAsync(
             summary, body, NotificationSoundType.TimeCompleted)).Returns(Task.CompletedTask);
-        _sessionManager.StartService();
+        _sessionManager.StartServiceAsync();
         
         // Act
         _sessionTimerMock.Raise(m => m.OnTimeCompleted += null,
@@ -402,7 +402,7 @@ public class SessionManagerTests : IDisposable
     public void SessionManager_should_SendMessagesToStdOut_when_OnSessionDelayElapsed()
     {
         _stdOutQueueMock.Setup(m => m.QueueMessage(It.IsAny<string>()));
-        _sessionManager.StartService();
+        _sessionManager.StartServiceAsync();
 
         _sessionTimerMock.Raise(m => m.OnDelayElapsed += null,
             _sessionTimerMock.Object, TimeSpan.Zero);
