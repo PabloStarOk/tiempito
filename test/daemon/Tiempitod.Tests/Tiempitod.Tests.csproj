@@ -15,7 +15,7 @@
         <TargetFramework>net8.0</TargetFramework>
     </PropertyGroup>
 
-    <PropertyGroup Condition=" '$(Configuration)' == 'Debug-Windows' ">
+    <PropertyGroup Condition=" '$(OS)' == '$(Windows_NT)' and '$(Configuration)' == 'Debug-Windows' ">
         <TargetFramework>net8.0-windows10.0.17763.0</TargetFramework>
     </PropertyGroup>
     
@@ -23,7 +23,7 @@
         <TargetFramework>net8.0</TargetFramework>
     </PropertyGroup>
 
-    <PropertyGroup Condition=" '$(Configuration)' == 'Release-Windows' ">
+    <PropertyGroup Condition=" '$(OS)' == '$(Windows_NT)' and '$(Configuration)' == 'Release-Windows' ">
         <TargetFramework>net8.0-windows10.0.17763.0</TargetFramework>
     </PropertyGroup>
     
