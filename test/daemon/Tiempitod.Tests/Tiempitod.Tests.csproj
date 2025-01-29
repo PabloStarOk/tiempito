@@ -7,8 +7,26 @@
 
         <IsPackable>false</IsPackable>
         <IsTestProject>true</IsTestProject>
+        <Configurations>Debug-Windows;Debug-Linux;Release-Linux;Release-Windows</Configurations>
+        <Platforms>AnyCPU</Platforms>
     </PropertyGroup>
 
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug-Linux' ">
+        <TargetFramework>net8.0</TargetFramework>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug-Windows' ">
+        <TargetFramework>net8.0-windows10.0.17763.0</TargetFramework>
+    </PropertyGroup>
+    
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release-Linux' ">
+        <TargetFramework>net8.0</TargetFramework>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release-Windows' ">
+        <TargetFramework>net8.0-windows10.0.17763.0</TargetFramework>
+    </PropertyGroup>
+    
     <ItemGroup>
         <PackageReference Include="coverlet.collector" Version="6.0.0" />
         <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" Version="9.1.0" />
