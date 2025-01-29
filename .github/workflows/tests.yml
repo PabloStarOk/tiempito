@@ -12,33 +12,33 @@ jobs:
     timeout-minutes: 15
     runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+    - uses: actions/checkout@v4
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 8.0.x
-    - name: Restore dependencies
-      run: dotnet restore
+    - name: Restore
+      run: dotnet restore --ucr
     - name: Build
-      run: dotnet build --no-restore
+      run: dotnet build --no-restore -c Release-Linux
     - name: Test
-      run: dotnet test --no-build --verbosity normal --configuration Release-Linux
+      run: dotnet test --no-build -v normal -c Release-Linux
 
   win-tests:
     timeout-minutes: 15
     runs-on: windows-2022
     steps:
-    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+    - uses: actions/checkout@v4
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 8.0.x
-    - name: Restore dependencies
-      run: dotnet restore
+    - name: Restore
+      run: dotnet restore --ucr
     - name: Build
-      run: dotnet build --no-restore
+      run: dotnet build --no-restore -c Release-Windows
     - name: Test
-      run: dotnet test --no-build --verbosity normal --configuration Release-Windows
+      run: dotnet test --no-build -v normal -c Release-Windows
       
     
       
