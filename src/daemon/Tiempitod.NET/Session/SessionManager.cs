@@ -3,7 +3,6 @@ using System.Collections.ObjectModel;
 using Tiempitod.NET.Common;
 using Tiempitod.NET.Configuration.Notifications;
 using Tiempitod.NET.Configuration.Session;
-using Tiempitod.NET.Extensions;
 using Tiempitod.NET.Notifications;
 using Tiempitod.NET.Server.StandardOut;
 
@@ -175,12 +174,12 @@ public sealed class SessionManager : Service, ISessionManager
     /// </summary>
     /// <param name="sender">Sender of the event.</param>
     /// <param name="timeType">A <see cref="TimeType"/> which represents the time completed.</param>
-    private void TimeCompletedHandler(object? sender, TimeType timeType)
+    private async Task TimeCompletedHandler(object? sender, TimeType timeType)
     {
         var message = $"{timeType.ToString()} time completed.";
         _standardOutQueue.QueueMessage(message);
         
-        _notificationManager.CloseLastNotificationAsync();
+        await _notificationManager.CloseLastNotificationAsync();
         
         string summary;
         string body;
@@ -196,7 +195,7 @@ public sealed class SessionManager : Service, ISessionManager
             body = _notificationConfig.BreakCompletedBody;
         }
         
-        _notificationManager.NotifyAsync(summary, body, NotificationSoundType.TimeCompleted).Forget();
+        await _notificationManager.NotifyAsync(summary, body, NotificationSoundType.TimeCompleted);
     }
 
     /// <summary>
@@ -205,10 +204,11 @@ public sealed class SessionManager : Service, ISessionManager
     /// </summary>
     /// <param name="sender">Sender of the event.</param>
     /// <param name="time">Elapsed time.</param>
-    private void DelayProgressHandler(object? sender, TimeSpan time)
+    private Task DelayProgressHandler(object? sender, TimeSpan time)
     {
         var message = $"Elapsed delay time: {time}";
         _standardOutQueue.QueueMessage(message);
+        return Task.CompletedTask;
     }
 
     /// <summary>
@@ -217,13 +217,13 @@ public sealed class SessionManager : Service, ISessionManager
     /// </summary>
     /// <param name="e">Empty arguments of the invoked event.</param>
     /// <param name="sender">Sender of the event.</param>
-    private void SessionStartedHandler(object? sender, EventArgs e)
+    private async Task SessionStartedHandler(object? sender, EventArgs e)
     {
-        _notificationManager.CloseLastNotificationAsync();
-        _notificationManager.NotifyAsync(
+        await _notificationManager.CloseLastNotificationAsync();
+        await _notificationManager.NotifyAsync(
             summary: _notificationConfig.SessionStartedSummary,
             body: _notificationConfig.SessionStartedBody,
-            NotificationSoundType.SessionStarted).Forget();
+            NotificationSoundType.SessionStarted);
     }
     
     /// <summary>
@@ -232,17 +232,17 @@ public sealed class SessionManager : Service, ISessionManager
     /// </summary>
     /// <param name="sender">Sender of the event.</param>
     /// <param name="session">The completed <see cref="Session"/>.</param>
-    private void SessionCompletedHandler(object? sender, Session session)
+    private async Task SessionCompletedHandler(object? sender, Session session)
     {
         _sessionStorage.AddSession(SessionStatus.Finished, session);
         
         var message = $"Session with id {session.Id} was completed";
         _standardOutQueue.QueueMessage(message);
         
-        _notificationManager.CloseLastNotificationAsync();
-        _notificationManager.NotifyAsync(
+        await _notificationManager.CloseLastNotificationAsync();
+        await _notificationManager.NotifyAsync(
             summary: _notificationConfig.SessionFinishedSummary,
             body: _notificationConfig.SessionFinishedBody,
-            NotificationSoundType.SessionFinished).Forget();
+            NotificationSoundType.SessionFinished);
     }
 }

@@ -1,3 +1,5 @@
+using AsyncEvent;
+
 namespace Tiempitod.NET.Session;
 
 /// <summary>
@@ -12,10 +14,10 @@ public class SessionTimer : ISessionTimer
     private readonly Dictionary<string, TimeSpan> _sessionsDelays = [];
     private readonly TimeSpan _interval;
     
-    public event EventHandler<TimeType>? OnTimeCompleted;
-    public event EventHandler? OnSessionStarted;
-    public event EventHandler<Session>? OnSessionCompleted;
-    public event EventHandler<TimeSpan>? OnDelayElapsed;
+    public event AsyncEventHandler<TimeType>? OnTimeCompleted;
+    public event AsyncEventHandler? OnSessionStarted;
+    public event AsyncEventHandler<Session>? OnSessionCompleted;
+    public event AsyncEventHandler<TimeSpan>? OnDelayElapsed;
     
     /// <summary>
     /// Instantiates a <see cref="SessionTimer"/>.

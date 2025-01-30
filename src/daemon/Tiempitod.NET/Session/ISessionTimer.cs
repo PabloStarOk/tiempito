@@ -1,3 +1,5 @@
+using AsyncEvent;
+
 namespace Tiempitod.NET.Session;
 
 /// <summary>
@@ -8,22 +10,22 @@ public interface ISessionTimer
     /// <summary>
     /// Raised when a focus or break time is completed in a session.
     /// </summary>
-    public event EventHandler<TimeType> OnTimeCompleted;
+    public event AsyncEventHandler<TimeType> OnTimeCompleted;
     
     /// <summary>
     /// Raised when a session is started.
     /// </summary>
-    public event EventHandler OnSessionStarted;
+    public event AsyncEventHandler OnSessionStarted;
     
     /// <summary>
     /// Raised when a session is completed.
     /// </summary>
-    public event EventHandler<Session> OnSessionCompleted;
+    public event AsyncEventHandler<Session> OnSessionCompleted;
     
     /// <summary>
     /// Raised when a second has elapsed in a delay between times.
     /// </summary>
-    public event EventHandler<TimeSpan> OnDelayElapsed;
+    public event AsyncEventHandler<TimeSpan> OnDelayElapsed;
     
     // TODO: Make async methods.
     /// <summary>
