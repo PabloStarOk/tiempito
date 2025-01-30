@@ -49,6 +49,7 @@ public class SessionTimerTests : IDisposable
         {   
             Assert.Same(sender, _sessionTimer);
             startedEventRaised = true;
+            return Task.CompletedTask;
         };
 
         _sessionTimer.Start(_session, _tokenSource.Token);
@@ -62,7 +63,11 @@ public class SessionTimerTests : IDisposable
         _sessionStorageMock.Setup(
                 s => s.AddSession(SessionStatus.Executing, _session))
             .Returns(false);
-        _sessionTimer.OnSessionStarted += (_, _) => Assert.Fail("OnSessionStarted event shouldn't be raised.");
+        _sessionTimer.OnSessionStarted += (_, _) =>
+        {
+            Assert.Fail("OnSessionStarted event shouldn't be raised.");
+            return Task.CompletedTask;
+        };
         
         _sessionTimer.Start(_session, _tokenSource.Token);
     }
@@ -138,6 +143,7 @@ public class SessionTimerTests : IDisposable
             Assert.Same(sender, _sessionTimer);
             Assert.Equal(timeType, _session.CurrentTimeType);
             eventRaised = true;
+            return Task.CompletedTask;
         };
         _fakeTimeProvider.Advance(_focusDuration);
         
@@ -160,6 +166,7 @@ public class SessionTimerTests : IDisposable
             Assert.Same(sender, _sessionTimer);
             Assert.Equal(session, _session);
             eventRaised = true;
+            return Task.CompletedTask;
         };
         _fakeTimeProvider.Advance(_interval);
         
@@ -181,6 +188,7 @@ public class SessionTimerTests : IDisposable
         {
             Assert.Same(sender, _sessionTimer);
             eventRaised = true;
+            return Task.CompletedTask;
         };
         _fakeTimeProvider.Advance(_delayBetweenTimes);
         
@@ -201,7 +209,11 @@ public class SessionTimerTests : IDisposable
         SetupMethods(updateSession: true, timeProgressReport: true);
         _sessionTimer.Start(testSession, _tokenSource.Token);
         
-        _sessionTimer.OnSessionCompleted += (_, _) => Assert.Fail();
+        _sessionTimer.OnSessionCompleted += (_, _) =>
+        {
+            Assert.Fail();
+            return Task.CompletedTask;
+        };
         _fakeTimeProvider.Advance(_focusDuration);
     }
     
@@ -219,7 +231,11 @@ public class SessionTimerTests : IDisposable
         SetupMethods(updateSession: true, timeProgressReport: true);
         _sessionTimer.Start(testSession, _tokenSource.Token);
         
-        _sessionTimer.OnDelayElapsed += (_, _) => Assert.Fail();
+        _sessionTimer.OnDelayElapsed += (_, _) =>
+        {
+            Assert.Fail();
+            return Task.CompletedTask;
+        };
         _fakeTimeProvider.Advance(_focusDuration);
     }
     

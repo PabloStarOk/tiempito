@@ -1,3 +1,4 @@
+using AsyncEvent;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -54,32 +55,36 @@ public class SessionManagerTests : IDisposable
 
     public void Dispose()
     {
+        // Global Arrange
         _mockRepository.VerifyAll();
     }
     
     #region Service Methods
 
     [Fact]
-    public void StartService_should_SubscribeToEvents()
+    public async Task StartService_should_SubscribeToEvents()
     {
-        _sessionManager.StartServiceAsync();
-        _sessionTimerMock.VerifyAdd(m => m.OnTimeCompleted += It.IsAny<EventHandler<TimeType>>(), Times.Once);
-        _sessionTimerMock.VerifyAdd(m => m.OnDelayElapsed += It.IsAny<EventHandler<TimeSpan>>(), Times.Once);
-        _sessionTimerMock.VerifyAdd(m => m.OnSessionStarted += It.IsAny<EventHandler>(), Times.Once);
-        _sessionTimerMock.VerifyAdd(m => m.OnSessionCompleted += It.IsAny<EventHandler<Session>>(), Times.Once);
+        bool startServiceResult = await _sessionManager.StartServiceAsync();
+        
+        _sessionTimerMock.VerifyAdd(m => m.OnTimeCompleted += It.IsAny<AsyncEventHandler<TimeType>>(), Times.Once);
+        _sessionTimerMock.VerifyAdd(m => m.OnDelayElapsed += It.IsAny<AsyncEventHandler<TimeSpan>>(), Times.Once);
+        _sessionTimerMock.VerifyAdd(m => m.OnSessionStarted += It.IsAny<AsyncEventHandler>(), Times.Once);
+        _sessionTimerMock.VerifyAdd(m => m.OnSessionCompleted += It.IsAny<AsyncEventHandler<Session>>(), Times.Once);
+        Assert.True(startServiceResult);
     }
     
     [Fact]
-    public void StopService_should_UnsubscribeFromEventsAndStopTimers()
+    public async Task StopService_should_UnsubscribeFromEventsAndStopTimers()
     {
         _sessionTimerMock.Setup(m => m.StopAll()).Returns([]);
         
-        _sessionManager.StopServiceAsync();
+        bool stopServiceResult = await _sessionManager.StopServiceAsync();
         
-        _sessionTimerMock.VerifyAdd(m => m.OnTimeCompleted += It.IsAny<EventHandler<TimeType>>(), Times.Never);
-        _sessionTimerMock.VerifyAdd(m => m.OnDelayElapsed += It.IsAny<EventHandler<TimeSpan>>(), Times.Never);
-        _sessionTimerMock.VerifyAdd(m => m.OnSessionStarted += It.IsAny<EventHandler>(), Times.Never);
-        _sessionTimerMock.VerifyAdd(m => m.OnSessionCompleted += It.IsAny<EventHandler<Session>>(), Times.Never);
+        _sessionTimerMock.VerifyAdd(m => m.OnTimeCompleted += It.IsAny<AsyncEventHandler<TimeType>>(), Times.Never);
+        _sessionTimerMock.VerifyAdd(m => m.OnDelayElapsed += It.IsAny<AsyncEventHandler<TimeSpan>>(), Times.Never);
+        _sessionTimerMock.VerifyAdd(m => m.OnSessionStarted += It.IsAny<AsyncEventHandler>(), Times.Never);
+        _sessionTimerMock.VerifyAdd(m => m.OnSessionCompleted += It.IsAny<AsyncEventHandler<Session>>(), Times.Never);
+        Assert.True(stopServiceResult);
     }
 
     #endregion
@@ -332,35 +337,42 @@ public class SessionManagerTests : IDisposable
     #region Events Handlers
 
     [Fact]
-    public void SessionManager_should_ReportAndNotify_when_SessionIsStarted()
+    public async Task SessionManager_should_ReportAndNotify_when_SessionIsStarted()
     {
-        _notificationManagerMock.Setup(m => m.CloseLastNotificationAsync()).Returns(Task.CompletedTask);
+        _notificationManagerMock.Setup(m => m.CloseLastNotificationAsync())
+            .Returns(Task.CompletedTask).Verifiable(Times.Once);
         _notificationManagerMock.Setup(m => m.NotifyAsync(
             _notificationConfig.SessionStartedSummary,
             _notificationConfig.SessionStartedBody,
-            NotificationSoundType.SessionStarted)).Returns(Task.CompletedTask);
-        _sessionManager.StartServiceAsync();
+            NotificationSoundType.SessionStarted)).Returns(Task.CompletedTask).Verifiable(Times.Once);
+        bool startServiceResult = await _sessionManager.StartServiceAsync();
         
-        _sessionTimerMock.Raise(m => m.OnSessionStarted += null,
+        await _sessionTimerMock.RaiseAsync(m => m.OnSessionStarted += null,
             _sessionTimerMock.Object, EventArgs.Empty);
+        
+        Assert.True(startServiceResult);
     }
     
     [Fact]
-    public void SessionManager_should_ReportAndNotify_when_SessionIsCompleted()
+    public async Task SessionManager_should_ReportAndNotify_when_SessionIsCompleted()
     {
         Session sessionEventArg = SessionProvider.CreateRandom();
         
         _sessionStorageMock.Setup(m => m.AddSession(SessionStatus.Finished, sessionEventArg)).Returns(true);
-        _stdOutQueueMock.Setup(m => m.QueueMessage(It.IsAny<string>()));
-        _notificationManagerMock.Setup(m => m.CloseLastNotificationAsync()).Returns(Task.CompletedTask);
+        _stdOutQueueMock.Setup(m => m.QueueMessage(It.IsAny<string>()))
+            .Verifiable(Times.Once);
+        _notificationManagerMock.Setup(m => m.CloseLastNotificationAsync())
+            .Returns(Task.CompletedTask).Verifiable(Times.Once);
         _notificationManagerMock.Setup(m => m.NotifyAsync(
             _notificationConfig.SessionFinishedSummary,
             _notificationConfig.SessionFinishedBody,
-            NotificationSoundType.SessionFinished)).Returns(Task.CompletedTask);
-        _sessionManager.StartServiceAsync();
+            NotificationSoundType.SessionFinished)).Returns(Task.CompletedTask).Verifiable(Times.Once);
+        bool startServiceResult = await _sessionManager.StartServiceAsync();
         
-        _sessionTimerMock.Raise(m => m.OnSessionCompleted += null,
+        await _sessionTimerMock.RaiseAsync(m => m.OnSessionCompleted += null,
             _sessionTimerMock.Object, sessionEventArg);
+        
+        Assert.True(startServiceResult);
     }
 
     // [Fact] TODO: Test fails when all solution tests are executed together.
@@ -378,7 +390,7 @@ public class SessionManagerTests : IDisposable
     [Theory]
     [InlineData(TimeType.Focus)]
     [InlineData(TimeType.Break)]
-    public void SessionManager_should_ReportAndNotify_when_TimeIsCompleted(
+    public async Task SessionManager_should_ReportAndNotify_when_TimeIsCompleted(
         TimeType timeTypeCompleted)
     {
         // Arrange
@@ -387,25 +399,34 @@ public class SessionManagerTests : IDisposable
         string body = timeTypeCompleted is TimeType.Focus 
             ? _notificationConfig.FocusCompletedBody : _notificationConfig.BreakCompletedBody;
         
-        _stdOutQueueMock.Setup(m => m.QueueMessage(It.IsAny<string>()));
-        _notificationManagerMock.Setup(m => m.CloseLastNotificationAsync()).Returns(Task.CompletedTask);
+        _stdOutQueueMock.Setup(m => m.QueueMessage(It.IsAny<string>()))
+            .Verifiable(Times.Once);
+        _notificationManagerMock.Setup(m => m.CloseLastNotificationAsync())
+            .Returns(Task.CompletedTask).Verifiable(Times.Once);
         _notificationManagerMock.Setup(m => m.NotifyAsync(
-            summary, body, NotificationSoundType.TimeCompleted)).Returns(Task.CompletedTask);
-        _sessionManager.StartServiceAsync();
+            summary, body, NotificationSoundType.TimeCompleted))
+            .Returns(Task.CompletedTask).Verifiable(Times.Once);
+        bool startServiceResult = await _sessionManager.StartServiceAsync();
         
         // Act
-        _sessionTimerMock.Raise(m => m.OnTimeCompleted += null,
+        await _sessionTimerMock.RaiseAsync(m => m.OnTimeCompleted += null,
             _sessionTimerMock.Object, timeTypeCompleted);
+        
+        // Arrange
+        Assert.True(startServiceResult);
     }
     
     [Fact]
-    public void SessionManager_should_SendMessagesToStdOut_when_OnSessionDelayElapsed()
+    public async Task SessionManager_should_SendMessagesToStdOut_when_OnSessionDelayElapsed()
     {
-        _stdOutQueueMock.Setup(m => m.QueueMessage(It.IsAny<string>()));
-        _sessionManager.StartServiceAsync();
+        _stdOutQueueMock.Setup(m => m.QueueMessage(It.IsAny<string>()))
+            .Verifiable(Times.Once);
+        bool startServiceResult = await _sessionManager.StartServiceAsync();
 
-        _sessionTimerMock.Raise(m => m.OnDelayElapsed += null,
+        await _sessionTimerMock.RaiseAsync(m => m.OnDelayElapsed += null,
             _sessionTimerMock.Object, TimeSpan.Zero);
+        
+        Assert.True(startServiceResult);
     }
     
     #endregion
