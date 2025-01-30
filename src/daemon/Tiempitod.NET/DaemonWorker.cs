@@ -92,7 +92,7 @@ public class DaemonWorker : BackgroundService
         _appLifetime.StopApplication();
     }
     
-    private async Task OnFailedServerHandler(object? sender)
+    private async Task OnFailedServerHandler(object? sender, EventArgs e)
     {
         _server.OnFailed -= OnFailedServerHandler;
         await ExitAsync();

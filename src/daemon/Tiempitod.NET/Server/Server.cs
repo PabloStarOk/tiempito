@@ -1,5 +1,8 @@
 using Microsoft.Extensions.Options;
 using System.IO.Pipes;
+
+using AsyncEvent;
+
 using Tiempito.IPC.NET.Messages;
 using Tiempito.IPC.NET.Packets;
 using Tiempitod.NET.Configuration.Server;
@@ -26,7 +29,7 @@ public class Server : IServer
     private string _currentConnectedUser = string.Empty;
     private int _currentRestartAttempts;
 
-    public event IServer.AsyncEventHandler? OnFailed;
+    public event AsyncEventHandler? OnFailed;
     
     public Server(
         ILogger<Server> logger,
@@ -75,7 +78,8 @@ public class Server : IServer
         if (_maxRestartAttempts > 0 && _currentRestartAttempts > _maxRestartAttempts)
         {
             _logger.LogError("Maximum restart attempts reached, command server will not restart.");
-            if (OnFailed is not null) await OnFailed(this);
+            if (OnFailed is not null)
+                await OnFailed.InvokeAsync(this, EventArgs.Empty);
         }
         
         if (_pipeServer.IsConnected)

@@ -1,3 +1,5 @@
+using AsyncEvent;
+
 namespace Tiempitod.NET.Server;
 
 /// <summary>
@@ -5,11 +7,6 @@ namespace Tiempitod.NET.Server;
 /// </summary>
 public interface IServer
 {
-    /// <summary>
-    /// Asynchronous event handler.
-    /// </summary>
-    public delegate Task AsyncEventHandler(object? sender);
-    
     /// <summary>
     /// Event raised when server execution fails due to a critical error.
     /// </summary>

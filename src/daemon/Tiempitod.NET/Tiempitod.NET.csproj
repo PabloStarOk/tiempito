@@ -50,6 +50,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="AsyncEvent" Version="0.2.1" />
         <PackageReference Include="Microsoft.Extensions.Configuration.Ini" Version="9.0.0" />
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
         <PackageReference Include="Microsoft.Toolkit.Uwp.Notifications" Version="7.1.3" />
