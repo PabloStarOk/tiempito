@@ -1,4 +1,5 @@
 using Tiempitod.NET.Common;
+using Tiempitod.NET.Configuration.Session;
 using Tiempitod.NET.Configuration.User;
 
 namespace Tiempitod.NET.Configuration;
@@ -17,13 +18,21 @@ public static class ConfigurationDependencyInjection
     public static IServiceCollection AddConfigurationServices(
         this IServiceCollection serviceCollection)
     {
+        serviceCollection.AddSingleton<IUserConfigReader, UserConfigReader>();
+        serviceCollection.AddSingleton<IUserConfigWriter, UserConfigWriter>();
+        serviceCollection.AddSingleton<ISessionConfigReader, SessionConfigReader>();
+        serviceCollection.AddSingleton<ISessionConfigWriter, SessionConfigWriter>();
+        
         serviceCollection.AddSingleton<UserConfigService>();
+        serviceCollection.AddSingleton<SessionConfigProvider>();
 
         using var serviceProvider = serviceCollection.BuildServiceProvider();
-        var userConfigService = serviceProvider.GetRequiredService<UserConfigService>();
         
-        serviceCollection.AddSingleton<IUserConfigService>(userConfigService);
-        serviceCollection.AddSingleton<Service>(userConfigService);
+        serviceCollection.AddSingleton<IUserConfigService>(sp => sp.GetRequiredService<UserConfigService>());
+        serviceCollection.AddSingleton<ISessionConfigProvider>(sp => sp.GetRequiredService<SessionConfigProvider>());
+        
+        serviceCollection.AddSingleton<Service>(sp => sp.GetRequiredService<UserConfigService>());
+        serviceCollection.AddSingleton<Service>(sp => sp.GetRequiredService<SessionConfigProvider>());
         
         return serviceCollection;
     }

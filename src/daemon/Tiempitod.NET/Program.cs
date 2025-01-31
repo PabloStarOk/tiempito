@@ -13,8 +13,6 @@ using Tiempitod.NET.Configuration;
 using Tiempitod.NET.Configuration.AppFilesystem;
 using Tiempitod.NET.Configuration.Notifications;
 using Tiempitod.NET.Configuration.Server;
-using Tiempitod.NET.Configuration.Session;
-using Tiempitod.NET.Configuration.User;
 using Tiempitod.NET.Notifications;
 using Tiempitod.NET.Server;
 using Tiempitod.NET.Server.Requests;
@@ -29,10 +27,9 @@ using Tiempitod.NET.Session;
 var builder = Host.CreateApplicationBuilder(args);
 
 IServiceProvider serviceProvider = builder.Services.BuildServiceProvider();
-var loggerProvider =  serviceProvider.GetService<ILoggerFactory>();
-ArgumentNullException.ThrowIfNull(loggerProvider);
+var loggerProvider =  serviceProvider.GetRequiredService<ILoggerFactory>();
 
-// Add configuration services
+// Add filesystem providers.
 IAppFilesystemPathProvider appFilesystemPathProvider = new AppFilesystemPathProvider(loggerProvider.CreateLogger<AppFilesystemPathProvider>());
 builder.Services.AddSingleton(appFilesystemPathProvider);
 
@@ -44,16 +41,7 @@ builder.Services.AddKeyedSingleton(
     AppConfigConstants.UserConfigParserServiceKey,
     new ConfigParser(userConfigFileProvider.GetFileInfo(AppConfigConstants.UserConfigFileName).PhysicalPath)); // BUG: If two section names are equals throws an exception.
 
-builder.Services.AddSingleton<IUserConfigReader, UserConfigReader>();
-builder.Services.AddSingleton<IUserConfigWriter, UserConfigWriter>();
-builder.Services.AddSingleton<ISessionConfigReader, SessionConfigReader>();
-builder.Services.AddSingleton<ISessionConfigWriter, SessionConfigWriter>();
-
-builder.Services.AddSingleton<SessionConfigProvider>();
-
-builder.Services.AddSingleton<ISessionConfigProvider>(sp => sp.GetService<SessionConfigProvider>()!);
-
-// Configuration dependencies
+// Add configuration services.
 builder.Services.AddConfigurationServices();
 
 // Load daemon config
@@ -61,10 +49,10 @@ builder.Configuration.AddIniFile(appFilesystemPathProvider.DaemonConfigFilePath,
 builder.Services.Configure<PipeConfig>(builder.Configuration.GetRequiredSection(key: PipeConfig.Pipe));
 builder.Services.Configure<NotificationConfig>(builder.Configuration.GetSection(key: NotificationConfig.Notification));
 
-// Add configuration dependencies.
-PipeConfig pipeConfig = builder.Services.BuildServiceProvider().GetService<IOptions<PipeConfig>>()?.Value!;
+// Add IPC dependencies
+PipeConfig pipeConfig = builder.Services.BuildServiceProvider().GetRequiredService<IOptions<PipeConfig>>().Value;
 builder.Services.AddTransient(_ => pipeConfig.GetEncoding());
-var jsonSerializerOptions = new JsonSerializerOptions()
+var jsonSerializerOptions = new JsonSerializerOptions
 {
     TypeInfoResolver = IpcSerializerContext.Default
 };
@@ -129,7 +117,6 @@ builder.Services.AddSingleton<NotificationManager>();
 builder.Services.AddSingleton<ISessionManager>(sp => sp.GetService<SessionManager>()!);
 builder.Services.AddSingleton<INotificationManager>(sp => sp.GetService<NotificationManager>()!);
 
-builder.Services.AddSingleton<Service>(sp => sp.GetService<SessionConfigProvider>()!);
 builder.Services.AddSingleton<Service>(sp => sp.GetService<SessionManager>()!);
 builder.Services.AddSingleton<Service>(sp => sp.GetService<NotificationManager>()!);
 
