@@ -17,7 +17,7 @@ public class NotificationManager : Service, INotificationManager
 {
     private readonly ISystemNotifier _systemNotifier;
     private readonly IAppFilesystemPathProvider _appFilesystemPathProvider;
-    private readonly IUserConfigProvider _userConfigProvider;
+    private readonly IUserConfigService _userConfigService;
     private readonly IOptionsMonitor<NotificationConfig> _notificationConfigOptions;
 #if LINUX
     private readonly ISystemAsyncIconLoader _systemAsyncIconLoader;
@@ -29,7 +29,7 @@ public class NotificationManager : Service, INotificationManager
         ILogger<NotificationManager> logger,
         IOptionsMonitor<NotificationConfig> notificationConfigOptions,
         IAppFilesystemPathProvider appFilesystemPathProvider,
-        IUserConfigProvider userConfigProvider,
+        IUserConfigService userConfigService,
         ISystemNotifier systemNotifier
 #if LINUX
         , ISystemAsyncIconLoader systemAsyncIconLoader
@@ -41,7 +41,7 @@ public class NotificationManager : Service, INotificationManager
             icon: notificationConfigOptions.CurrentValue.IconPath,
             expirationTimeout: notificationConfigOptions.CurrentValue.ExpirationTimeoutMs);
         _appFilesystemPathProvider = appFilesystemPathProvider;
-        _userConfigProvider = userConfigProvider;
+        _userConfigService = userConfigService;
         _systemNotifier = systemNotifier;
         _notificationConfigOptions = notificationConfigOptions;
 #if LINUX
@@ -72,7 +72,7 @@ public class NotificationManager : Service, INotificationManager
     
     public async Task NotifyAsync(string summary, string body, NotificationSoundType notificationSoundType)
     {
-        if (!_userConfigProvider.UserConfig.NotificationsEnabled)
+        if (!_userConfigService.UserConfig.NotificationsEnabled)
             return;
         
         _baseNotification.Summary = summary;

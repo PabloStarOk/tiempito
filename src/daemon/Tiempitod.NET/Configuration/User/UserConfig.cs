@@ -12,7 +12,7 @@ public struct UserConfig
     /// <summary>
     /// The id of the default session to start by the daemon.
     /// </summary>
-    public string DefaultSessionId { get; init; }
+    public string DefaultSessionId { get; private set; }
     
     /// <summary>
     /// If the notifications feature is enabled.
@@ -27,9 +27,9 @@ public struct UserConfig
     /// <summary>
     /// Allowed features that can be understood by the daemon.
     /// </summary>
-    public static ImmutableArray<ConfigFeature> AllowedFeatures { get; }  =
+    public static ImmutableArray<UserConfigFeature> AllowedFeatures { get; }  =
     [
-        ..new ConfigFeature[]
+        ..new UserConfigFeature[]
         {
             new(Name: "notification", Aliases: ["nc"])
         }
@@ -53,10 +53,19 @@ public struct UserConfig
     }
 
     /// <summary>
+    /// Sets the default session configuration ID.
+    /// </summary>
+    /// <param name="id">ID of the session configuration.</param>
+    public void SetDefaultSessionConfigId(string id)
+    {
+        DefaultSessionId = id;
+    }
+    
+    /// <summary>
     /// Add the given feature to the enabled ones.
     /// </summary>
     /// <param name="configFeature">Feature to add.</param>
-    public void AddFeature(ConfigFeature configFeature)
+    public void AddFeature(UserConfigFeature configFeature)
     {
         _enabledFeatures.Add(configFeature.Name);
         OnFeatureModified(configFeature.Name, true);
@@ -76,7 +85,7 @@ public struct UserConfig
     /// Remove a feature from the enabled ones.
     /// </summary>
     /// <param name="configFeature">Feature to remove.</param>
-    public void RemoveFeature(ConfigFeature configFeature)
+    public void RemoveFeature(UserConfigFeature configFeature)
     {
         _enabledFeatures.Remove(configFeature.Name);
         OnFeatureModified(configFeature.Name, wasAdded: false);
@@ -93,7 +102,7 @@ public struct UserConfig
         switch (feature)
         {
             case "notification": // TODO: Replace hardcoded name with enum.
-                NotificationsEnabled = wasAdded;
+                NotificationsEnabled = wasAdded; // BUG: Not updating on runtime.
                 break;
             
             default:

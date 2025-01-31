@@ -9,22 +9,22 @@ namespace Tiempitod.NET.Commands.Configuration;
 /// </summary>
 public class ConfigCommandsCreator : CommandCreator
 {
-    private readonly IUserConfigProvider _userConfigProvider;
+    private readonly IUserConfigService _userConfigService;
     private readonly ISessionConfigProvider _sessionConfigProvider;
     
     /// <summary>
     /// Initializes a new instance of the <see cref="ConfigCommandsCreator"/> class.
     /// </summary>
     /// <param name="logger">The logger instance to use for logging.</param>
-    /// <param name="userConfigProvider">Service to manage user configurations.</param>
+    /// <param name="userConfigService">Service of user's configurations.</param>
     /// <param name="sessionConfigProvider">Service to manage session configurations.</param>
     public ConfigCommandsCreator(
-        ILogger<CommandCreator> logger,
-        IUserConfigProvider userConfigProvider,
+        ILogger<ConfigCommandsCreator> logger,
+        IUserConfigService userConfigService,
         ISessionConfigProvider sessionConfigProvider)
         : base(logger, CommandType.Config)
     {
-        _userConfigProvider = userConfigProvider;
+        _userConfigService = userConfigService;
         _sessionConfigProvider = sessionConfigProvider;
     }
 
@@ -34,11 +34,11 @@ public class ConfigCommandsCreator : CommandCreator
         switch (subcommandType)
         {
             case "set":
-                return new SetConfigCommand(_userConfigProvider, args);
+                return new SetConfigCommand(_userConfigService, args);
             case "enable":
-                return new EnableConfigCommand(_userConfigProvider, args);
+                return new EnableConfigCommand(_userConfigService, args);
             case "disable":
-                return new DisableConfigCommand(_userConfigProvider, args);
+                return new DisableConfigCommand(_userConfigService, args);
             case "create-session-config":
                 return new CreateSessionConfigCommand(_sessionConfigProvider, args);
             case "modify-session-config":

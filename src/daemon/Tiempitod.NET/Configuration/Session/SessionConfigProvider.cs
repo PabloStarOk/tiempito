@@ -8,10 +8,9 @@ namespace Tiempitod.NET.Configuration.Session;
 /// </summary>
 public class SessionConfigProvider : Service, ISessionConfigProvider
 {
-    private readonly IUserConfigProvider _userConfigProvider;
+    private readonly IUserConfigService _userConfigService;
     private readonly ISessionConfigReader _sessionConfigReader;
     private readonly ISessionConfigWriter _sessionConfigWriter;
-    private readonly EventHandler _defaultSessionChangedHandler;
     private IDictionary<string, SessionConfig> _sessionConfigs;
     
     public IReadOnlyDictionary<string, SessionConfig> SessionConfigs => _sessionConfigs.AsReadOnly();
@@ -21,33 +20,32 @@ public class SessionConfigProvider : Service, ISessionConfigProvider
     /// Instantiates a new <see cref="SessionConfigProvider"/>.
     /// </summary>
     /// <param name="logger">Logger to register special events.</param>
-    /// <param name="userConfigProvider">Provider of user's configuration.</param>
+    /// <param name="userConfigService">Service of user's configuration.</param>
     /// <param name="sessionConfigReader">Reader of session configurations.</param>
     /// <param name="sessionConfigWriter">Writer of session configurations.</param>
     public SessionConfigProvider(
         ILogger<SessionConfigProvider> logger,
-        IUserConfigProvider userConfigProvider,
+        IUserConfigService userConfigService,
         ISessionConfigReader sessionConfigReader,
         ISessionConfigWriter sessionConfigWriter) : base(logger)
     {
-        _userConfigProvider = userConfigProvider;
+        _userConfigService = userConfigService;
         _sessionConfigReader = sessionConfigReader;
         _sessionConfigWriter = sessionConfigWriter;
         _sessionConfigs = new Dictionary<string, SessionConfig>();
-        _defaultSessionChangedHandler = (_, _) => SetDefaultUserSessionConfig();
     }
 
     protected override Task<bool> OnStartServiceAsync()
     {
-        _userConfigProvider.OnUserConfigChanged += _defaultSessionChangedHandler; 
+        _userConfigService.OnConfigChanged += SetDefaultSessionConfig; 
         LoadSessionConfigs();
-        SetDefaultUserSessionConfig();
+        SetDefaultSessionConfig(null, EventArgs.Empty);
         return Task.FromResult(true);
     }
 
     protected override Task<bool> OnStopServiceAsync()
     { 
-        _userConfigProvider.OnUserConfigChanged -= _defaultSessionChangedHandler;
+        _userConfigService.OnConfigChanged -= SetDefaultSessionConfig;
         return Task.FromResult(true);
     }
 
@@ -78,7 +76,7 @@ public class SessionConfigProvider : Service, ISessionConfigProvider
     /// <summary>
     /// Sets the default session configuration of the user.
     /// </summary>
-    private void SetDefaultUserSessionConfig()
+    private void SetDefaultSessionConfig(object? sender, EventArgs e)
     {
         if (SessionConfigs.Count < 1)
             return;
@@ -87,10 +85,10 @@ public class SessionConfigProvider : Service, ISessionConfigProvider
         {
             DefaultSessionConfig = SessionConfigs.Values.First();
             return;
-        } 
+        }
         
-        string userDefaultSession = _userConfigProvider.UserConfig.DefaultSessionId;
-        if (SessionConfigs.TryGetValue(userDefaultSession, out SessionConfig sessionConfig))
+        string configId = _userConfigService.UserConfig.DefaultSessionId; 
+        if (SessionConfigs.TryGetValue(configId, out SessionConfig sessionConfig))
         {
             DefaultSessionConfig = sessionConfig;
             return;

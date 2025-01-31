@@ -44,17 +44,17 @@ builder.Services.AddKeyedSingleton(
     AppConfigConstants.UserConfigParserServiceKey,
     new ConfigParser(userConfigFileProvider.GetFileInfo(AppConfigConstants.UserConfigFileName).PhysicalPath)); // BUG: If two section names are equals throws an exception.
 
-builder.Services.AddSingleton<UserConfigFileCreator>();
 builder.Services.AddSingleton<IUserConfigReader, UserConfigReader>();
 builder.Services.AddSingleton<IUserConfigWriter, UserConfigWriter>();
 builder.Services.AddSingleton<ISessionConfigReader, SessionConfigReader>();
 builder.Services.AddSingleton<ISessionConfigWriter, SessionConfigWriter>();
 
-builder.Services.AddSingleton<UserConfigProvider>();
 builder.Services.AddSingleton<SessionConfigProvider>();
 
-builder.Services.AddSingleton<IUserConfigProvider>(sp => sp.GetService<UserConfigProvider>()!);
 builder.Services.AddSingleton<ISessionConfigProvider>(sp => sp.GetService<SessionConfigProvider>()!);
+
+// Configuration dependencies
+builder.Services.AddConfigurationServices();
 
 // Load daemon config
 builder.Configuration.AddIniFile(appFilesystemPathProvider.DaemonConfigFilePath, optional: false, reloadOnChange: true);
@@ -129,8 +129,6 @@ builder.Services.AddSingleton<NotificationManager>();
 builder.Services.AddSingleton<ISessionManager>(sp => sp.GetService<SessionManager>()!);
 builder.Services.AddSingleton<INotificationManager>(sp => sp.GetService<NotificationManager>()!);
 
-builder.Services.AddSingleton<Service>(sp => sp.GetService<UserConfigFileCreator>()!);
-builder.Services.AddSingleton<Service>(sp => sp.GetService<UserConfigProvider>()!);
 builder.Services.AddSingleton<Service>(sp => sp.GetService<SessionConfigProvider>()!);
 builder.Services.AddSingleton<Service>(sp => sp.GetService<SessionManager>()!);
 builder.Services.AddSingleton<Service>(sp => sp.GetService<NotificationManager>()!);
