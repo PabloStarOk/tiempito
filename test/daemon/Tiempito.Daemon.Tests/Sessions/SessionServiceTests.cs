@@ -13,9 +13,9 @@ using Tiempito.Daemon.Sessions;
 using Tiempito.Daemon.Sessions.Enums;
 using Tiempito.Daemon.Sessions.Interfaces;
 using Tiempito.Daemon.Sessions.Objects;
-using Tiempitod.Tests.Sessions.Helpers;
+using Tiempito.Daemon.Tests.Sessions.Helpers;
 
-namespace Tiempitod.Tests.Sessions;
+namespace Tiempito.Daemon.Tests.Sessions;
 
 [Trait("Sessions", "Unit")]
 public class SessionServiceTests : IDisposable

@@ -1,7 +1,7 @@
 using Tiempito.Daemon.Configuration.Session.Objects;
 using Tiempito.Daemon.Sessions.Objects;
 
-namespace Tiempitod.Tests.Sessions.Helpers;
+namespace Tiempito.Daemon.Tests.Sessions.Helpers;
 
 /// <summary>
 /// Creates sessions for tests.

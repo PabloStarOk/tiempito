@@ -5,7 +5,7 @@ using Tiempito.Daemon.Sessions.Enums;
 using Tiempito.Daemon.Sessions.Interfaces;
 using Tiempito.Daemon.Sessions.Objects;
 
-namespace Tiempitod.Tests.Sessions;
+namespace Tiempito.Daemon.Tests.Sessions;
 
 [Trait("Sessions", "Unit")]
 public class SessionTimerTests : IDisposable

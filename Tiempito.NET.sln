@@ -6,7 +6,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tiempito.CLI", "src\cli\Tie
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tiempito.IPC", "src\lib\Tiempito.IPC\Tiempito.IPC.csproj", "{73DFDB5F-2E39-4C40-BA04-C9279C9FF0A6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tiempitod.Tests", "test\daemon\Tiempitod.Tests\Tiempitod.Tests.csproj", "{6D07B78F-D1B5-4C15-B210-0FFE063D3552}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tiempito.Daemon.Tests", "test\daemon\Tiempito.Daemon.Tests\Tiempito.Daemon.Tests.csproj", "{6D07B78F-D1B5-4C15-B210-0FFE063D3552}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
