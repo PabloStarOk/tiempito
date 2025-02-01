@@ -1,4 +1,4 @@
-namespace Tiempito.IPC.NET.Packets;
+namespace Tiempito.IPC.Packets;
 
 /// <summary>
 /// Defines a deserializer of packets to cast data of packets into objects.

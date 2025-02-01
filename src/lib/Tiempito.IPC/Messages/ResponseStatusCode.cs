@@ -1,4 +1,4 @@
-namespace Tiempito.IPC.NET.Messages;
+namespace Tiempito.IPC.Messages;
 
 /// <summary>
 /// Represents the status code of a response.

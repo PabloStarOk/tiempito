@@ -1,4 +1,4 @@
-namespace Tiempito.IPC.NET.Packets;
+namespace Tiempito.IPC.Packets;
 
 /// <summary>
 /// Represents a message sent by a server or client.

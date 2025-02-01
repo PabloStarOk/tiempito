@@ -8,7 +8,7 @@ using System.Text.Json;
 using Tiempito.CLI.Client;
 using Tiempito.CLI.Config;
 using Tiempito.CLI.Session;
-using Tiempito.IPC.NET.Packets;
+using Tiempito.IPC.Packets;
 
 // Session Commands
 var rootCommand = new RootCommand("Tiempito CLI");

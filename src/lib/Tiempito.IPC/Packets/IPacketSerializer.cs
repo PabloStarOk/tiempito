@@ -1,4 +1,4 @@
-namespace Tiempito.IPC.NET.Packets;
+namespace Tiempito.IPC.Packets;
 
 /// <summary>
 /// Defines a JSON serializer of objects to store in the data of a packet.

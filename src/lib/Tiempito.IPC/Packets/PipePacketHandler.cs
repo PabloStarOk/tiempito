@@ -2,7 +2,7 @@ using System.IO.Pipes;
 using System.Text;
 using System.Text.Json;
 
-namespace Tiempito.IPC.NET.Packets;
+namespace Tiempito.IPC.Packets;
 
 /// <summary>
 /// Defines a class to send messages and read messages which contains a header and a payload.

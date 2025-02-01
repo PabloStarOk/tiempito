@@ -4,7 +4,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tiempito.Daemon", "src\daem
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tiempito.CLI", "src\cli\Tiempito.CLI\Tiempito.CLI.csproj", "{AC54CE43-0738-4915-A22E-A6D5903A537C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tiempito.IPC.NET", "src\lib\Tiempito.IPC.NET\Tiempito.IPC.NET.csproj", "{73DFDB5F-2E39-4C40-BA04-C9279C9FF0A6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tiempito.IPC", "src\lib\Tiempito.IPC\Tiempito.IPC.csproj", "{73DFDB5F-2E39-4C40-BA04-C9279C9FF0A6}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tiempitod.Tests", "test\daemon\Tiempitod.Tests\Tiempitod.Tests.csproj", "{6D07B78F-D1B5-4C15-B210-0FFE063D3552}"
 EndProject

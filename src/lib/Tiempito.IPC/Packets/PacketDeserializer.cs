@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace Tiempito.IPC.NET.Packets;
+namespace Tiempito.IPC.Packets;
 
 /// <summary>
 /// Provides deserialization of packets.

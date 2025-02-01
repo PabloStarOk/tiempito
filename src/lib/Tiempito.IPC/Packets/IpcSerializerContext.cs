@@ -1,7 +1,8 @@
 using System.Text.Json.Serialization;
-using Tiempito.IPC.NET.Messages;
 
-namespace Tiempito.IPC.NET.Packets;
+using Tiempito.IPC.Messages;
+
+namespace Tiempito.IPC.Packets;
 
 [JsonSourceGenerationOptions(WriteIndented = true)]
 [JsonSerializable(typeof(Packet))]

@@ -3,7 +3,7 @@ using Microsoft.Extensions.Options;
 using Salaros.Configuration;
 using System.IO.Pipes;
 using System.Text.Json;
-using Tiempito.IPC.NET.Packets;
+using Tiempito.IPC.Packets;
 using Tiempito.Daemon;
 using Tiempito.Daemon.Commands;
 using Tiempito.Daemon.Commands.Configuration;

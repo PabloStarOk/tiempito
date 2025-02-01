@@ -1,6 +1,6 @@
 using System.IO.Pipes;
 
-namespace Tiempito.IPC.NET.Packets;
+namespace Tiempito.IPC.Packets;
 
 /// <summary>
 /// Defines a handler to read and write messages in a named pipe.

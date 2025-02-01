@@ -1,4 +1,4 @@
-using Tiempito.IPC.NET.Messages;
+using Tiempito.IPC.Messages;
 
 namespace Tiempito.CLI.Client;
 

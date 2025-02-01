@@ -59,7 +59,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\lib\Tiempito.IPC.NET\Tiempito.IPC.NET.csproj" />
+      <ProjectReference Include="..\..\lib\Tiempito.IPC\Tiempito.IPC.csproj" />
     </ItemGroup>
 
     <ItemGroup>

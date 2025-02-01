@@ -1,6 +1,6 @@
 using System.IO.Pipes;
-using Tiempito.IPC.NET.Messages;
-using Tiempito.IPC.NET.Packets;
+using Tiempito.IPC.Messages;
+using Tiempito.IPC.Packets;
 
 namespace Tiempito.CLI.Client;
 

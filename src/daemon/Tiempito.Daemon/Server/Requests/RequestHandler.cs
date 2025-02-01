@@ -1,6 +1,6 @@
 using Tiempito.Daemon.Commands;
 using Tiempito.Daemon.Common;
-using Tiempito.IPC.NET.Messages;
+using Tiempito.IPC.Messages;
 
 namespace Tiempito.Daemon.Server.Requests;
 
