@@ -9,14 +9,14 @@ public struct SessionConfig
     /// <summary>
     /// Number of focus and breaks to complete, 0 means no limit.
     /// </summary>
-    public int TargetCycles { get;  }
+    public int TargetCycles { get; init; }
     
     /// <summary>
     /// Delay to start a time when the last time was completed.
     /// </summary>
-    public TimeSpan DelayBetweenTimes { get; }
-    public TimeSpan FocusDuration { get; }
-    public TimeSpan BreakDuration { get; }
+    public TimeSpan DelayBetweenTimes { get; init;  }
+    public TimeSpan FocusDuration { get; init; }
+    public TimeSpan BreakDuration { get; init; }
 
     /// <summary>
     /// Instantiates a new <see cref="SessionConfig"/>

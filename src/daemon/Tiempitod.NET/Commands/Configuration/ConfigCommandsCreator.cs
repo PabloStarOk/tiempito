@@ -10,22 +10,22 @@ namespace Tiempitod.NET.Commands.Configuration;
 public class ConfigCommandsCreator : CommandCreator
 {
     private readonly IUserConfigService _userConfigService;
-    private readonly ISessionConfigProvider _sessionConfigProvider;
+    private readonly ISessionConfigService _sessionConfigService;
     
     /// <summary>
     /// Initializes a new instance of the <see cref="ConfigCommandsCreator"/> class.
     /// </summary>
     /// <param name="logger">The logger instance to use for logging.</param>
     /// <param name="userConfigService">Service of user's configurations.</param>
-    /// <param name="sessionConfigProvider">Service to manage session configurations.</param>
+    /// <param name="sessionConfigService">Service to manage session configurations.</param>
     public ConfigCommandsCreator(
         ILogger<ConfigCommandsCreator> logger,
         IUserConfigService userConfigService,
-        ISessionConfigProvider sessionConfigProvider)
+        ISessionConfigService sessionConfigService)
         : base(logger, CommandType.Config)
     {
         _userConfigService = userConfigService;
-        _sessionConfigProvider = sessionConfigProvider;
+        _sessionConfigService = sessionConfigService;
     }
 
     /// <inheritdoc/>
@@ -40,9 +40,9 @@ public class ConfigCommandsCreator : CommandCreator
             case "disable":
                 return new DisableConfigCommand(_userConfigService, args);
             case "create-session-config":
-                return new CreateSessionConfigCommand(_sessionConfigProvider, args);
+                return new CreateSessionConfigCommand(_sessionConfigService, args);
             case "modify-session-config":
-                return new ModifySessionConfigCommand(_sessionConfigProvider, args);
+                return new ModifySessionConfigCommand(_sessionConfigService, args);
             default:
                 _logger.LogError("Unrecognized subcommand was sent to the daemon: {SubcommandType}", subcommandType);
                 throw new CommandNotFoundException(subcommandType);

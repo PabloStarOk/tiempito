@@ -17,7 +17,7 @@ public class SessionManagerTests : IDisposable
 {
     private readonly SessionManager _sessionManager;
     private readonly MockRepository _mockRepository;
-    private readonly Mock<ISessionConfigProvider> _sessionConfigProviderMock;
+    private readonly Mock<ISessionConfigService> _sessionConfigServiceMock;
     private readonly Mock<INotificationManager> _notificationManagerMock;
     private readonly Progress<Session> _progress;
     private readonly Mock<ISessionStorage> _sessionStorageMock;
@@ -30,7 +30,7 @@ public class SessionManagerTests : IDisposable
         _mockRepository = new MockRepository(MockBehavior.Strict);
         
         Mock<ILogger<SessionManager>> loggerMock = _mockRepository.Create<ILogger<SessionManager>>();
-        _sessionConfigProviderMock = _mockRepository.Create<ISessionConfigProvider>();
+        _sessionConfigServiceMock = _mockRepository.Create<ISessionConfigService>();
         Mock<IOptions<NotificationConfig>> notificationOptionsMock = _mockRepository.Create<IOptions<NotificationConfig>>();
         _notificationManagerMock = _mockRepository.Create<INotificationManager>();
         _progress = new Progress<Session>();
@@ -43,7 +43,7 @@ public class SessionManagerTests : IDisposable
         
         _sessionManager = new SessionManager(
             loggerMock.Object,
-            _sessionConfigProviderMock.Object,
+            _sessionConfigServiceMock.Object,
             notificationOptionsMock.Object,
             _notificationManagerMock.Object,
             _progress,
@@ -102,11 +102,11 @@ public class SessionManagerTests : IDisposable
         // Arrange
         if (specifyConfigId)
         {
-            _sessionConfigProviderMock.Setup(m => m.SessionConfigs.TryGetValue(config.Id, out config))
+            _sessionConfigServiceMock.Setup(m => m.TryGetConfigById(config.Id, out config))
                 .Returns(true);
         }
         else
-            _sessionConfigProviderMock.Setup(m => m.DefaultSessionConfig).Returns(config);
+            _sessionConfigServiceMock.Setup(m => m.DefaultConfig).Returns(config);
         _sessionTimerMock.Setup(m => m.Start(session, It.IsAny<CancellationToken>()));
         _sessionStorageMock.Setup(m => m.RunningSessions).Returns(new Dictionary<string, Session>());
         _sessionStorageMock.Setup(m => m.PausedSessions).Returns(new Dictionary<string, Session>());
@@ -132,7 +132,7 @@ public class SessionManagerTests : IDisposable
     {
         SessionConfig config = SessionProvider.CreateRandomConfig();
         
-        _sessionConfigProviderMock.Setup(m => m.SessionConfigs.TryGetValue(It.IsAny<string>(), out config))
+        _sessionConfigServiceMock.Setup(m => m.TryGetConfigById(It.IsAny<string>(), out config))
             .Returns(false);
         
         OperationResult operationResult = _sessionManager.StartSession(sessionConfigId: config.Id);
@@ -147,7 +147,7 @@ public class SessionManagerTests : IDisposable
         Session session = SessionProvider.CreateRandom();
         Dictionary<string, Session> runningSessions = CreateSessionsDictionary(session);
         
-        _sessionConfigProviderMock.Setup(m => m.DefaultSessionConfig).Returns(config);
+        _sessionConfigServiceMock.Setup(m => m.DefaultConfig).Returns(config);
         _sessionStorageMock.Setup(m => m.RunningSessions).Returns(runningSessions);
         _sessionStorageMock.Setup(m => m.PausedSessions).Returns(new Dictionary<string, Session>());
         

@@ -6,51 +6,46 @@ namespace Tiempitod.NET.Commands.Configuration;
 /// <summary>
 /// Represents the command to modify an existing session configuration.
 /// </summary>
-/// <param name="sessionConfigProvider">Provider of session configurations.</param>
+/// <param name="sessionConfigService">Service to modify session configurations.</param>
 /// <param name="arguments">Arguments of the command.</param>
 public readonly struct ModifySessionConfigCommand(
-    ISessionConfigProvider sessionConfigProvider,
+    ISessionConfigService sessionConfigService,
     IReadOnlyDictionary<string, string> arguments)
     : ICommand
 {
-    public Task<OperationResult> ExecuteAsync(CancellationToken cancellationToken = default)
+    public async Task<OperationResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         // TODO: Implement command request parser to create a CommandRequest model to encapsulate validation logic.
         if (!arguments.TryGetValue("session-config-id", out string? sessionId))
-            return Task.FromResult(new OperationResult(Success: false, Message: "Session id was not provided."));
-        
-        if (!sessionConfigProvider.SessionConfigs.TryGetValue(sessionId.ToLower(), out SessionConfig currentSessionConfig))
-            return Task.FromResult(new OperationResult(Success: false, Message: $"Session with id '{sessionId}' doesn't exist."));
+            return new OperationResult(Success: false, Message: "Session id was not provided.");
 
-        if (!arguments.TryGetValue("target-cycles", out string? targetCyclesString)
-            || !int.TryParse(targetCyclesString, out int targetCycles))
-            targetCycles = currentSessionConfig.TargetCycles;
+        int? targetCycles = null;
+        TimeSpan? delayBetweenTimes = null;
+        TimeSpan? focusDuration = null;
+        TimeSpan? breakDuration = null;
         
-        if (!arguments.TryGetValue("delay-times", out string? delayTimesString)
-            || !TryParseDuration(delayTimesString, out TimeSpan delayBetweenTimes))
-            delayBetweenTimes = currentSessionConfig.DelayBetweenTimes;
+        if (arguments.TryGetValue("target-cycles", out string? targetCyclesString)
+            && int.TryParse(targetCyclesString, out int parsedTargetCycles))
+            targetCycles = parsedTargetCycles;
         
-        if (!arguments.TryGetValue("focus-duration", out string? focusDurationString)
-            || !TryParseDuration(focusDurationString, out TimeSpan focusDuration))
-            focusDuration = currentSessionConfig.FocusDuration;
+        if (arguments.TryGetValue("delay-times", out string? delayTimesString)
+            && TryParseDuration(delayTimesString, out TimeSpan parsedDelayBetweenTimes))
+            delayBetweenTimes = parsedDelayBetweenTimes;
         
-        if (!arguments.TryGetValue("break-duration", out string? breakDurationString) 
-            || !TryParseDuration(breakDurationString, out TimeSpan breakDuration))
-            breakDuration = currentSessionConfig.BreakDuration;
+        if (arguments.TryGetValue("focus-duration", out string? focusDurationString)
+            && TryParseDuration(focusDurationString, out TimeSpan parsedFocusDuration))
+            focusDuration = parsedFocusDuration;
         
-        OperationResult operationResult = sessionConfigProvider.SaveSessionConfig
-        (
-            new SessionConfig
-            (
-                sessionId,
-                targetCycles,
-                delayBetweenTimes,
-                focusDuration,
-                breakDuration
-            )
-        );
+        if (arguments.TryGetValue("break-duration", out string? breakDurationString) 
+            && TryParseDuration(breakDurationString, out TimeSpan parsedBreakDuration))
+            breakDuration = parsedBreakDuration;
         
-        return Task.FromResult(operationResult);
+        return await sessionConfigService.ModifyConfigAsync(
+            sessionId,
+            targetCycles,
+            delayBetweenTimes,
+            focusDuration,
+            breakDuration);
     }
     
     // TODO: Create time span IFormatProvider to parse the configuration.

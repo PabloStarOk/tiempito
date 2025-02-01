@@ -24,15 +24,13 @@ public static class ConfigurationDependencyInjection
         serviceCollection.AddSingleton<ISessionConfigWriter, SessionConfigWriter>();
         
         serviceCollection.AddSingleton<UserConfigService>();
-        serviceCollection.AddSingleton<SessionConfigProvider>();
-
-        using var serviceProvider = serviceCollection.BuildServiceProvider();
+        serviceCollection.AddSingleton<SessionConfigService>();
         
         serviceCollection.AddSingleton<IUserConfigService>(sp => sp.GetRequiredService<UserConfigService>());
-        serviceCollection.AddSingleton<ISessionConfigProvider>(sp => sp.GetRequiredService<SessionConfigProvider>());
+        serviceCollection.AddSingleton<ISessionConfigService>(sp => sp.GetRequiredService<SessionConfigService>());
         
         serviceCollection.AddSingleton<Service>(sp => sp.GetRequiredService<UserConfigService>());
-        serviceCollection.AddSingleton<Service>(sp => sp.GetRequiredService<SessionConfigProvider>());
+        serviceCollection.AddSingleton<Service>(sp => sp.GetRequiredService<SessionConfigService>());
         
         return serviceCollection;
     }

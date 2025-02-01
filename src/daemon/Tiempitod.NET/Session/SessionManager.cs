@@ -13,7 +13,7 @@ namespace Tiempitod.NET.Session;
 /// </summary>
 public sealed class SessionManager : Service, ISessionManager
 {
-    private readonly ISessionConfigProvider _sessionConfigProvider;
+    private readonly ISessionConfigService _sessionConfigService;
     private readonly NotificationConfig _notificationConfig;
     private readonly Progress<Session> _progress;
     private readonly INotificationManager _notificationManager;
@@ -24,7 +24,7 @@ public sealed class SessionManager : Service, ISessionManager
     
     public SessionManager(
         ILogger<SessionManager> logger,
-        ISessionConfigProvider sessionConfigProvider,
+        ISessionConfigService sessionConfigService,
         IOptions<NotificationConfig> notificationOptions,
         INotificationManager notificationManager,
         Progress<Session> progress,
@@ -32,7 +32,7 @@ public sealed class SessionManager : Service, ISessionManager
         ISessionTimer sessionTimer,
         IStandardOutQueue standardOutQueue) : base(logger)
     {
-        _sessionConfigProvider = sessionConfigProvider;
+        _sessionConfigService = sessionConfigService;
         _notificationConfig = notificationOptions.Value;
         _progress = progress;
         _notificationManager = notificationManager;
@@ -72,8 +72,8 @@ public sealed class SessionManager : Service, ISessionManager
         // Try to get the config
         SessionConfig configSession;
         if (string.IsNullOrWhiteSpace(sessionConfigId))
-            configSession = _sessionConfigProvider.DefaultSessionConfig;
-        else if (_sessionConfigProvider.SessionConfigs.TryGetValue(sessionConfigId.ToLower(), out SessionConfig foundSessionConfig)) // TODO: Unify letter case management for sessionId.
+            configSession = _sessionConfigService.DefaultConfig;
+        else if (_sessionConfigService.TryGetConfigById(sessionConfigId, out SessionConfig foundSessionConfig))
             configSession = foundSessionConfig;
         else
             return new OperationResult(Success: false, Message: $"Session configuration with ID '{sessionConfigId}' was not found");

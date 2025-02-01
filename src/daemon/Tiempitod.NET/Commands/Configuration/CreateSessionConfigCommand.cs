@@ -6,43 +6,40 @@ namespace Tiempitod.NET.Commands.Configuration;
 /// <summary>
 /// Represents a command to create a new session configuration.
 /// </summary>
-/// <param name="sessionConfigProvider">Provider of session configurations.</param>
+/// <param name="sessionConfigService">Service to add the created session configurations.</param>
 /// <param name="arguments">Arguments of the command.</param>
 public readonly struct CreateSessionConfigCommand(
-    ISessionConfigProvider sessionConfigProvider,
+    ISessionConfigService sessionConfigService,
     IReadOnlyDictionary<string, string> arguments)
     : ICommand
 {
-    public Task<OperationResult> ExecuteAsync(CancellationToken cancellationToken = default)
+    public async Task<OperationResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         // TODO: Implement command request parser to create a CommandRequest model to encapsulate validation logic.
         if (!arguments.TryGetValue("session-config-id", out string? sessionId))
-            return Task.FromResult(new OperationResult(Success: false, Message: "Session id was not provided."));
-        
-        if (sessionConfigProvider.SessionConfigs.TryGetValue(sessionId.ToLower(), out _))
-            return Task.FromResult(new OperationResult(Success: false, Message: $"Session with id '{sessionId}' already exists."));
+            return new OperationResult(Success: false, Message: "Session id was not provided.");
         
         if (!arguments.TryGetValue("target-cycles", out string? targetCyclesString))
-            return Task.FromResult(new OperationResult(Success: false, Message: "Target cycles was not provided."));
+            return new OperationResult(Success: false, Message: "Target cycles was not provided.");
         if (!int.TryParse(targetCyclesString, out int targetCycles))
-            return Task.FromResult(new OperationResult(Success: false, Message: "Target cycles number provided is not recognized."));
+            return new OperationResult(Success: false, Message: "Target cycles number provided is not recognized.");
         
         if (!arguments.TryGetValue("delay-times", out string? delayTimesString))
-            return Task.FromResult(new OperationResult(Success: false, Message: "Focus duration was not provided."));
+            return new OperationResult(Success: false, Message: "Focus duration was not provided.");
         if (!TryParseDuration(delayTimesString, out TimeSpan delayBetweenTimes))
-            return Task.FromResult(new OperationResult(Success: false, Message: "Focus duration time is not recognized."));
+            return new OperationResult(Success: false, Message: "Focus duration time is not recognized.");
         
         if (!arguments.TryGetValue("focus-duration", out string? focusDurationString))
-            return Task.FromResult(new OperationResult(Success: false, Message: "Focus duration was not provided."));
+            return new OperationResult(Success: false, Message: "Focus duration was not provided.");
         if (!TryParseDuration(focusDurationString, out TimeSpan focusDuration))
-            return Task.FromResult(new OperationResult(Success: false, Message: "Focus duration time is not recognized."));
+            return new OperationResult(Success: false, Message: "Focus duration time is not recognized.");
         
         if (!arguments.TryGetValue("break-duration", out string? breakDurationString))
-            return Task.FromResult(new OperationResult(Success: false, Message: "Focus duration was not provided."));
+            return new OperationResult(Success: false, Message: "Focus duration was not provided.");
         if (!TryParseDuration(breakDurationString, out TimeSpan breakDuration))
-            return Task.FromResult(new OperationResult(Success: false, Message: "Focus duration time is not recognized."));
+            return new OperationResult(Success: false, Message: "Focus duration time is not recognized.");
         
-        OperationResult operationResult = sessionConfigProvider.SaveSessionConfig
+        OperationResult operationResult = await sessionConfigService.AddConfigAsync
         (
             new SessionConfig
             (
@@ -54,7 +51,7 @@ public readonly struct CreateSessionConfigCommand(
             )
         );
         
-        return Task.FromResult(operationResult);
+        return operationResult;
     }
     
     // TODO: Create time span IFormatProvider to parse the configuration.
