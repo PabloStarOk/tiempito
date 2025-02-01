@@ -1,6 +1,6 @@
 using Tiempito.IPC.Messages.Objects;
 
-namespace Tiempito.CLI.Client;
+namespace Tiempito.CLI.Client.Interfaces;
 
 /// <summary>
 /// Defines a client to connect and send requests to the daemon.

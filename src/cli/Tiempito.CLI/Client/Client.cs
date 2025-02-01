@@ -1,5 +1,6 @@
 using System.IO.Pipes;
 
+using Tiempito.CLI.Client.Interfaces;
 using Tiempito.IPC.Messages.Objects;
 using Tiempito.IPC.Packets.Interfaces;
 using Tiempito.IPC.Packets.Objects;

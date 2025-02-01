@@ -5,6 +5,7 @@ using System.IO.Pipes;
 using System.Text;
 using System.Text.Json;
 using Tiempito.CLI.Client;
+using Tiempito.CLI.Client.Interfaces;
 using Tiempito.CLI.Config;
 using Tiempito.CLI.Session;
 using Tiempito.IPC.Packets;
