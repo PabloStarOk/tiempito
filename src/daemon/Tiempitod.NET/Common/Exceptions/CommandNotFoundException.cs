@@ -1,4 +1,4 @@
-namespace Tiempitod.NET.Exceptions;
+namespace Tiempitod.NET.Common.Exceptions;
 
 /// <summary>
 /// Exception that is thrown when the given command is not recognized.

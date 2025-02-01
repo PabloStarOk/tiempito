@@ -1,6 +1,6 @@
 using Tiempitod.NET.Configuration.Session.Interfaces;
 using Tiempitod.NET.Configuration.User.Interfaces;
-using Tiempitod.NET.Exceptions;
+using Tiempitod.NET.Common.Exceptions;
 
 namespace Tiempitod.NET.Commands.Configuration;
 

@@ -1,4 +1,4 @@
-using Tiempitod.NET.Exceptions;
+using Tiempitod.NET.Common.Exceptions;
 using Tiempitod.NET.Sessions.Interfaces;
 
 namespace Tiempitod.NET.Commands.SessionManagement;

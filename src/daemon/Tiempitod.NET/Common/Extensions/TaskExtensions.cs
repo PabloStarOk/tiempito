@@ -1,4 +1,4 @@
-namespace Tiempitod.NET.Extensions;
+namespace Tiempitod.NET.Common.Extensions;
 
 public static class TaskExtensions
 {

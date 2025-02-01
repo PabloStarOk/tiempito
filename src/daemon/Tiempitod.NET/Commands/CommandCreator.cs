@@ -1,4 +1,4 @@
-using Tiempitod.NET.Exceptions;
+using Tiempitod.NET.Common.Exceptions;
 
 namespace Tiempitod.NET.Commands;
 

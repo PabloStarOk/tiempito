@@ -7,7 +7,7 @@ using Tiempito.IPC.NET.Messages;
 using Tiempito.IPC.NET.Packets;
 
 using Tiempitod.NET.Configuration.Daemon.Objects;
-using Tiempitod.NET.Extensions;
+using Tiempitod.NET.Common.Extensions;
 using Tiempitod.NET.Server.Requests;
 using Tiempitod.NET.Server.StandardOut;
 
