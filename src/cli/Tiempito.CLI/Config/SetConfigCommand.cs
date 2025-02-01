@@ -1,7 +1,8 @@
 using System.CommandLine;
-using Tiempito.CLI.NET.Client;
 
-namespace Tiempito.CLI.NET.Config;
+using Tiempito.CLI.Client;
+
+namespace Tiempito.CLI.Config;
 
 /// <summary>
 /// Represents the subcommand to modify parameters of the user's configuration.

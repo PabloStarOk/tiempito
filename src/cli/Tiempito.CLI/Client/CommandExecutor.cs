@@ -1,6 +1,6 @@
 using Tiempito.IPC.NET.Messages;
 
-namespace Tiempito.CLI.NET.Client;
+namespace Tiempito.CLI.Client;
 
 /// <summary>
 /// Represents an executor of commands which sends requests,

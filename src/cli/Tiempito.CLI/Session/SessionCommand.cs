@@ -1,7 +1,8 @@
 using System.CommandLine;
-using Tiempito.CLI.NET.Client;
 
-namespace Tiempito.CLI.NET.Session;
+using Tiempito.CLI.Client;
+
+namespace Tiempito.CLI.Session;
 
 /// <summary>
 /// 

@@ -2,7 +2,7 @@ using System.IO.Pipes;
 using Tiempito.IPC.NET.Messages;
 using Tiempito.IPC.NET.Packets;
 
-namespace Tiempito.CLI.NET.Client;
+namespace Tiempito.CLI.Client;
 
 /// <summary>
 /// Client that sends requests to the daemon and receive responses from the daemon.

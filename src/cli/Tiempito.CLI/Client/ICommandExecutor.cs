@@ -1,4 +1,4 @@
-namespace Tiempito.CLI.NET.Client;
+namespace Tiempito.CLI.Client;
 
 /// <summary>
 /// Defines an executor of incoming commands.

@@ -5,9 +5,9 @@ using System.IO.Pipes;
 using System.Security.Principal;
 using System.Text;
 using System.Text.Json;
-using Tiempito.CLI.NET.Client;
-using Tiempito.CLI.NET.Config;
-using Tiempito.CLI.NET.Session;
+using Tiempito.CLI.Client;
+using Tiempito.CLI.Config;
+using Tiempito.CLI.Session;
 using Tiempito.IPC.NET.Packets;
 
 // Session Commands
