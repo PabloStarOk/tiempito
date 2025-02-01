@@ -2,13 +2,13 @@
 using System.CommandLine.Builder;
 using System.CommandLine.Parsing;
 using System.IO.Pipes;
-using System.Security.Principal;
 using System.Text;
 using System.Text.Json;
 using Tiempito.CLI.Client;
 using Tiempito.CLI.Config;
 using Tiempito.CLI.Session;
 using Tiempito.IPC.Packets;
+using Tiempito.IPC.Packets.Interfaces;
 
 // Session Commands
 var rootCommand = new RootCommand("Tiempito CLI");

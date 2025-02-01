@@ -2,6 +2,9 @@ using System.IO.Pipes;
 using System.Text;
 using System.Text.Json;
 
+using Tiempito.IPC.Packets.Interfaces;
+using Tiempito.IPC.Packets.Objects;
+
 namespace Tiempito.IPC.Packets;
 
 /// <summary>

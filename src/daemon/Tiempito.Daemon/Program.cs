@@ -25,6 +25,7 @@ using Tiempito.Daemon.Notifications.Systems.Windows;
 using Tiempito.Daemon.Sessions;
 using Tiempito.Daemon.Sessions.Interfaces;
 using Tiempito.Daemon.Sessions.Objects;
+using Tiempito.IPC.Packets.Interfaces;
 
 var builder = Host.CreateApplicationBuilder(args);
 

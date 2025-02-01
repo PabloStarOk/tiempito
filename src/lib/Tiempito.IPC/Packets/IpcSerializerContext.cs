@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 
 using Tiempito.IPC.Messages;
+using Tiempito.IPC.Packets.Objects;
 
 namespace Tiempito.IPC.Packets;
 
