@@ -1,4 +1,7 @@
-namespace Tiempitod.NET.Session;
+using Tiempitod.NET.Sessions.Enums;
+using Tiempitod.NET.Sessions.Objects;
+
+namespace Tiempitod.NET.Sessions.Interfaces;
 
 /// <summary>
 /// Defines a storage of sessions which stores all managed sessions in dictionaries identified by

@@ -1,5 +1,5 @@
 using Tiempitod.NET.Exceptions;
-using Tiempitod.NET.Session;
+using Tiempitod.NET.Sessions.Interfaces;
 
 namespace Tiempitod.NET.Commands.SessionManagement;
 

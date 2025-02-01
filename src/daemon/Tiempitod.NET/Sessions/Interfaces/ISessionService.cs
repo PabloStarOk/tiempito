@@ -1,6 +1,6 @@
 using Tiempitod.NET.Common;
 
-namespace Tiempitod.NET.Session;
+namespace Tiempitod.NET.Sessions.Interfaces;
 
 /// <summary>
 /// Defines a service to manage sessions.
@@ -11,6 +11,7 @@ public interface ISessionService
     /// Starts a session of focus and break times.
     /// </summary>
     /// <param name="sessionId">ID of the session to start.</param>
+    /// <param name="sessionConfigId">ID of the session configuration to use.</param>
     /// <returns>An <see cref="OperationResult"/> to know if the session was started successfully.</returns>
     public OperationResult StartSession(string sessionId = "", string sessionConfigId = "");
 

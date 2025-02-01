@@ -8,7 +8,10 @@ using Tiempitod.NET.Configuration.Session.Interfaces;
 using Tiempitod.NET.Configuration.Session.Objects;
 using Tiempitod.NET.Notifications;
 using Tiempitod.NET.Server.StandardOut;
-using Tiempitod.NET.Session;
+using Tiempitod.NET.Sessions;
+using Tiempitod.NET.Sessions.Enums;
+using Tiempitod.NET.Sessions.Interfaces;
+using Tiempitod.NET.Sessions.Objects;
 using Tiempitod.Tests.Sessions.Helpers;
 
 namespace Tiempitod.Tests.Sessions;

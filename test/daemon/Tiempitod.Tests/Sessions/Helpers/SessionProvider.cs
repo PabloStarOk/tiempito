@@ -1,5 +1,5 @@
 using Tiempitod.NET.Configuration.Session.Objects;
-using Tiempitod.NET.Session;
+using Tiempitod.NET.Sessions.Objects;
 
 namespace Tiempitod.Tests.Sessions.Helpers;
 

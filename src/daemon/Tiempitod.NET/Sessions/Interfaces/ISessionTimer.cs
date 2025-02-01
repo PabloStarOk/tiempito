@@ -1,6 +1,9 @@
 using AsyncEvent;
 
-namespace Tiempitod.NET.Session;
+using Tiempitod.NET.Sessions.Enums;
+using Tiempitod.NET.Sessions.Objects;
+
+namespace Tiempitod.NET.Sessions.Interfaces;
 
 /// <summary>
 /// Defines a runner of sessions.

@@ -1,4 +1,6 @@
-namespace Tiempitod.NET.Session;
+using Tiempitod.NET.Sessions.Enums;
+
+namespace Tiempitod.NET.Sessions.Objects;
 
 /// <summary>
 /// Represents a session.

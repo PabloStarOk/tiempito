@@ -1,4 +1,4 @@
-namespace Tiempitod.NET.Session;
+namespace Tiempitod.NET.Sessions.Enums;
 
 /// <summary>
 /// Status of a session.

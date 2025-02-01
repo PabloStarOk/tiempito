@@ -21,7 +21,9 @@ using Tiempitod.NET.Notifications.Linux;
 #elif WINDOWS10_0_17763_0_OR_GREATER
 using Tiempitod.NET.Notifications.Windows;
 #endif
-using Tiempitod.NET.Session;
+using Tiempitod.NET.Sessions;
+using Tiempitod.NET.Sessions.Interfaces;
+using Tiempitod.NET.Sessions.Objects;
 
 var builder = Host.CreateApplicationBuilder(args);
 

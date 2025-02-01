@@ -6,8 +6,11 @@ using Tiempitod.NET.Configuration.Session.Interfaces;
 using Tiempitod.NET.Configuration.Session.Objects;
 using Tiempitod.NET.Notifications;
 using Tiempitod.NET.Server.StandardOut;
+using Tiempitod.NET.Sessions.Enums;
+using Tiempitod.NET.Sessions.Interfaces;
+using Tiempitod.NET.Sessions.Objects;
 
-namespace Tiempitod.NET.Session;
+namespace Tiempitod.NET.Sessions;
 
 /// <summary>
 /// Service to manage sessions.
