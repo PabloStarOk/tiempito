@@ -3,7 +3,7 @@
 Description=Tiempito daemon
 
 [Service]
-ExecStart=/path/to/daemon-bin
+ExecStart=/bin/tiempitod
 Environment=DOTNET_ENVIRONMENT=Production
 
 [Install]
