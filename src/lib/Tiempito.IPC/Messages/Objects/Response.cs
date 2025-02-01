@@ -1,4 +1,6 @@
-namespace Tiempito.IPC.Messages;
+using Tiempito.IPC.Messages.Enums;
+
+namespace Tiempito.IPC.Messages.Objects;
 
 /// <summary>
 /// Represents a response from the daemon.
@@ -35,7 +37,7 @@ public record Response(ResponseStatusCode StatusCode, bool Success, string Messa
     }
     
     /// <summary>
-    /// Returns a <see cref="Response"/> about an operation that failed due to a internal error of the daemon.
+    /// Returns a <see cref="Response"/> about an operation that failed due to an internal error of the daemon.
     /// </summary>
     /// <param name="message">A human-readable message for the client telling about error.</param>
     /// <returns>A <see cref="Response"/> with the information.</returns>

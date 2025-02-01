@@ -1,4 +1,5 @@
-using Tiempito.IPC.Messages;
+using Tiempito.IPC.Messages.Enums;
+using Tiempito.IPC.Messages.Objects;
 
 namespace Tiempito.CLI.Client;
 

@@ -4,11 +4,11 @@ using System.IO.Pipes;
 using AsyncEvent;
 
 using Tiempito.Daemon.Configuration.Daemon.Objects;
-using Tiempito.IPC.Messages;
 
 using Tiempito.Daemon.Common.Extensions;
 using Tiempito.Daemon.Server.Requests;
 using Tiempito.Daemon.Server.StandardOut;
+using Tiempito.IPC.Messages.Objects;
 using Tiempito.IPC.Packets.Interfaces;
 using Tiempito.IPC.Packets.Objects;
 

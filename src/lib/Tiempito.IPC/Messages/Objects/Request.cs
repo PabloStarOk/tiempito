@@ -1,4 +1,4 @@
-﻿namespace Tiempito.IPC.Messages;
+﻿namespace Tiempito.IPC.Messages.Objects;
 
 /// <summary>
 /// Represents a request from a client.
