@@ -13,7 +13,7 @@ namespace Tiempitod.NET.Notifications;
 /// <summary>
 /// Concrete class to display or close notifications.
 /// </summary>
-public class NotificationManager : Service, INotificationManager
+public class NotificationService : Service, INotificationService
 {
     private readonly ISystemNotifier _systemNotifier;
     private readonly IAppFilesystemPathProvider _appFilesystemPathProvider;
@@ -25,8 +25,8 @@ public class NotificationManager : Service, INotificationManager
     private readonly string _appIconFilePath;
     private Notification _baseNotification;
 
-    public NotificationManager(
-        ILogger<NotificationManager> logger,
+    public NotificationService(
+        ILogger<NotificationService> logger,
         IOptionsMonitor<NotificationConfig> notificationConfigOptions,
         IAppFilesystemPathProvider appFilesystemPathProvider,
         IUserConfigService userConfigService,

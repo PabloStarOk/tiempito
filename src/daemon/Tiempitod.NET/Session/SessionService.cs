@@ -16,7 +16,7 @@ public sealed class SessionService : Service, ISessionService
     private readonly ISessionConfigService _sessionConfigService;
     private readonly NotificationConfig _notificationConfig;
     private readonly Progress<Session> _progress;
-    private readonly INotificationManager _notificationManager;
+    private readonly INotificationService _notificationService;
     private readonly ISessionStorage _sessionStorage;
     private readonly ISessionTimer _sessionTimer;
     private readonly IStandardOutQueue _standardOutQueue;
@@ -26,7 +26,7 @@ public sealed class SessionService : Service, ISessionService
         ILogger<SessionService> logger,
         ISessionConfigService sessionConfigService,
         IOptions<NotificationConfig> notificationOptions,
-        INotificationManager notificationManager,
+        INotificationService notificationService,
         Progress<Session> progress,
         ISessionStorage sessionStorage,
         ISessionTimer sessionTimer,
@@ -35,7 +35,7 @@ public sealed class SessionService : Service, ISessionService
         _sessionConfigService = sessionConfigService;
         _notificationConfig = notificationOptions.Value;
         _progress = progress;
-        _notificationManager = notificationManager;
+        _notificationService = notificationService;
         _sessionTimer = sessionTimer;
         _sessionStorage = sessionStorage;
         _timerTokenSource = new CancellationTokenSource();
@@ -179,7 +179,7 @@ public sealed class SessionService : Service, ISessionService
         var message = $"{timeType.ToString()} time completed.";
         _standardOutQueue.QueueMessage(message);
         
-        await _notificationManager.CloseLastNotificationAsync();
+        await _notificationService.CloseLastNotificationAsync();
         
         string summary;
         string body;
@@ -195,7 +195,7 @@ public sealed class SessionService : Service, ISessionService
             body = _notificationConfig.BreakCompletedBody;
         }
         
-        await _notificationManager.NotifyAsync(summary, body, NotificationSoundType.TimeCompleted);
+        await _notificationService.NotifyAsync(summary, body, NotificationSoundType.TimeCompleted);
     }
 
     /// <summary>
@@ -219,8 +219,8 @@ public sealed class SessionService : Service, ISessionService
     /// <param name="sender">Sender of the event.</param>
     private async Task SessionStartedHandler(object? sender, EventArgs e)
     {
-        await _notificationManager.CloseLastNotificationAsync();
-        await _notificationManager.NotifyAsync(
+        await _notificationService.CloseLastNotificationAsync();
+        await _notificationService.NotifyAsync(
             summary: _notificationConfig.SessionStartedSummary,
             body: _notificationConfig.SessionStartedBody,
             NotificationSoundType.SessionStarted);
@@ -239,8 +239,8 @@ public sealed class SessionService : Service, ISessionService
         var message = $"Session with id {session.Id} was completed";
         _standardOutQueue.QueueMessage(message);
         
-        await _notificationManager.CloseLastNotificationAsync();
-        await _notificationManager.NotifyAsync(
+        await _notificationService.CloseLastNotificationAsync();
+        await _notificationService.NotifyAsync(
             summary: _notificationConfig.SessionFinishedSummary,
             body: _notificationConfig.SessionFinishedBody,
             NotificationSoundType.SessionFinished);

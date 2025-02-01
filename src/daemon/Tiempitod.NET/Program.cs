@@ -112,13 +112,13 @@ builder.Services.AddKeyedSingleton(typeof(TimeSpan), "TimingInterval", (_, _) =>
 builder.Services.AddSingleton<ISessionTimer, SessionTimer>();
 
 builder.Services.AddSingleton<SessionService>();
-builder.Services.AddSingleton<NotificationManager>();
+builder.Services.AddSingleton<NotificationService>();
 
 builder.Services.AddSingleton<ISessionService>(sp => sp.GetService<SessionService>()!);
-builder.Services.AddSingleton<INotificationManager>(sp => sp.GetService<NotificationManager>()!);
+builder.Services.AddSingleton<INotificationService>(sp => sp.GetService<NotificationService>()!);
 
 builder.Services.AddSingleton<Service>(sp => sp.GetService<SessionService>()!);
-builder.Services.AddSingleton<Service>(sp => sp.GetService<NotificationManager>()!);
+builder.Services.AddSingleton<Service>(sp => sp.GetService<NotificationService>()!);
 
 builder.Services.AddHostedService<DaemonWorker>();
 

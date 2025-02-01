@@ -3,7 +3,7 @@ namespace Tiempitod.NET.Notifications;
 /// <summary>
 /// Defines a manager of notifications.
 /// </summary>
-public interface INotificationManager
+public interface INotificationService
 {
     /// <summary>
     /// Displays a notification in the current operating system.

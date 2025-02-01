@@ -18,7 +18,7 @@ public class SessionServiceTests : IDisposable
     private readonly SessionService _sessionService;
     private readonly MockRepository _mockRepository;
     private readonly Mock<ISessionConfigService> _sessionConfigServiceMock;
-    private readonly Mock<INotificationManager> _notificationManagerMock;
+    private readonly Mock<INotificationService> _notificationManagerMock;
     private readonly Progress<Session> _progress;
     private readonly Mock<ISessionStorage> _sessionStorageMock;
     private readonly Mock<ISessionTimer> _sessionTimerMock;
@@ -32,7 +32,7 @@ public class SessionServiceTests : IDisposable
         Mock<ILogger<SessionService>> loggerMock = _mockRepository.Create<ILogger<SessionService>>();
         _sessionConfigServiceMock = _mockRepository.Create<ISessionConfigService>();
         Mock<IOptions<NotificationConfig>> notificationOptionsMock = _mockRepository.Create<IOptions<NotificationConfig>>();
-        _notificationManagerMock = _mockRepository.Create<INotificationManager>();
+        _notificationManagerMock = _mockRepository.Create<INotificationService>();
         _progress = new Progress<Session>();
         _sessionStorageMock = _mockRepository.Create<ISessionStorage>();
         _sessionTimerMock = _mockRepository.Create<ISessionTimer>();
