@@ -9,9 +9,9 @@ using Tiempitod.NET.Server.StandardOut;
 namespace Tiempitod.NET.Session;
 
 /// <summary>
-/// A concrete class to manage sessions.
+/// Service to manage sessions.
 /// </summary>
-public sealed class SessionManager : Service, ISessionManager
+public sealed class SessionService : Service, ISessionService
 {
     private readonly ISessionConfigService _sessionConfigService;
     private readonly NotificationConfig _notificationConfig;
@@ -22,8 +22,8 @@ public sealed class SessionManager : Service, ISessionManager
     private readonly IStandardOutQueue _standardOutQueue;
     private CancellationTokenSource _timerTokenSource;
     
-    public SessionManager(
-        ILogger<SessionManager> logger,
+    public SessionService(
+        ILogger<SessionService> logger,
         ISessionConfigService sessionConfigService,
         IOptions<NotificationConfig> notificationOptions,
         INotificationManager notificationManager,

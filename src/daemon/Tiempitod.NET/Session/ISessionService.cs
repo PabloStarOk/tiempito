@@ -3,9 +3,9 @@ using Tiempitod.NET.Common;
 namespace Tiempitod.NET.Session;
 
 /// <summary>
-/// Defines a manager of sessions.
+/// Defines a service to manage sessions.
 /// </summary>
-public interface ISessionManager
+public interface ISessionService
 {
     /// <summary>
     /// Starts a session of focus and break times.

@@ -6,10 +6,10 @@ namespace Tiempitod.NET.Commands.SessionManagement;
 /// <summary>
 /// Represents command to start a new session.
 /// </summary>
-/// <param name="sessionManager">The session manager to handle session operations.</param>
+/// <param name="sessionService">The session manager to handle session operations.</param>
 /// <param name="arguments">The arguments containing the session ID and configuration ID.</param>
 public readonly struct StartSessionCommand(
-    ISessionManager sessionManager,
+    ISessionService sessionService,
     IReadOnlyDictionary<string, string> arguments)
     : ICommand
 {
@@ -17,6 +17,6 @@ public readonly struct StartSessionCommand(
     {
         arguments.TryGetValue("session-id", out string? sessionId);
         arguments.TryGetValue("session-config-id", out string? sessionConfigId);
-        return Task.FromResult(sessionManager.StartSession(sessionId ?? string.Empty, sessionConfigId ?? string.Empty));
+        return Task.FromResult(sessionService.StartSession(sessionId ?? string.Empty, sessionConfigId ?? string.Empty));
     }
 }
