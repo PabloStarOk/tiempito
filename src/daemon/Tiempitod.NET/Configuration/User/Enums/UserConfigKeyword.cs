@@ -1,4 +1,4 @@
-namespace Tiempitod.NET.Configuration.User;
+namespace Tiempitod.NET.Configuration.User.Enums;
 
 /// <summary>
 /// Keywords to identify in the user's configuration files for the user configuration section.

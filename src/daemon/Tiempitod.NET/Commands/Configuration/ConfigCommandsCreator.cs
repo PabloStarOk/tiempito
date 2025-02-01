@@ -1,5 +1,5 @@
 using Tiempitod.NET.Configuration.Session;
-using Tiempitod.NET.Configuration.User;
+using Tiempitod.NET.Configuration.User.Interfaces;
 using Tiempitod.NET.Exceptions;
 
 namespace Tiempitod.NET.Commands.Configuration;

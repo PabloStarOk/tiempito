@@ -1,4 +1,6 @@
-namespace Tiempitod.NET.Configuration.User;
+using Tiempitod.NET.Configuration.User.Objects;
+
+namespace Tiempitod.NET.Configuration.User.Interfaces;
 
 /// <summary>
 /// Defines a writer for user's configuration.

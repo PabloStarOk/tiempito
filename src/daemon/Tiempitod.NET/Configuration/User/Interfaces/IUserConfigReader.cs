@@ -1,4 +1,6 @@
-namespace Tiempitod.NET.Configuration.User;
+using Tiempitod.NET.Configuration.User.Objects;
+
+namespace Tiempitod.NET.Configuration.User.Interfaces;
 
 /// <summary>
 /// Defines a reader of user's configuration

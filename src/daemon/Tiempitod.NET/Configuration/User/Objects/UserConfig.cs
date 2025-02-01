@@ -1,6 +1,6 @@
 using System.Collections.Immutable;
 
-namespace Tiempitod.NET.Configuration.User;
+namespace Tiempitod.NET.Configuration.User.Objects;
 
 /// <summary>
 /// Represents the configuration of the user.

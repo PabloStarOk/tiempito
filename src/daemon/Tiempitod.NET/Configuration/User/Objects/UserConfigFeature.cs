@@ -1,4 +1,4 @@
-namespace Tiempitod.NET.Configuration.User;
+namespace Tiempitod.NET.Configuration.User.Objects;
 
 /// <summary>
 /// Represents a feature that is enabled in the configuration.

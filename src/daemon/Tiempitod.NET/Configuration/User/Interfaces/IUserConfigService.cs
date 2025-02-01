@@ -1,6 +1,7 @@
 using Tiempitod.NET.Common;
+using Tiempitod.NET.Configuration.User.Objects;
 
-namespace Tiempitod.NET.Configuration.User;
+namespace Tiempitod.NET.Configuration.User.Interfaces;
 
 /// <summary>
 /// Defines a services to manage user's configuration.
