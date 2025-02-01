@@ -1,6 +1,4 @@
-using Tiempitod.NET.Configuration.AppFilesystem;
-
-namespace Tiempitod.NET.Configuration.Notifications;
+namespace Tiempitod.NET.Configuration.Daemon.Objects;
 
 /// <summary>
 /// Represents the configuration of the notifications displayed by the daemon.

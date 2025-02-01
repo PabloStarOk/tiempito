@@ -1,7 +1,7 @@
 using System.IO.Pipes;
 using System.Text;
 
-namespace Tiempitod.NET.Configuration.Server;
+namespace Tiempitod.NET.Configuration.Daemon.Objects;
 
 /// <summary>
 /// Represents the configuration for the named pipes of the command server.

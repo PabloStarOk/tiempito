@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using Tiempitod.NET.Common;
-using Tiempitod.NET.Configuration.Notifications;
+using Tiempitod.NET.Configuration.Daemon.Objects;
 using Tiempitod.NET.Configuration.Session.Interfaces;
 using Tiempitod.NET.Configuration.Session.Objects;
 using Tiempitod.NET.Notifications;

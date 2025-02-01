@@ -2,7 +2,7 @@ using Microsoft.Extensions.Options;
 
 using Tiempitod.NET.Common;
 using Tiempitod.NET.Configuration.AppFilesystem;
-using Tiempitod.NET.Configuration.Notifications;
+using Tiempitod.NET.Configuration.Daemon.Objects;
 using Tiempitod.NET.Configuration.User.Interfaces;
 #if LINUX
 using Tmds.DBus.Protocol;
