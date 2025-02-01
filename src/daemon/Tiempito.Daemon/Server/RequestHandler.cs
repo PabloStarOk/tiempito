@@ -1,8 +1,9 @@
 using Tiempito.Daemon.Commands;
 using Tiempito.Daemon.Common;
+using Tiempito.Daemon.Server.Interfaces;
 using Tiempito.IPC.Messages.Objects;
 
-namespace Tiempito.Daemon.Server.Requests;
+namespace Tiempito.Daemon.Server;
 
 /// <summary>
 /// Handles incoming requests.

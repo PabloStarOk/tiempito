@@ -1,4 +1,4 @@
-namespace Tiempito.Daemon.Server.StandardOut;
+namespace Tiempito.Daemon.Server.Interfaces;
 
 /// <summary>
 /// Defines a writer to send messages to the

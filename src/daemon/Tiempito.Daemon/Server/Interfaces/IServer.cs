@@ -1,6 +1,6 @@
 using AsyncEvent;
 
-namespace Tiempito.Daemon.Server;
+namespace Tiempito.Daemon.Server.Interfaces;
 
 /// <summary>
 /// Defines a server to receive requests and send responses.

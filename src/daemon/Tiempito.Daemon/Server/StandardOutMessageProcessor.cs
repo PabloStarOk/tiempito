@@ -1,6 +1,8 @@
 using System.Collections.Concurrent;
 
-namespace Tiempito.Daemon.Server.StandardOut;
+using Tiempito.Daemon.Server.Interfaces;
+
+namespace Tiempito.Daemon.Server;
 
 /// <summary>
 /// Process all messages that must be sent to the standard output of the current

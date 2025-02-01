@@ -1,5 +1,5 @@
 using Tiempito.Daemon.Common;
-using Tiempito.Daemon.Server;
+using Tiempito.Daemon.Server.Interfaces;
 
 namespace Tiempito.Daemon;
 

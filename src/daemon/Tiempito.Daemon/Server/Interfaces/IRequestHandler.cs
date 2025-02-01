@@ -1,6 +1,6 @@
 using Tiempito.IPC.Messages.Objects;
 
-namespace Tiempito.Daemon.Server.Requests;
+namespace Tiempito.Daemon.Server.Interfaces;
 
 /// <summary>
 /// Defines a handler of requests.

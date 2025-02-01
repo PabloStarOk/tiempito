@@ -8,7 +8,7 @@ using Tiempito.Daemon.Configuration.Session.Interfaces;
 using Tiempito.Daemon.Configuration.Session.Objects;
 using Tiempito.Daemon.Notifications.Enums;
 using Tiempito.Daemon.Notifications.Interfaces;
-using Tiempito.Daemon.Server.StandardOut;
+using Tiempito.Daemon.Server.Interfaces;
 using Tiempito.Daemon.Sessions;
 using Tiempito.Daemon.Sessions.Enums;
 using Tiempito.Daemon.Sessions.Interfaces;

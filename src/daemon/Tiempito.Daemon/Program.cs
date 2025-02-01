@@ -15,8 +15,7 @@ using Tiempito.Daemon.Configuration.Daemon.Objects;
 using Tiempito.Daemon.Notifications;
 using Tiempito.Daemon.Notifications.Interfaces;
 using Tiempito.Daemon.Server;
-using Tiempito.Daemon.Server.Requests;
-using Tiempito.Daemon.Server.StandardOut;
+using Tiempito.Daemon.Server.Interfaces;
 #if LINUX
 using Tiempito.Daemon.Notifications.Systems.Linux;
 #elif WINDOWS10_0_17763_0_OR_GREATER

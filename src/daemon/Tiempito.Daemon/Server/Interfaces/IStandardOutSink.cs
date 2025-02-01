@@ -1,4 +1,4 @@
-namespace Tiempito.Daemon.Server.StandardOut;
+namespace Tiempito.Daemon.Server.Interfaces;
 
 /// <summary>
 /// Defines a sink which queues messages to be sent to standard output
