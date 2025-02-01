@@ -1,4 +1,4 @@
-using Tiempitod.NET.Configuration.Session;
+using Tiempitod.NET.Configuration.Session.Interfaces;
 using Tiempitod.NET.Configuration.User.Interfaces;
 using Tiempitod.NET.Exceptions;
 

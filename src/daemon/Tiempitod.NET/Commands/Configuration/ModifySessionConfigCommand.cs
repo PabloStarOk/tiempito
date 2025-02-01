@@ -1,5 +1,6 @@
 using Tiempitod.NET.Common;
-using Tiempitod.NET.Configuration.Session;
+using Tiempitod.NET.Configuration.Session.Enums;
+using Tiempitod.NET.Configuration.Session.Interfaces;
 
 namespace Tiempitod.NET.Commands.Configuration;
 

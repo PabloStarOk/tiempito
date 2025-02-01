@@ -1,4 +1,4 @@
-namespace Tiempitod.NET.Configuration.Session;
+namespace Tiempitod.NET.Configuration.Session.Objects;
 
 /// <summary>
 /// Represents the configuration of a session.

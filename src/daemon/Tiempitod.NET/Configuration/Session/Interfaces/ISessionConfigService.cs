@@ -1,6 +1,7 @@
 using Tiempitod.NET.Common;
+using Tiempitod.NET.Configuration.Session.Objects;
 
-namespace Tiempitod.NET.Configuration.Session;
+namespace Tiempitod.NET.Configuration.Session.Interfaces;
 
 /// <summary>
 /// Defines a service to manage sessions configuration.

@@ -1,4 +1,4 @@
-using Tiempitod.NET.Configuration.Session;
+using Tiempitod.NET.Configuration.Session.Objects;
 using Tiempitod.NET.Session;
 
 namespace Tiempitod.Tests.Sessions.Helpers;

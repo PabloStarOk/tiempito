@@ -1,5 +1,6 @@
 using Tiempitod.NET.Common;
 using Tiempitod.NET.Configuration.Session;
+using Tiempitod.NET.Configuration.Session.Interfaces;
 using Tiempitod.NET.Configuration.User;
 using Tiempitod.NET.Configuration.User.Interfaces;
 

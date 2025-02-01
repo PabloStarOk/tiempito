@@ -2,7 +2,8 @@ using Microsoft.Extensions.Options;
 using System.Collections.ObjectModel;
 using Tiempitod.NET.Common;
 using Tiempitod.NET.Configuration.Notifications;
-using Tiempitod.NET.Configuration.Session;
+using Tiempitod.NET.Configuration.Session.Interfaces;
+using Tiempitod.NET.Configuration.Session.Objects;
 using Tiempitod.NET.Notifications;
 using Tiempitod.NET.Server.StandardOut;
 

@@ -1,4 +1,4 @@
-namespace Tiempitod.NET.Configuration.Session;
+namespace Tiempitod.NET.Configuration.Session.Enums;
 
 /// <summary>
 /// Represents the symbols for session duration.

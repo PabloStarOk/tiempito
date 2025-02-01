@@ -1,4 +1,4 @@
-namespace Tiempitod.NET.Configuration.Session;
+namespace Tiempitod.NET.Configuration.Session.Enums;
 
 /// <summary>
 /// Represents the keywords to identify in the session configuration files.

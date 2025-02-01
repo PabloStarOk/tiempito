@@ -1,4 +1,6 @@
-namespace Tiempitod.NET.Configuration.Session;
+using Tiempitod.NET.Configuration.Session.Objects;
+
+namespace Tiempitod.NET.Configuration.Session.Interfaces;
 
 /// <summary>
 /// Defines a class to read configurations.
