@@ -41,7 +41,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\..\src\daemon\Tiempitod.NET\Tiempitod.NET.csproj" />
+      <ProjectReference Include="..\..\..\src\daemon\Tiempito.Daemon\Tiempito.Daemon.csproj" />
     </ItemGroup>
 
 </Project>

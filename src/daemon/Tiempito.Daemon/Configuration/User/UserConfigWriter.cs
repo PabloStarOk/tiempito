@@ -1,0 +1,50 @@
+using Salaros.Configuration;
+using System.Text;
+
+using Tiempito.Daemon.Configuration.User.Enums;
+using Tiempito.Daemon.Configuration.User.Interfaces;
+using Tiempito.Daemon.Configuration.User.Objects;
+
+namespace Tiempito.Daemon.Configuration.User;
+
+/// <summary>
+/// Writes in the user's configuration.
+/// </summary>
+public class UserConfigWriter : IUserConfigWriter
+{
+    private readonly ConfigParser _configParser;
+    
+    /// <summary>
+    /// Instantiates a new <see cref="UserConfigWriter"/>
+    /// </summary>
+    /// <param name="configParser">Parser of the user's configuration file.</param>
+    public UserConfigWriter(
+        [FromKeyedServices(AppConfigConstants.UserConfigParserServiceKey)] ConfigParser configParser)
+    {
+        _configParser = configParser;
+    }
+    
+    // TODO: Make method asynchronous.
+    public bool Write(UserConfig userConfig)
+    {
+        bool wasSessionIdSet = _configParser.SetValue
+        (
+            AppConfigConstants.UserSectionName,
+            UserConfigKeyword.DefaultSession.ToString(),
+            userConfig.DefaultSessionId
+        );
+        
+        var enabledFeatures = new StringBuilder()
+            .AppendJoin(',', userConfig.EnabledFeatures)
+            .ToString();
+        
+        bool wasEnabledFeaturesSet = _configParser.SetValue
+        (
+            AppConfigConstants.UserSectionName,
+            UserConfigKeyword.EnabledFeatures.ToString(),
+            enabledFeatures
+        );
+        
+        return wasSessionIdSet && wasEnabledFeaturesSet && _configParser.Save();
+    }
+}

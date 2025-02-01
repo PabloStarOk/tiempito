@@ -1,0 +1,24 @@
+using Tiempito.Daemon.Notifications.Enums;
+
+namespace Tiempito.Daemon.Notifications.Interfaces;
+
+/// <summary>
+/// Defines a manager of notifications.
+/// </summary>
+public interface INotificationService
+{
+    /// <summary>
+    /// Displays a notification in the current operating system.
+    /// </summary>
+    /// <param name="summary">Summary of the notification.</param>
+    /// <param name="body">Body of the notification.</param>
+    /// <param name="notificationSoundType">Type of sound to play along with the notification.</param>
+    /// <returns>A task representing the operation.</returns>
+    public Task NotifyAsync(string summary, string body, NotificationSoundType notificationSoundType);
+    
+    /// <summary>
+    /// Closes the last notification displayed.
+    /// </summary>
+    /// <returns>A task representing the operation.</returns>
+    public Task CloseLastNotificationAsync();
+}

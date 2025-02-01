@@ -1,9 +1,9 @@
 using Microsoft.Extensions.Time.Testing;
 using Moq;
-using Tiempitod.NET.Sessions;
-using Tiempitod.NET.Sessions.Enums;
-using Tiempitod.NET.Sessions.Interfaces;
-using Tiempitod.NET.Sessions.Objects;
+using Tiempito.Daemon.Sessions;
+using Tiempito.Daemon.Sessions.Enums;
+using Tiempito.Daemon.Sessions.Interfaces;
+using Tiempito.Daemon.Sessions.Objects;
 
 namespace Tiempitod.Tests.Sessions;
 

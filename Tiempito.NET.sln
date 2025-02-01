@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tiempitod.NET", "src\daemon\Tiempitod.NET\Tiempitod.NET.csproj", "{C00A0339-2ED8-464E-BA68-AA473956CD67}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tiempito.Daemon", "src\daemon\Tiempito.Daemon\Tiempito.Daemon.csproj", "{C00A0339-2ED8-464E-BA68-AA473956CD67}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tiempito.CLI.NET", "src\cli\Tiempito.CLI.NET\Tiempito.CLI.NET.csproj", "{AC54CE43-0738-4915-A22E-A6D5903A537C}"
 EndProject
