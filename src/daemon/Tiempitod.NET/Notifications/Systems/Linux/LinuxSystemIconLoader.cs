@@ -1,7 +1,10 @@
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
-namespace Tiempitod.NET.Notifications.Linux;
+using Tiempitod.NET.Notifications.Interfaces;
+using Tiempitod.NET.Notifications.Objects;
+
+namespace Tiempitod.NET.Notifications.Systems.Linux;
 
 /// <summary>
 /// Represents the icon loader for linux operating systems.

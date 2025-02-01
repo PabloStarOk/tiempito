@@ -1,4 +1,6 @@
-namespace Tiempitod.NET.Notifications;
+using Tiempitod.NET.Notifications.Enums;
+
+namespace Tiempitod.NET.Notifications.Interfaces;
 
 /// <summary>
 /// Defines a manager of notifications.

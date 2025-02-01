@@ -1,6 +1,6 @@
 using Tmds.DBus.Protocol;
 
-namespace Tiempitod.NET.Notifications;
+namespace Tiempitod.NET.Notifications.Objects;
 
 /// <summary>
 /// D-Bus structured specified by freedesktop linux specification.

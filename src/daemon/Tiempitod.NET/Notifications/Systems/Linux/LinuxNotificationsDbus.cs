@@ -1,6 +1,6 @@
 using Tmds.DBus.Protocol;
 
-namespace Tiempitod.NET.Notifications.Linux;
+namespace Tiempitod.NET.Notifications.Systems.Linux;
 
 // TODO: Move everything to a library.
 

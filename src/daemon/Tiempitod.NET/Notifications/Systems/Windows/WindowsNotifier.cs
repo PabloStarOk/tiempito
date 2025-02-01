@@ -2,7 +2,10 @@
 using Microsoft.Toolkit.Uwp.Notifications;
 using System.Runtime.Versioning;
 
-namespace Tiempitod.NET.Notifications.Windows;
+using Tiempitod.NET.Notifications.Interfaces;
+using Tiempitod.NET.Notifications.Objects;
+
+namespace Tiempitod.NET.Notifications.Systems.Windows;
 
 [SupportedOSPlatform("Windows")]
 public class WindowsNotifier : ISystemNotifier

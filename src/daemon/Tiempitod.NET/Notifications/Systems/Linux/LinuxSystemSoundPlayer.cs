@@ -1,7 +1,9 @@
 #if LINUX
 using System.Diagnostics;
 
-namespace Tiempitod.NET.Notifications.Linux;
+using Tiempitod.NET.Notifications.Interfaces;
+
+namespace Tiempitod.NET.Notifications.Systems.Linux;
 
 /// <summary>
 /// A sound player for linux operating systems.

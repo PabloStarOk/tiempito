@@ -13,13 +13,14 @@ using Tiempitod.NET.Configuration;
 using Tiempitod.NET.Configuration.AppFilesystem;
 using Tiempitod.NET.Configuration.Daemon.Objects;
 using Tiempitod.NET.Notifications;
+using Tiempitod.NET.Notifications.Interfaces;
 using Tiempitod.NET.Server;
 using Tiempitod.NET.Server.Requests;
 using Tiempitod.NET.Server.StandardOut;
 #if LINUX
-using Tiempitod.NET.Notifications.Linux;
+using Tiempitod.NET.Notifications.Systems.Linux;
 #elif WINDOWS10_0_17763_0_OR_GREATER
-using Tiempitod.NET.Notifications.Windows;
+using Tiempitod.NET.Notifications.Systems.Windows;
 #endif
 using Tiempitod.NET.Sessions;
 using Tiempitod.NET.Sessions.Interfaces;

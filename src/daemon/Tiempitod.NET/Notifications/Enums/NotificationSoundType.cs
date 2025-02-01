@@ -1,4 +1,4 @@
-namespace Tiempitod.NET.Notifications;
+namespace Tiempitod.NET.Notifications.Enums;
 
 public enum NotificationSoundType
 {

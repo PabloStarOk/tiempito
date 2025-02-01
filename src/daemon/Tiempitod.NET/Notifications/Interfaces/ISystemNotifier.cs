@@ -1,4 +1,6 @@
-namespace Tiempitod.NET.Notifications;
+using Tiempitod.NET.Notifications.Objects;
+
+namespace Tiempitod.NET.Notifications.Interfaces;
 
 /// <summary>
 /// Defines a notifier to display popup notifications in an operating system.

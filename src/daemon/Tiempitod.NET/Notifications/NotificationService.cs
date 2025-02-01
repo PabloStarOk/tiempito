@@ -4,6 +4,9 @@ using Tiempitod.NET.Common;
 using Tiempitod.NET.Configuration.AppFilesystem;
 using Tiempitod.NET.Configuration.Daemon.Objects;
 using Tiempitod.NET.Configuration.User.Interfaces;
+using Tiempitod.NET.Notifications.Enums;
+using Tiempitod.NET.Notifications.Interfaces;
+using Tiempitod.NET.Notifications.Objects;
 #if LINUX
 using Tmds.DBus.Protocol;
 #endif

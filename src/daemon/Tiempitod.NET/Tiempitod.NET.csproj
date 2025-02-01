@@ -73,4 +73,8 @@
         <HintPath>..\..\lib\ConfigParser.dll</HintPath>
       </Reference>
     </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Notifications\Systems\" />
+    </ItemGroup>
 </Project>

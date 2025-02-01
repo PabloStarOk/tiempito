@@ -1,7 +1,10 @@
 #if LINUX
 using System.Runtime.Versioning;
 
-namespace Tiempitod.NET.Notifications.Linux;
+using Tiempitod.NET.Notifications.Interfaces;
+using Tiempitod.NET.Notifications.Objects;
+
+namespace Tiempitod.NET.Notifications.Systems.Linux;
 
 /// <summary>
 /// Notification handler for Linux-based operating systems

@@ -1,7 +1,7 @@
 #if LINUX
 using Tmds.DBus.Protocol;
 
-namespace Tiempitod.NET.Notifications.Linux;
+namespace Tiempitod.NET.Notifications.Systems.Linux;
 
 /// <summary>
 /// Extensions for linux services.
