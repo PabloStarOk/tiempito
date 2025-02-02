@@ -88,6 +88,9 @@ public class SessionConfigService : Service, ISessionConfigService
         };
 
         _configs[configId.ToLower()] = modifiedConfig;
+
+        if (_userConfigService.UserConfig.DefaultSessionId == modifiedConfig.Id)
+            DefaultConfig = modifiedConfig;
         
         bool wasSaved = _configWriter.Write(AppConfigConstants.SessionSectionPrefix, modifiedConfig);
         string message = wasSaved 
