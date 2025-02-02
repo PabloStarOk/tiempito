@@ -86,6 +86,8 @@ public class SessionConfigService : Service, ISessionConfigService
             FocusDuration = focusDuration ?? config.FocusDuration,
             BreakDuration = breakDuration ?? config.BreakDuration
         };
+
+        _configs[configId.ToLower()] = modifiedConfig;
         
         bool wasSaved = _configWriter.Write(AppConfigConstants.SessionSectionPrefix, modifiedConfig);
         string message = wasSaved 
