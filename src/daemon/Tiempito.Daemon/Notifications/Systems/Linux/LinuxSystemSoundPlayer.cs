@@ -15,6 +15,8 @@ public class LinuxSystemSoundPlayer : ISystemSoundPlayer
     
     private readonly ILogger<LinuxSystemSoundPlayer> _logger;
     private readonly bool _isRequiredEnvVariableDefined;
+    private string _audioSystem = string.Empty;
+    private bool _audioSystemLoaded;
     
     private Process? _currentProcess;
     
@@ -25,7 +27,6 @@ public class LinuxSystemSoundPlayer : ISystemSoundPlayer
     public LinuxSystemSoundPlayer(ILogger<LinuxSystemSoundPlayer> logger)
     {
         _logger = logger;
-        GetAudioSystemAsync().Wait();
         
         _isRequiredEnvVariableDefined = Environment.GetEnvironmentVariables().Contains(RequiredEnvVariable);
         if (!_isRequiredEnvVariableDefined)
@@ -39,16 +40,20 @@ public class LinuxSystemSoundPlayer : ISystemSoundPlayer
         
         try
         {
-            string systemAudioPlayer = await GetAudioSystemAsync();
+            if (!_audioSystemLoaded)
+            {
+                _audioSystem = await GetAudioSystemAsync();
+                _audioSystemLoaded = true;
+            }
 
-            if (string.IsNullOrWhiteSpace(systemAudioPlayer))
+            if (string.IsNullOrWhiteSpace(_audioSystem))
                 return;
 
             _currentProcess = new Process
             {
                 StartInfo = new ProcessStartInfo
                 {
-                    FileName = systemAudioPlayer,
+                    FileName = _audioSystem,
                     Arguments = filepath,
                     RedirectStandardInput = true,
                     RedirectStandardOutput = true,
@@ -111,7 +116,7 @@ public class LinuxSystemSoundPlayer : ISystemSoundPlayer
             };
             tempProcess.Start();
             tempProcess.ErrorDataReceived += OnErrorReceived;
-            
+            await tempProcess.WaitForExitAsync();
             stdOut = await tempProcess.StandardOutput.ReadToEndAsync();
         }
 
