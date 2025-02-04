@@ -1,9 +1,9 @@
-namespace Tiempito.Daemon.Configuration.Session.Enums;
+namespace Tiempito.Daemon.Common.Enums;
 
 /// <summary>
-/// Represents the symbols for session duration.
+/// Represents the time units.
 /// </summary>
-public enum SessionDurationSymbol
+public enum TimeUnit
 {
     /// <summary>
     /// Represents a duration in milliseconds.

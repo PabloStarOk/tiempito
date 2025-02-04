@@ -1,5 +1,6 @@
 using Salaros.Configuration;
 
+using Tiempito.Daemon.Common.Enums;
 using Tiempito.Daemon.Configuration.Session.Enums;
 using Tiempito.Daemon.Configuration.Session.Interfaces;
 using Tiempito.Daemon.Configuration.Session.Objects;
@@ -12,14 +13,14 @@ namespace Tiempito.Daemon.Configuration.Session;
 public class SessionConfigReader : ISessionConfigReader
 {
     /// <summary>
-    /// Maps enums <see cref="SessionDurationSymbol"/> to a string representing that unit in lower case.
+    /// Maps enums <see cref="TimeUnit"/> to a string representing that unit in lower case.
     /// </summary>
-    private readonly static  Dictionary<SessionDurationSymbol, string> TimeUnitSymbolsMap = new()
+    private readonly static  Dictionary<TimeUnit, string> TimeUnitSymbolsMap = new()
     {
-        { SessionDurationSymbol.Millisecond, "ms" },
-        { SessionDurationSymbol.Second, "s" },
-        { SessionDurationSymbol.Minute, "m" },
-        { SessionDurationSymbol.Hour, "h" }
+        { TimeUnit.Millisecond, "ms" },
+        { TimeUnit.Second, "s" },
+        { TimeUnit.Minute, "m" },
+        { TimeUnit.Hour, "h" }
     };
     private readonly ConfigParser _configParser;
 
@@ -129,7 +130,7 @@ public class SessionConfigReader : ISessionConfigReader
     /// <param name="durationSymbol">Time unit symbol to try to extract.</param>
     /// <param name="parsedTime">String parsed to an integer value.</param>
     /// <returns>True if the given duration symbol is correct and the time was parsed successfully, false otherwise.</returns>
-    private static bool TryExtractTimeUnit(string timeString, SessionDurationSymbol durationSymbol, out int parsedTime)
+    private static bool TryExtractTimeUnit(string timeString, TimeUnit durationSymbol, out int parsedTime)
     {
         parsedTime = 0;
 
@@ -156,25 +157,25 @@ public class SessionConfigReader : ISessionConfigReader
         if (timeString == "0")
             return true;
         
-        if (TryExtractTimeUnit(timeString, SessionDurationSymbol.Millisecond, out int parsedTime))
+        if (TryExtractTimeUnit(timeString, TimeUnit.Millisecond, out int parsedTime))
         {
             duration = TimeSpan.FromMilliseconds(parsedTime);
             return true;
         }
 
-        if (TryExtractTimeUnit(timeString, SessionDurationSymbol.Second, out parsedTime))
+        if (TryExtractTimeUnit(timeString, TimeUnit.Second, out parsedTime))
         {
             duration = TimeSpan.FromSeconds(parsedTime);
             return true;
         }
 
-        if (TryExtractTimeUnit(timeString, SessionDurationSymbol.Minute, out parsedTime))
+        if (TryExtractTimeUnit(timeString, TimeUnit.Minute, out parsedTime))
         {
             duration = TimeSpan.FromMinutes(parsedTime);
             return true;
         }
 
-        if (!TryExtractTimeUnit(timeString, SessionDurationSymbol.Hour, out parsedTime))
+        if (!TryExtractTimeUnit(timeString, TimeUnit.Hour, out parsedTime))
             return false;
 
         duration = TimeSpan.FromHours(parsedTime);

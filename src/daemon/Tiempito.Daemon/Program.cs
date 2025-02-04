@@ -9,6 +9,7 @@ using Tiempito.Daemon.Commands;
 using Tiempito.Daemon.Commands.Configuration;
 using Tiempito.Daemon.Commands.SessionManagement;
 using Tiempito.Daemon.Common;
+using Tiempito.Daemon.Common.Interfaces;
 using Tiempito.Daemon.Configuration;
 using Tiempito.Daemon.Configuration.AppFilesystem;
 using Tiempito.Daemon.Configuration.Daemon.Objects;
@@ -25,6 +26,8 @@ using Tiempito.Daemon.Sessions;
 using Tiempito.Daemon.Sessions.Interfaces;
 using Tiempito.Daemon.Sessions.Objects;
 using Tiempito.IPC.Packets.Interfaces;
+
+using TimeSpanConverter = Tiempito.Daemon.Common.Services.TimeSpanConverter;
 
 var builder = Host.CreateApplicationBuilder(args);
 
@@ -100,6 +103,7 @@ builder.Services.AddSingleton<IStandardOutQueue>(stdOutProcessor);
 builder.Services.AddSingleton(TimeProvider.System);
 
 // Server dependencies
+builder.Services.AddSingleton<ITimeSpanConverter, TimeSpanConverter>();
 builder.Services.AddSingleton<CommandCreator, ConfigCommandsCreator>();
 builder.Services.AddSingleton<CommandCreator, SessionCommandsCreator>();
 builder.Services.AddSingleton<IRequestHandler, RequestHandler>();
