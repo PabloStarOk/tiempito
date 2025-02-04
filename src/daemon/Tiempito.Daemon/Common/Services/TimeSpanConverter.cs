@@ -17,7 +17,8 @@ public class TimeSpanConverter : ITimeSpanConverter
         { TimeUnit.Millisecond, "ms" },
         { TimeUnit.Second, "s" },
         { TimeUnit.Minute, "m" },
-        { TimeUnit.Hour, "h" }
+        { TimeUnit.Hour, "h" },
+        { TimeUnit.Day, "d" }
     };
     
     /// <inheritdoc/>
@@ -36,7 +37,7 @@ public class TimeSpanConverter : ITimeSpanConverter
         
         string amountStr = value.Replace(_timeUnitsSymbols[timeUnit], "");
         
-        if (!int.TryParse(amountStr, out int timeSpanAmount))
+        if (!double.TryParse(amountStr, out double timeSpanAmount))
             return false;
 
         result = timeUnit switch
@@ -45,6 +46,7 @@ public class TimeSpanConverter : ITimeSpanConverter
             TimeUnit.Second => TimeSpan.FromSeconds(timeSpanAmount),
             TimeUnit.Minute => TimeSpan.FromMinutes(timeSpanAmount),
             TimeUnit.Hour => TimeSpan.FromHours(timeSpanAmount),
+            TimeUnit.Day => TimeSpan.FromDays(timeSpanAmount),
             _ => throw new ArgumentOutOfRangeException(nameof(value))
         };
         
@@ -54,27 +56,16 @@ public class TimeSpanConverter : ITimeSpanConverter
     /// <inheritdoc />
     public string ConvertToString(TimeSpan value)
     {
-        bool containHours = value.Hours > 0;
-        bool containMinutes = value.Minutes > 0;
-        bool containSeconds = value.Seconds > 0;
-
-        TimeUnit timeUnit = TimeUnit.Millisecond;
-        if (containHours)
-            timeUnit = TimeUnit.Hour;
-        if (containMinutes)
-            timeUnit = TimeUnit.Minute;
-        if (containSeconds)
-            timeUnit = TimeUnit.Second;
-            
-        string timeUnitStr = _timeUnitsSymbols[timeUnit];
-        return timeUnit switch
-        {
-            TimeUnit.Millisecond => value.TotalMilliseconds + timeUnitStr,
-            TimeUnit.Second => value.TotalSeconds + timeUnitStr,
-            TimeUnit.Minute => value.TotalMinutes + timeUnitStr,
-            TimeUnit.Hour => value.TotalHours + timeUnitStr,
-            _ => throw new InvalidOperationException("Time unit wasn't in the enum types.")
-        };
+        if (value.Days > 0)
+            return $"{value.TotalDays:0.##}{_timeUnitsSymbols[TimeUnit.Day]}";
+        if (value.Hours > 0)
+            return $"{value.TotalHours:0.##}{_timeUnitsSymbols[TimeUnit.Hour]}";
+        if (value.Minutes > 0)
+            return $"{value.TotalMinutes:0.##}{_timeUnitsSymbols[TimeUnit.Minute]}";
+        if (value.Seconds > 0)
+            return $"{value.TotalSeconds:0.##}{_timeUnitsSymbols[TimeUnit.Second]}";
+        
+        return $"{value.TotalMilliseconds:0.##}{_timeUnitsSymbols[TimeUnit.Millisecond]}";
     }
     
     /// <summary>

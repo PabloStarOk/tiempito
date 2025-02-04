@@ -23,5 +23,10 @@ public enum TimeUnit
     /// <summary>
     /// Represents a duration in hours.
     /// </summary>
-    Hour
+    Hour,
+    
+    /// <summary>
+    /// Represents a duration in days.
+    /// </summary>
+    Day
 }

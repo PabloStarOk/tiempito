@@ -1,6 +1,6 @@
 using Salaros.Configuration;
-using System.Globalization;
 
+using Tiempito.Daemon.Common.Interfaces;
 using Tiempito.Daemon.Configuration.Session.Enums;
 using Tiempito.Daemon.Configuration.Session.Interfaces;
 using Tiempito.Daemon.Configuration.Session.Objects;
@@ -13,14 +13,19 @@ namespace Tiempito.Daemon.Configuration.Session;
 public class SessionConfigWriter : ISessionConfigWriter
 {
     private readonly ConfigParser _configParser;
+    private readonly ITimeSpanConverter _timeSpanConverter;
     
     /// <summary>
     /// Instantiates a new <see cref="SessionConfigWriter"/>.
     /// </summary>
     /// <param name="configParser">Parser of the user's configuration file.</param>
-    public SessionConfigWriter([FromKeyedServices(AppConfigConstants.UserConfigParserServiceKey)] ConfigParser configParser)
+    /// <param name="timeSpanConverter">A <see cref="ITimeSpanConverter"/> to convert <see cref="TimeSpan"/> to string values.</param>
+    public SessionConfigWriter(
+        [FromKeyedServices(AppConfigConstants.UserConfigParserServiceKey)] ConfigParser configParser,
+        ITimeSpanConverter timeSpanConverter)
     {
         _configParser = configParser;
+        _timeSpanConverter = timeSpanConverter;
     }
     
     // TODO: Make method asynchronous.
@@ -28,12 +33,12 @@ public class SessionConfigWriter : ISessionConfigWriter
     {
         string sectionName = prefixSectionName + sessionConfig.Id;
         var targetCycles = sessionConfig.TargetCycles.ToString();
-        var delayBetweenTimes = sessionConfig.DelayBetweenTimes.TotalSeconds.ToString(CultureInfo.InvariantCulture) + "s";
-        // BUG: Saving as minutes when are in seconds will cause saving floats which are not gonna be parsed when loading configs again.
-        string focusDuration = sessionConfig.FocusDuration.TotalMinutes.ToString(CultureInfo.InvariantCulture) + "m";
-        string breakDuration = sessionConfig.BreakDuration.TotalMinutes.ToString(CultureInfo.InvariantCulture) + "m";
+        var delayBetweenTimes = _timeSpanConverter.ConvertToString(sessionConfig.DelayBetweenTimes);
+        string focusDuration = _timeSpanConverter.ConvertToString(sessionConfig.FocusDuration);
+        string breakDuration = _timeSpanConverter.ConvertToString(sessionConfig.BreakDuration);
         
-        bool wasWritten = _configParser.SetValue(sectionName, SessionConfigKeyword.TargetCycles.ToString(), targetCycles)
+        bool wasWritten =
+            _configParser.SetValue(sectionName, SessionConfigKeyword.TargetCycles.ToString(), targetCycles)
             && _configParser.SetValue(sectionName, SessionConfigKeyword.DelayBetweenTimes.ToString(), delayBetweenTimes)
             && _configParser.SetValue(sectionName, SessionConfigKeyword.FocusDuration.ToString(), focusDuration)
             && _configParser.SetValue(sectionName, SessionConfigKeyword.BreakDuration.ToString(), breakDuration);
