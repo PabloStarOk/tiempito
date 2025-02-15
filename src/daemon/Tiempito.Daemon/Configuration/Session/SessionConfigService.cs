@@ -43,20 +43,20 @@ public class SessionConfigService : Service, ISessionConfigService
     /// <inheritdoc/>
     public bool TryGetConfigById(string id, out SessionConfig config)
     {
-        return _configs.TryGetValue(id.ToLower(), out config);
+        return _configs.TryGetValue(id, out config);
     }
     
     /// <inheritdoc/>
     public Task<OperationResult> AddConfigAsync(SessionConfig config)
     {
-        if (_configs.ContainsKey(config.Id.ToLower()))
+        if (_configs.ContainsKey(config.Id))
         {
             return Task.FromResult(new OperationResult(
                 Success: false, 
                 Message: $"There's already a session configuration with the same ID \"{config.Id}\"")); 
         }
         
-        _configs.Add(config.Id.ToLower(), config);
+        _configs.Add(config.Id, config);
         bool wasSaved = _configWriter.Write(AppConfigConstants.SessionSectionPrefix, config);
         string message = wasSaved 
             ? "Session configuration added." 
@@ -87,7 +87,7 @@ public class SessionConfigService : Service, ISessionConfigService
             BreakDuration = breakDuration ?? config.BreakDuration
         };
 
-        _configs[configId.ToLower()] = modifiedConfig;
+        _configs[configId] = modifiedConfig;
 
         if (_userConfigService.UserConfig.DefaultSessionId == modifiedConfig.Id)
             DefaultConfig = modifiedConfig;

@@ -61,7 +61,7 @@ public class SessionConfigReader : ISessionConfigReader
     /// <returns>A <see cref="SessionConfig"/> or null if one of the required fields is not found.</returns>
     private SessionConfig? ReadConfigSection(ConfigSection configSection, string prefixSectionName)
     {
-        string id = configSection.SectionName.ToLower().Replace(prefixSectionName.ToLower(), "");
+        string id = configSection.SectionName.Replace(prefixSectionName, "");
         var targetCyclesStr = string.Empty;
         var delayBetweenTimesStr = string.Empty;
         var focusDurationStr = string.Empty;
