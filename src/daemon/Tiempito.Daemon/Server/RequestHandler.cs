@@ -1,7 +1,7 @@
 using Tiempito.Daemon.Commands;
 using Tiempito.Daemon.Common;
 using Tiempito.Daemon.Server.Interfaces;
-using Tiempito.IPC.Messages.Objects;
+using Tiempito.IPC.Models;
 
 namespace Tiempito.Daemon.Server;
 

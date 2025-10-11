@@ -1,17 +1,13 @@
-using Microsoft.Extensions.Options;
 using System.IO.Pipes;
-
 using AsyncEvent;
-
-using Tiempito.Daemon.Configuration.Daemon.Objects;
-
+using Microsoft.Extensions.Options;
 using Tiempito.Daemon.Common.Extensions;
+using Tiempito.Daemon.Configuration.Daemon.Objects;
 using Tiempito.Daemon.Server.Interfaces;
-using Tiempito.IPC.Messages.Objects;
-using Tiempito.IPC.Packets.Interfaces;
-using Tiempito.IPC.Packets.Objects;
+using Tiempito.IPC.Abstractions;
+using Tiempito.IPC.Models;
 
-namespace Tiempito.Daemon.Server; 
+namespace Tiempito.Daemon.Server;
 
 /// <summary>
 /// Represents the server to receive requests and send responses to the client.
@@ -21,36 +17,33 @@ public class Server : IServer
     private readonly ILogger<Server> _logger;
     private readonly PipeConfig _pipeConfig;
     private readonly NamedPipeServerStream _pipeServer;
-    private readonly IAsyncPacketHandler _asyncPacketHandler;
-    private readonly IPacketSerializer _packetSerializer;
-    private readonly IPacketDeserializer _packetDeserializer;
     private readonly IStandardOutSink _stdOutSink;
     private readonly IRequestHandler _requestHandler;
+    private readonly IMessageWriter _messageWriter;
+    private readonly IMessageReader _messageReader;
     private readonly int _maxRestartAttempts;
     private string _currentConnectedUser = string.Empty;
     private int _currentRestartAttempts;
 
     public event AsyncEventHandler? OnFailed;
-    
+
     public Server(
         ILogger<Server> logger,
         IOptions<PipeConfig> daemonConfigOptions,
         NamedPipeServerStream pipeServer,
         IStandardOutSink stdOutSink,
-        IAsyncPacketHandler asyncPacketHandler,
-        IPacketSerializer packetSerializer,
-        IPacketDeserializer packetDeserializer,
-        IRequestHandler requestHandler)
+        IRequestHandler requestHandler,
+        IMessageWriter messageWriter,
+        IMessageReader messageReader)
     {
         _logger = logger;
         _pipeConfig = daemonConfigOptions.Value;
         _pipeServer = pipeServer;
         _stdOutSink = stdOutSink;
-        _asyncPacketHandler = asyncPacketHandler;
-        _packetSerializer = packetSerializer;
-        _packetDeserializer = packetDeserializer;
         _requestHandler = requestHandler;
         _maxRestartAttempts = daemonConfigOptions.Value.MaxRestartAttempts;
+        _messageWriter = messageWriter;
+        _messageReader = messageReader;
     }
 
     public Task StartAsync(CancellationToken cancellationToken)
@@ -103,20 +96,18 @@ public class Server : IServer
                     await ConnectAsync(cancellationToken);
                 
                 // Handle client requests
-                Packet incomingPacket = await ReceiveRequestsAsync(cancellationToken);
-                
-                // A length lower than zero means a client disconnection.
-                if (incomingPacket.Length < 0) // TODO: Replace with a termination request.
+                Request? incomingRequest = await ReceiveRequestsAsync(cancellationToken);
+
+                if (incomingRequest is null) // TODO: Replace with a termination request.
                 {
                     await DisconnectAsync();
                     continue;
                 }
 
-                var request = _packetDeserializer.Deserialize<Request>(incomingPacket);
-                Response response = await _requestHandler.HandleAsync(request, cancellationToken);
+                Response response = await _requestHandler.HandleAsync(incomingRequest, cancellationToken);
                 await SendResponseAsync(response, cancellationToken);
                 
-                if (request.RedirectProgress)
+                if (incomingRequest.RedirectProgress)
                     _stdOutSink.Start(cancellationToken);
             }
         }
@@ -161,20 +152,20 @@ public class Server : IServer
     /// </summary>
     /// <param name="cancellationToken">Token to stop the task.</param>
     /// <returns>A string with the received message.</returns>
-    private async Task<Packet> ReceiveRequestsAsync(CancellationToken cancellationToken)
+    private async Task<Request?> ReceiveRequestsAsync(CancellationToken cancellationToken)
     {
         while (!cancellationToken.IsCancellationRequested)
         {
             if (!_pipeServer.IsConnected)
                 break;
             
-            if (_pipeServer.CanRead)
-                return await _asyncPacketHandler.ReadPacketAsync(_pipeServer, cancellationToken);
+            if (!_pipeServer.CanRead)
+                _logger.LogError("Named pipe stream doesn't support read operations.");
 
-            _logger.LogError("Named pipe stream doesn't support read operations.");
+            return await _messageReader.ReadAsync<Request>(_pipeServer, cancellationToken);
         }
 
-        return new Packet(string.Empty.Length, string.Empty);
+        return null;
     }
     
     /// <summary>
@@ -192,12 +183,11 @@ public class Server : IServer
         
         if (!_pipeServer.CanWrite)
         {
-            _logger.LogError("Named pipe stream doesn't support write operations.");
+            _logger.LogError("Named pipe stream does not support write operations.");
             return;
         }
 
-        Packet outgoingPacket = _packetSerializer.Serialize(response);
-        await _asyncPacketHandler.WritePacketAsync(_pipeServer, outgoingPacket, cancellationToken);
+        await _messageWriter.WriteAsync(_pipeServer, response, cancellationToken);
     }
     
     /// <summary>

@@ -1,6 +1,8 @@
-using Tiempito.IPC.Messages.Enums;
+using MessagePack;
 
-namespace Tiempito.IPC.Messages.Objects;
+using Tiempito.IPC.Enums;
+
+namespace Tiempito.IPC.Models;
 
 /// <summary>
 /// Represents a response from the daemon.
@@ -8,7 +10,11 @@ namespace Tiempito.IPC.Messages.Objects;
 /// <param name="StatusCode">Status of the response.</param>
 /// <param name="Success">If the requested operation was completed successfully.</param>
 /// <param name="Message">A human-readable message for the client telling about the operation success or failure.</param>
-public record Response(ResponseStatusCode StatusCode, bool Success, string Message)
+[MessagePackObject]
+public record Response(
+    [property: Key(0)] ResponseStatusCode StatusCode,
+    [property: Key(1)] bool Success,
+    [property: Key(2)] string Message)
 {
     /// <summary>
     /// Returns a <see cref="Response"/> about an operation that was completed successfully.
@@ -22,7 +28,7 @@ public record Response(ResponseStatusCode StatusCode, bool Success, string Messa
             Success: true,
             Message: message);
     }
-    
+
     /// <summary>
     /// Returns a <see cref="Response"/> about an operation that failed due to a client error.
     /// </summary>
@@ -35,7 +41,7 @@ public record Response(ResponseStatusCode StatusCode, bool Success, string Messa
             Success: false,
             Message: message);
     }
-    
+
     /// <summary>
     /// Returns a <see cref="Response"/> about an operation that failed due to an internal error of the daemon.
     /// </summary>
@@ -49,4 +55,3 @@ public record Response(ResponseStatusCode StatusCode, bool Success, string Messa
             Message: message);
     }
 }
-

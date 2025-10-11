@@ -2,14 +2,15 @@
 using System.CommandLine.Builder;
 using System.CommandLine.Parsing;
 using System.IO.Pipes;
-using System.Text;
-using System.Text.Json;
+
+using Microsoft.Extensions.DependencyInjection;
+
 using Tiempito.CLI.Client;
 using Tiempito.CLI.Client.Interfaces;
 using Tiempito.CLI.Config;
 using Tiempito.CLI.Session;
-using Tiempito.IPC.Packets;
-using Tiempito.IPC.Packets.Interfaces;
+using Tiempito.IPC;
+using Tiempito.IPC.Abstractions;
 
 // Session Commands
 var rootCommand = new RootCommand("Tiempito CLI");
@@ -19,21 +20,20 @@ builder.UseDefaults();
 
 // TODO: Improve DI
 
-var jsonSerializerOptions = new JsonSerializerOptions()
-{
-    TypeInfoResolver = IpcSerializerContext.Default
-};
-IAsyncPacketHandler packetHandler = new PipePacketHandler(Encoding.UTF8, jsonSerializerOptions); // TODO: Read config of the host for the encoding.
-IPacketSerializer packetSerializer = new PacketSerializer(jsonSerializerOptions);
-IPacketDeserializer packetDeserializer = new PacketDeserializer(jsonSerializerOptions);
-
 var pipeClient = new NamedPipeClientStream(
     ".",
     "tiempito-pipe",
     PipeDirection.InOut,
     PipeOptions.Asynchronous); // TODO: Read config of the host.
 var pipeStdIn = new StreamReader(pipeClient);
-IClient client = new Client(pipeClient, packetHandler, packetSerializer, packetDeserializer, pipeStdIn);
+
+var services = new ServiceCollection();
+services.AddIpc();
+await using var sp = services.BuildServiceProvider();
+var transportWriter = sp.GetRequiredService<IMessageWriter>();
+var transportReader = sp.GetRequiredService<IMessageReader>();
+
+IClient client = new Client(pipeClient, pipeStdIn, transportWriter, transportReader);
 IAsyncCommandExecutor asyncCommandExecutor = new CommandExecutor(client, Console.Out, Console.Error);
 
 Command sessionCommand = new SessionCommand(asyncCommandExecutor).GetCommand();
