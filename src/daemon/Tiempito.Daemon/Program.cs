@@ -2,8 +2,6 @@ using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
 using Salaros.Configuration;
 using System.IO.Pipes;
-using System.Text.Json;
-using Tiempito.IPC.Packets;
 using Tiempito.Daemon;
 using Tiempito.Daemon.Commands;
 using Tiempito.Daemon.Commands.Configuration;
@@ -25,14 +23,14 @@ using Tiempito.Daemon.Notifications.Systems.Windows;
 using Tiempito.Daemon.Sessions;
 using Tiempito.Daemon.Sessions.Interfaces;
 using Tiempito.Daemon.Sessions.Objects;
-using Tiempito.IPC.Packets.Interfaces;
+using Tiempito.IPC;
 
 using TimeSpanConverter = Tiempito.Daemon.Common.Services.TimeSpanConverter;
 
 var builder = Host.CreateApplicationBuilder(args);
 
 IServiceProvider serviceProvider = builder.Services.BuildServiceProvider();
-var loggerProvider =  serviceProvider.GetRequiredService<ILoggerFactory>();
+var loggerProvider = serviceProvider.GetRequiredService<ILoggerFactory>();
 
 // Add filesystem providers.
 IAppFilesystemPathProvider appFilesystemPathProvider = new AppFilesystemPathProvider(loggerProvider.CreateLogger<AppFilesystemPathProvider>());
@@ -55,16 +53,7 @@ builder.Services.Configure<PipeConfig>(builder.Configuration.GetRequiredSection(
 builder.Services.Configure<NotificationConfig>(builder.Configuration.GetSection(key: NotificationConfig.Notification));
 
 // Add IPC dependencies
-PipeConfig pipeConfig = builder.Services.BuildServiceProvider().GetRequiredService<IOptions<PipeConfig>>().Value;
-builder.Services.AddTransient(_ => pipeConfig.GetEncoding());
-var jsonSerializerOptions = new JsonSerializerOptions
-{
-    TypeInfoResolver = IpcSerializerContext.Default
-};
-builder.Services.AddSingleton(jsonSerializerOptions);
-builder.Services.AddTransient<IAsyncPacketHandler, PipePacketHandler>();
-builder.Services.AddTransient<IPacketSerializer, PacketSerializer>();
-builder.Services.AddTransient<IPacketDeserializer, PacketDeserializer>();
+builder.Services.AddIpc();
 
 // Add system notification
 #if LINUX
@@ -81,23 +70,34 @@ if (OperatingSystem.IsWindowsVersionAtLeast(10,0,10240))
 #endif
 
 // Add server named pipe.
-var serverPipe = new NamedPipeServerStream
-(
-    pipeConfig.PipeName,
-    pipeConfig.PipeDirection,
-    pipeConfig.PipeMaxInstances,
-    PipeTransmissionMode.Byte,
-    PipeOptions.Asynchronous
-);
-builder.Services.AddSingleton(serverPipe);
+builder.Services.AddSingleton(sp =>
+    {
+        var options = sp.GetRequiredService<IOptions<PipeConfig>>();
+        return new NamedPipeServerStream
+        (
+            options.Value.PipeName,
+            options.Value.PipeDirection,
+            options.Value.PipeMaxInstances,
+            PipeTransmissionMode.Byte,
+            PipeOptions.Asynchronous
+        );
+    } );
 
 // Add stdout handler
-TextWriter pipeStdOut = new StreamWriter(serverPipe);
-builder.Services.AddSingleton(pipeStdOut);
-var stdOutProcessor = new StandardOutMessageProcessor([], pipeStdOut);
-builder.Services.AddSingleton(stdOutProcessor);
-builder.Services.AddSingleton<IStandardOutSink>(stdOutProcessor);
-builder.Services.AddSingleton<IStandardOutQueue>(stdOutProcessor);
+
+builder.Services.AddSingleton<TextWriter>(sp =>
+    {
+        var stream = sp.GetRequiredService<NamedPipeServerStream>();
+        return new StreamWriter(stream);
+    });
+builder.Services.AddSingleton(sp =>
+    {
+        var pipeStdOut = sp.GetRequiredService<TextWriter>();
+        return new StandardOutMessageProcessor([], pipeStdOut);
+    }
+);
+builder.Services.AddSingleton<IStandardOutSink>(sp => sp.GetRequiredService<StandardOutMessageProcessor>());
+builder.Services.AddSingleton<IStandardOutQueue>(sp => sp.GetRequiredService<StandardOutMessageProcessor>());
 
 // Add time provider.
 builder.Services.AddSingleton(TimeProvider.System);

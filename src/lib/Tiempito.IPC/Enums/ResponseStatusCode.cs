@@ -1,8 +1,5 @@
-namespace Tiempito.IPC.Messages.Enums;
+namespace Tiempito.IPC.Enums;
 
-/// <summary>
-/// Represents the status code of a response.
-/// </summary>
 /// <summary>
 /// Represents the status code of a response.
 /// </summary>
@@ -21,5 +18,5 @@ public enum ResponseStatusCode
     /// <summary>
     /// An internal server error occurred.
     /// </summary>
-    Error = 500
+    Error = 500,
 }

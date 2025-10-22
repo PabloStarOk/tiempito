@@ -1,4 +1,4 @@
-using Tiempito.IPC.Messages.Objects;
+using Tiempito.IPC.Models;
 
 namespace Tiempito.Daemon.Server.Interfaces;
 

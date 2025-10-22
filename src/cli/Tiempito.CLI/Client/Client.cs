@@ -1,9 +1,8 @@
 using System.IO.Pipes;
 
 using Tiempito.CLI.Client.Interfaces;
-using Tiempito.IPC.Messages.Objects;
-using Tiempito.IPC.Packets.Interfaces;
-using Tiempito.IPC.Packets.Objects;
+using Tiempito.IPC.Abstractions;
+using Tiempito.IPC.Models;
 
 namespace Tiempito.CLI.Client;
 
@@ -12,68 +11,57 @@ namespace Tiempito.CLI.Client;
 /// </summary>
 public class Client : IClient
 {
-    private readonly NamedPipeClientStream _pipeClient;
-    private readonly IAsyncPacketHandler _packetHandler;
-    private readonly IPacketSerializer _packetSerializer;
-    private readonly IPacketDeserializer _packetDeserializer;
-    private readonly TextReader _pipeStandardIn;
     private const int ConnectionTimeout = 3000;
-    
+    private readonly NamedPipeClientStream _pipeClient;
+    private readonly TextReader _pipeStandardIn;
+    private readonly IMessageWriter _messageWriter;
+    private readonly IMessageReader _messageReader;
+
     /// <summary>
-    /// Instantiates a <see cref="Client"/>. 
+    /// Initializes a new instance of the <see cref="Client"/> class.
     /// </summary>
-    /// <param name="pipeClient">Named pipe to connect to the daemon.</param>
-    /// <param name="packetHandler">Handler of packets.</param>
-    /// <param name="packetSerializer">Serializer of packets.</param>
-    /// <param name="packetDeserializer">Deserializer of packets.</param>
-    /// <param name="pipeStandardIn">Standard input of the named pipe.</param>
+    /// <param name="pipeClient">The named pipe client stream used to connect to the daemon.</param>
+    /// <param name="pipeStandardIn">The standard input reader for the named pipe.</param>
+    /// <param name="messageWriter">The message writer for sending requests.</param>
+    /// <param name="messageReader">The message reader for receiving responses.</param>
     public Client(
         NamedPipeClientStream pipeClient,
-        IAsyncPacketHandler packetHandler,
-        IPacketSerializer packetSerializer,
-        IPacketDeserializer packetDeserializer,
-        TextReader pipeStandardIn)
+        TextReader pipeStandardIn,
+        IMessageWriter messageWriter,
+        IMessageReader messageReader)
     {
         _pipeClient = pipeClient;
-        _packetHandler = packetHandler;
-        _packetSerializer = packetSerializer;
-        _packetDeserializer = packetDeserializer;
         _pipeStandardIn = pipeStandardIn;
-    }
-    
-    /// <summary>
-    /// Sends a request to the daemon.
-    /// </summary>
-    /// <param name="request">Request to send to the daemon.</param>
-    public async Task SendRequestAsync(Request request)
-    {
-        if (!_pipeClient.IsConnected)
-            await _pipeClient.ConnectAsync(ConnectionTimeout);
-
-        Packet outgoingPacket = _packetSerializer.Serialize(request);
-        await _packetHandler.WritePacketAsync(_pipeClient, outgoingPacket);
+        _messageWriter = messageWriter;
+        _messageReader = messageReader;
     }
 
-    /// <summary>
-    /// Receives a response from the daemon.
-    /// </summary>
-    /// <returns>The response of the daemon.</returns>
-    /// <exception cref="InvalidOperationException">If the incoming packet is null.</exception>
-    public async Task<Response> ReceiveResponseAsync()
+    /// <inheritdoc/>
+    public async Task SendRequestAsync(Request request, CancellationToken cancellationToken = default)
     {
         if (!_pipeClient.IsConnected)
+        {
+            await _pipeClient.ConnectAsync(ConnectionTimeout, cancellationToken);
+        }
+
+        await _messageWriter.WriteAsync(_pipeClient, request, cancellationToken);
+    }
+
+    /// <inheritdoc/>
+    public async Task<Response?> ReceiveResponseAsync(CancellationToken cancellationToken = default)
+    {
+        if (!_pipeClient.IsConnected)
+        {
             throw new InvalidOperationException("Named pipe is not connected.");
+        }
 
-        Packet? incomingPacket = await _packetHandler.ReadPacketAsync(_pipeClient);
-
-        if (incomingPacket == null)
-            throw new InvalidOperationException("Response not recognized.");
-        
-        return _packetDeserializer.Deserialize<Response>(incomingPacket);
+        var response = await _messageReader.ReadAsync<Response>(_pipeClient, cancellationToken);
+        return response ?? throw new InvalidOperationException("Response not recognized.");
     }
 
-    public async Task<string> ReadPipeStdInAsync()
+    /// <inheritdoc/>
+    public async Task<string> ReadPipeStdInAsync(CancellationToken cancellationToken = default)
     {
-        return await _pipeStandardIn.ReadLineAsync() ?? string.Empty;
+        return await _pipeStandardIn.ReadLineAsync(cancellationToken) ?? string.Empty;
     }
 }

@@ -1,4 +1,4 @@
-using Tiempito.IPC.Messages.Objects;
+using Tiempito.IPC.Models;
 
 namespace Tiempito.CLI.Client.Interfaces;
 
@@ -7,22 +7,9 @@ namespace Tiempito.CLI.Client.Interfaces;
 /// </summary>
 public interface IClient
 {
-    /// <summary>
-    /// Sends a request to the daemon.
-    /// </summary>
-    /// <param name="request">Request to send.</param>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    public Task SendRequestAsync(Request request);
-    
-    /// <summary>
-    /// Receives a response from the daemon.
-    /// </summary>
-    /// <returns>A task with the response from the daemon.</returns>
-    public Task<Response> ReceiveResponseAsync();
+    public Task SendRequestAsync(Request request, CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// Reads the standard input.
-    /// </summary>
-    /// <returns>The incoming message as a string.</returns>
-    public Task<string> ReadPipeStdInAsync();
+    public Task<Response?> ReceiveResponseAsync(CancellationToken cancellationToken = default);
+    
+    public Task<string> ReadPipeStdInAsync(CancellationToken cancellationToken = default);
 }
