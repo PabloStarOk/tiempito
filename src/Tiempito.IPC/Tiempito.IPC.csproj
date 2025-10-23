@@ -1,30 +1,28 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <OutputType>Exe</OutputType>
         <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <Configurations>Debug-Windows;Release-Linux;Release-Windows;Debug-Linux</Configurations>
         <Platforms>AnyCPU</Platforms>
-        <PackageId>tiempito-cli</PackageId>
+        <PackageId>tiempito-ipc</PackageId>
         <Authors>PabloStarOk</Authors>
-        <Product>tiempito-cli</Product>
+        <Product>tiempito-ipc</Product>
         <AssemblyVersion>1.0.0</AssemblyVersion>
         <NeutralLanguage>en-US</NeutralLanguage>
-        <ApplicationIcon>..\..\..\assets\icon\icon.ico</ApplicationIcon>
-        <PublishAot>true</PublishAot>
+        <PackageIcon>icon.ico</PackageIcon>
         <Version>1.0.0</Version>
-    </PropertyGroup>
-
-    <PropertyGroup Condition=" '$(Configuration)' == 'Debug-Linux' ">
-      <OutputPath>bin/linux/debug/</OutputPath>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug-Windows' ">
       <OutputPath>bin/windows/debug/</OutputPath>
     </PropertyGroup>
 
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug-Linux' ">
+        <OutputPath>bin/linux/debug/</OutputPath>
+    </PropertyGroup>
+    
     <PropertyGroup Condition=" '$(Configuration)' == 'Release-Linux' ">
       <OutputPath>bin/linux/release/</OutputPath>
       <DefineConstants />
@@ -40,24 +38,19 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.8" />
-      <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.8" />
+      <None Include="..\assets\icon\icon.ico">
+        <Pack>True</Pack>
+        <Link>icon.ico</Link>
+      </None>
+    </ItemGroup>
+
+    <ItemGroup>
       <PackageReference Include="StyleCop.Analyzers" Version="1.1.118">
         <PrivateAssets>all</PrivateAssets>
         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       </PackageReference>
-      <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
-      <PackageReference Include="System.CommandLine.NamingConventionBinder" Version="2.0.0-beta4.22272.1" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <ProjectReference Include="..\..\lib\Tiempito.IPC\Tiempito.IPC.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <None Include="..\..\..\assets\icon\icon.ico">
-        <Link>icon.ico</Link>
-      </None>
+      <PackageReference Include="MessagePack" Version="3.1.4" />
+      <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.8" />
     </ItemGroup>
 
 </Project>

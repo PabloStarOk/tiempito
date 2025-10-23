@@ -12,7 +12,7 @@
         <Product>tiempitod</Product>
         <AssemblyVersion>1.0.0</AssemblyVersion>
         <NeutralLanguage>en-US</NeutralLanguage>
-        <ApplicationIcon>..\..\..\assets\icon\icon.ico</ApplicationIcon>
+        <ApplicationIcon>..\..\assets\icon\icon.ico</ApplicationIcon>
         <Version>1.0.0</Version>
     </PropertyGroup>
 
@@ -63,18 +63,18 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\lib\Tiempito.IPC\Tiempito.IPC.csproj" />
+      <ProjectReference Include="..\Tiempito.IPC\Tiempito.IPC.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-      <None Include="..\..\..\assets\icon\icon.ico">
+      <None Include="..\assets\icon\icon.ico">
         <Link>icon.ico</Link>
       </None>
     </ItemGroup>
 
     <ItemGroup>
       <Reference Include="ConfigParser">
-        <HintPath>..\..\lib\ConfigParser.dll</HintPath>
+        <HintPath>..\lib\ConfigParser.dll</HintPath>
       </Reference>
     </ItemGroup>
 
