@@ -9,7 +9,7 @@ namespace Tiempito.IPC.Models;
 /// <param name="CorrelationId">Identifier used to correlate related messages.</param>
 /// <param name="Timestamp">Timestamp when the message was created (offset-aware).</param>
 [MessagePackObject]
-[Union(0, typeof(Request))]
+[Union(0, typeof(Command))]
 [Union(1, typeof(Response))]
 public abstract record Message(
     [property: Key(0)] Guid Id,

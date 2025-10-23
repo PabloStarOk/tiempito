@@ -106,7 +106,7 @@ builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<ITimeSpanConverter, TimeSpanConverter>();
 builder.Services.AddSingleton<CommandCreator, ConfigCommandsCreator>();
 builder.Services.AddSingleton<CommandCreator, SessionCommandsCreator>();
-builder.Services.AddSingleton<IRequestHandler, RequestHandler>();
+builder.Services.AddSingleton<ICommandHandler, CommandHandler>();
 builder.Services.AddSingleton<IServer, Server>();
 
 // Session service dependencies

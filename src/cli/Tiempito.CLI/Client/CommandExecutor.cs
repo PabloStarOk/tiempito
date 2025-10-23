@@ -33,7 +33,7 @@ public class CommandExecutor : IAsyncCommandExecutor
         // Send request.
         try
         {
-            var request = new Request(command, subcommand, args, tty);
+            var request = Command.CreateNew(command, subcommand, args, tty);
             await _client.SendRequestAsync(request);
         }
         catch (TimeoutException)
