@@ -18,7 +18,7 @@ public class Server : IServer
     private readonly PipeConfig _pipeConfig;
     private readonly NamedPipeServerStream _pipeServer;
     private readonly IStandardOutSink _stdOutSink;
-    private readonly IRequestHandler _requestHandler;
+    private readonly ICommandHandler _commandHandler;
     private readonly IMessageWriter _messageWriter;
     private readonly IMessageReader _messageReader;
     private readonly int _maxRestartAttempts;
@@ -32,7 +32,7 @@ public class Server : IServer
         IOptions<PipeConfig> daemonConfigOptions,
         NamedPipeServerStream pipeServer,
         IStandardOutSink stdOutSink,
-        IRequestHandler requestHandler,
+        ICommandHandler commandHandler,
         IMessageWriter messageWriter,
         IMessageReader messageReader)
     {
@@ -40,7 +40,7 @@ public class Server : IServer
         _pipeConfig = daemonConfigOptions.Value;
         _pipeServer = pipeServer;
         _stdOutSink = stdOutSink;
-        _requestHandler = requestHandler;
+        _commandHandler = commandHandler;
         _maxRestartAttempts = daemonConfigOptions.Value.MaxRestartAttempts;
         _messageWriter = messageWriter;
         _messageReader = messageReader;
@@ -96,7 +96,7 @@ public class Server : IServer
                     await ConnectAsync(cancellationToken);
                 
                 // Handle client requests
-                Request? incomingRequest = await ReceiveRequestsAsync(cancellationToken);
+                Command? incomingRequest = await ReceiveRequestsAsync(cancellationToken);
 
                 if (incomingRequest is null) // TODO: Replace with a termination request.
                 {
@@ -104,7 +104,7 @@ public class Server : IServer
                     continue;
                 }
 
-                Response response = await _requestHandler.HandleAsync(incomingRequest, cancellationToken);
+                Response response = await _commandHandler.HandleAsync(incomingRequest, cancellationToken);
                 await SendResponseAsync(response, cancellationToken);
                 
                 if (incomingRequest.RedirectProgress)
@@ -152,7 +152,7 @@ public class Server : IServer
     /// </summary>
     /// <param name="cancellationToken">Token to stop the task.</param>
     /// <returns>A string with the received message.</returns>
-    private async Task<Request?> ReceiveRequestsAsync(CancellationToken cancellationToken)
+    private async Task<Command?> ReceiveRequestsAsync(CancellationToken cancellationToken)
     {
         while (!cancellationToken.IsCancellationRequested)
         {
@@ -162,7 +162,7 @@ public class Server : IServer
             if (!_pipeServer.CanRead)
                 _logger.LogError("Named pipe stream doesn't support read operations.");
 
-            return await _messageReader.ReadAsync<Request>(_pipeServer, cancellationToken);
+            return await _messageReader.ReadAsync<Command>(_pipeServer, cancellationToken);
         }
 
         return null;

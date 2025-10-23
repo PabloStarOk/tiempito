@@ -37,14 +37,14 @@ public class Client : IClient
     }
 
     /// <inheritdoc/>
-    public async Task SendRequestAsync(Request request, CancellationToken cancellationToken = default)
+    public async Task SendRequestAsync(Command command, CancellationToken cancellationToken = default)
     {
         if (!_pipeClient.IsConnected)
         {
             await _pipeClient.ConnectAsync(ConnectionTimeout, cancellationToken);
         }
 
-        await _messageWriter.WriteAsync(_pipeClient, request, cancellationToken);
+        await _messageWriter.WriteAsync(_pipeClient, command, cancellationToken);
     }
 
     /// <inheritdoc/>

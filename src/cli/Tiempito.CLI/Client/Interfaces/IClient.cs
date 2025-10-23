@@ -7,7 +7,7 @@ namespace Tiempito.CLI.Client.Interfaces;
 /// </summary>
 public interface IClient
 {
-    public Task SendRequestAsync(Request request, CancellationToken cancellationToken = default);
+    public Task SendRequestAsync(Command command, CancellationToken cancellationToken = default);
 
     public Task<Response?> ReceiveResponseAsync(CancellationToken cancellationToken = default);
     
