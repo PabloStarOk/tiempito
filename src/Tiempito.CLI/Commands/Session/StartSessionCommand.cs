@@ -9,6 +9,9 @@ namespace Tiempito.CLI.Commands.Session;
 /// </summary>
 public class StartSessionCommand : Command
 {
+    private const string CommandName = "start";
+    private const string CommandDescription = "Starts a new session.";
+
     private readonly IAsyncCommandExecutor _asyncCommandExecutor;
     private readonly string _commandParent;
     private readonly Option<string> _sessionIdOption;
@@ -22,12 +25,10 @@ public class StartSessionCommand : Command
     /// <param name="commandParent">Command parent of this command.</param>
     /// <param name="sessionIdOption">Session id option.</param>
     /// <param name="interactiveOption">If the session's progress is redirected to the current process.</param>
-    /// <param name="name">Name of the command.</param>
-    /// <param name="description">Description of the command.</param>
     public StartSessionCommand(
         IAsyncCommandExecutor asyncCommandExecutor,
         string commandParent, Option<string> sessionIdOption,
-        Option<bool> interactiveOption, string name, string description) : base(name, description)
+        Option<bool> interactiveOption) : base(CommandName, CommandDescription)
     {
         _asyncCommandExecutor = asyncCommandExecutor;
         _commandParent = commandParent;

@@ -36,9 +36,7 @@ internal sealed class SessionCommand : Command
             commandExecutor,
             Name,
             sessionIdOption,
-            interactiveOption,
-            "start",
-            "Starts a new session.");
+            interactiveOption);
 
         var cancelCommand = new GenericSessionCommand(
             commandExecutor,

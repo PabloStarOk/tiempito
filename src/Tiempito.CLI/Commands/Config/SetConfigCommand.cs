@@ -9,6 +9,9 @@ namespace Tiempito.CLI.Commands.Config;
 /// </summary>
 public class SetConfigCommand : Command
 {
+    private const string CommandName = "set";
+    private const string CommandDescription = "Sets the specified user configuration.";
+
     private readonly IAsyncCommandExecutor _asyncCommandExecutor;
     private readonly string _commandParent;
     private readonly Option<string> _defaultSessionIdOption;
@@ -22,7 +25,7 @@ public class SetConfigCommand : Command
     public SetConfigCommand(
         IAsyncCommandExecutor asyncCommandExecutor,
         string commandParent, Option<string> defaultSessionIdOption) 
-        : base("set", "Sets the specified user configuration.")
+        : base(CommandName, CommandDescription)
     {
         _asyncCommandExecutor = asyncCommandExecutor;
         _commandParent = commandParent;
