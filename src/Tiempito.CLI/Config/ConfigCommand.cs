@@ -22,25 +22,26 @@ public class ConfigCommand
     {
         _asyncCommandExecutor = asyncCommandExecutor;
         // Set config command
-        _defaultSessionConfigIdOption = new Option<string>("--default-config", "Sets the default session configuration to use specifying its ID.")
+        _defaultSessionConfigIdOption = new Option<string>("--default-config", "-d")
         {
+            Description = "Sets the default session configuration to use specifying its ID.",
             Arity = ArgumentArity.ExactlyOne
         };
-        _defaultSessionConfigIdOption.AddAlias("-d");
-        
+
         // Feature commands
-        _featureArgument = new Argument<string>("feature", "Feature to enable or disable.")
+        _featureArgument = new Argument<string>("feature")
         {
+            Description = "Feature to enable or disable.",
             Arity = ArgumentArity.ExactlyOne
         };
-        
+
         // Session config commands
-        _sessionConfigIdOption = new Option<string>("--config-id", "ID of the session configuration.")
+        _sessionConfigIdOption = new Option<string>("--config-id", "-ci")
         {
+            Description = "ID of the session configuration.",
             Arity = ArgumentArity.ExactlyOne,
-            IsRequired = true
+            Required = true
         };
-        _sessionConfigIdOption.AddAlias("-ci");
     }
 
     /// <summary>
@@ -50,20 +51,20 @@ public class ConfigCommand
     public Command GetCommand()
     {
         var configCommand = new Command("config", "Modifies the user's configuration.");
-        
-        configCommand.AddCommand(new SetConfigCommand(_asyncCommandExecutor, configCommand.Name, _defaultSessionConfigIdOption));
-        
-        configCommand.AddCommand(new GenericFeatureConfigCommand(
+
+        configCommand.Add(new SetConfigCommand(_asyncCommandExecutor, configCommand.Name, _defaultSessionConfigIdOption));
+
+        configCommand.Add(new GenericFeatureConfigCommand(
             _asyncCommandExecutor, configCommand.Name, _featureArgument,
             "enable", "Enables a specified feature in the user's configuration."));
-        
-        configCommand.AddCommand(new GenericFeatureConfigCommand(
+
+        configCommand.Add(new GenericFeatureConfigCommand(
             _asyncCommandExecutor, configCommand.Name, _featureArgument,
             "disable", "Disables a specified feature in the user's configuration."));
-        
-        configCommand.AddCommand(new CreateSessionConfigCommand(_asyncCommandExecutor, configCommand.Name, _sessionConfigIdOption));
-        configCommand.AddCommand(new ModifySessionConfigCommand(_asyncCommandExecutor, configCommand.Name, _sessionConfigIdOption));
-        
+
+        configCommand.Add(new CreateSessionConfigCommand(_asyncCommandExecutor, configCommand.Name, _sessionConfigIdOption));
+        configCommand.Add(new ModifySessionConfigCommand(_asyncCommandExecutor, configCommand.Name, _sessionConfigIdOption));
+
         return configCommand;
     }
 }

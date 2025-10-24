@@ -12,7 +12,8 @@ public class GenericFeatureConfigCommand : Command
     private readonly IAsyncCommandExecutor _asyncCommandExecutor;
     private readonly string _commandParent;
     private readonly string[] _allowedFeatureArgs = ["nc", "notification"];
-    
+    private readonly Argument<string> _featureArgument;
+
     /// <summary>
     /// Instantiates a <see cref="GenericFeatureConfigCommand"/>.
     /// </summary>
@@ -29,21 +30,17 @@ public class GenericFeatureConfigCommand : Command
     {
         _asyncCommandExecutor = asyncCommandExecutor;
         _commandParent = commandParent;
-        
-        featureArgument.FromAmong(_allowedFeatureArgs);
-        AddArgument(featureArgument);
-        this.SetHandler(CommandHandler, featureArgument);
+        _featureArgument = featureArgument;
+        _featureArgument.AcceptOnlyFromAmong(_allowedFeatureArgs);
+        Add(_featureArgument);
+        SetAction(ExecuteAsync);
     }
 
-    /// <summary>
-    /// Sends the request to execute a command to enable/disable a feature.
-    /// </summary>
-    /// <param name="feature">Feature to enable/disable.</param>
-    private async Task CommandHandler(string feature)
+    private async Task ExecuteAsync(ParseResult parseResult, CancellationToken cancellationToken)
     {
         var arguments = new Dictionary<string, string>
         {
-            { "feature", feature }
+            { "feature", parseResult.GetRequiredValue(_featureArgument) },
         };
         await _asyncCommandExecutor.ExecuteAsync(_commandParent, subcommand: Name, arguments);
     }

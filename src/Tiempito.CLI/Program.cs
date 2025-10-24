@@ -1,6 +1,4 @@
 ﻿using System.CommandLine;
-using System.CommandLine.Builder;
-using System.CommandLine.Parsing;
 using System.IO.Pipes;
 
 using Microsoft.Extensions.DependencyInjection;
@@ -14,9 +12,6 @@ using Tiempito.IPC.Abstractions;
 
 // Session Commands
 var rootCommand = new RootCommand("Tiempito CLI");
-var builder = new CommandLineBuilder(rootCommand);
-
-builder.UseDefaults();
 
 // TODO: Improve DI
 
@@ -39,8 +34,8 @@ IAsyncCommandExecutor asyncCommandExecutor = new CommandExecutor(client, Console
 Command sessionCommand = new SessionCommand(asyncCommandExecutor).GetCommand();
 Command configCommand = new ConfigCommand(asyncCommandExecutor).GetCommand();
 
-rootCommand.AddCommand(sessionCommand);
-rootCommand.AddCommand(configCommand);
+rootCommand.Add(sessionCommand);
+rootCommand.Add(configCommand);
 
-Parser parser = builder.Build();
-await parser.InvokeAsync(args);
+var parseResult = rootCommand.Parse(args);
+await parseResult.InvokeAsync();

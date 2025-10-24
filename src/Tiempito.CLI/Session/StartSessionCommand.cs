@@ -11,7 +11,10 @@ public class StartSessionCommand : Command
 {
     private readonly IAsyncCommandExecutor _asyncCommandExecutor;
     private readonly string _commandParent;
-    
+    private readonly Option<string> _sessionIdOption;
+    private readonly Option<string> _sessionConfigIdOption;
+    private readonly Option<bool>? _interactiveOption;
+
     /// <summary>
     /// Instantiates a <see cref="StartSessionCommand"/>.
     /// </summary>
@@ -28,33 +31,29 @@ public class StartSessionCommand : Command
     {
         _asyncCommandExecutor = asyncCommandExecutor;
         _commandParent = commandParent;
-        
-        sessionIdOption.IsRequired = false;
+        _sessionIdOption = sessionIdOption;
+        _interactiveOption = interactiveOption;
 
-        var sessionConfigIdOption = new Option<string>("--config-id", "ID of the session configuration.")
+        _sessionIdOption.Required = false;
+        _sessionConfigIdOption = new Option<string>("--config-id", "-ci")
         {
-            Arity = ArgumentArity.ZeroOrOne
+            Description = "ID of the session configuration.",
+            Arity = ArgumentArity.ZeroOrOne,
         };
-        sessionConfigIdOption.AddAlias("-ci");
-        
-        AddOption(sessionIdOption);
-        AddOption(sessionConfigIdOption);
-        AddOption(interactiveOption);
-        this.SetHandler(CommandHandler, sessionIdOption, sessionConfigIdOption, interactiveOption);
+
+        Add(_sessionIdOption);
+        Add(_sessionConfigIdOption);
+        Add(_interactiveOption);
+        SetAction(ExecuteAsync);
     }
-    
-    /// <summary>
-    /// Sends the request to manage a tiempito session.
-    /// </summary>
-    /// <param name="sessionId">ID of the session to use.</param>
-    /// <param name="sessionConfigId">ID of the config to use for the new session.</param>
-    /// <param name="tty">If the session's progress is redirected to the current process.</param>
-    private async Task CommandHandler(string sessionId, string sessionConfigId, bool tty)
+
+    private async Task ExecuteAsync(ParseResult parseResult, CancellationToken cancellationToken)
     {
+        var tty = _interactiveOption is not null && parseResult.GetValue(_interactiveOption);
         var arguments = new Dictionary<string, string>
         {
-            { "session-id", sessionId },
-            { "session-config-id", sessionConfigId }
+            { "session-id", parseResult.GetValue(_sessionIdOption) ?? string.Empty },
+            { "session-config-id", parseResult.GetValue(_sessionConfigIdOption) ?? string.Empty },
         };
         await _asyncCommandExecutor.ExecuteAsync(_commandParent, subcommand: Name, arguments, tty);
     }
