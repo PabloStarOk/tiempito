@@ -9,7 +9,7 @@ namespace Tiempito.CLI.Commands.Config;
 /// </summary>
 public class CreateSessionConfigCommand : Command
 {
-    private const string CommandName = "create-session-config";
+    private const string CommandName = "create-session";
     private const string CommandDescription = "Creates a new session configuration.";
 
     private readonly IAsyncCommandExecutor _asyncCommandExecutor;
@@ -33,7 +33,6 @@ public class CreateSessionConfigCommand : Command
     {
         _asyncCommandExecutor = asyncCommandExecutor;
         _commandParent = commandParent;
-        Aliases.Add("create-session");
         _sessionIdOption = sessionIdOption;
         _sessionIdOption.Required = true;
 
