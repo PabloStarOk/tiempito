@@ -11,7 +11,8 @@ public class SetConfigCommand : Command
 {
     private readonly IAsyncCommandExecutor _asyncCommandExecutor;
     private readonly string _commandParent;
-    
+    private readonly Option<string> _defaultSessionIdOption;
+
     /// <summary>
     /// Instantiates a <see cref="SetConfigCommand"/>.
     /// </summary>
@@ -25,20 +26,17 @@ public class SetConfigCommand : Command
     {
         _asyncCommandExecutor = asyncCommandExecutor;
         _commandParent = commandParent;
-        defaultSessionIdOption.IsRequired = false;
-        AddOption(defaultSessionIdOption);
-        this.SetHandler(CommandHandler, defaultSessionIdOption);
+        _defaultSessionIdOption = defaultSessionIdOption;
+        _defaultSessionIdOption.Required = false;
+        Add(_defaultSessionIdOption);
+        SetAction(ExecuteAsync);
     }
-    
-    /// <summary>
-    /// Sends a request to the daemon to modify the provided arguments.
-    /// </summary>
-    /// <param name="defaultSessionId">New ID of the default session of the user.</param>
-    private async Task CommandHandler(string defaultSessionId)
+
+    private async Task ExecuteAsync(ParseResult parseResult, CancellationToken cancellationToken)
     {
         var arguments = new Dictionary<string, string>
         {
-            { "default-session-id", defaultSessionId }
+            { "default-session-id", parseResult.GetRequiredValue(_defaultSessionIdOption) },
         };
         await _asyncCommandExecutor.ExecuteAsync(_commandParent, subcommand: Name, arguments);
     }

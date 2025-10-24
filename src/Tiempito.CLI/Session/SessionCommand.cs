@@ -20,18 +20,18 @@ public class SessionCommand
     public SessionCommand(IAsyncCommandExecutor asyncCommandExecutor)
     {
         _asyncCommandExecutor = asyncCommandExecutor;
-        _sessionIdOption = new Option<string>("--id", "ID of the session.")
+        _sessionIdOption = new Option<string>("--id", "-i")
         {
+            Description = "ID of the session.",
             Arity = ArgumentArity.ExactlyOne
         };
-        _sessionIdOption.AddAlias("-i");
-        
-        _interactiveOption = new Option<bool>("--tty", "Redirects the progress of the session to the current process.")
+
+        _interactiveOption = new Option<bool>("--tty", "-t")
         {
+            Description = "Redirects the progress of the session to the current process.",
             Arity = ArgumentArity.ZeroOrOne,
-            IsRequired = false
+            Required = false
         };
-        _interactiveOption.AddAlias("-t");
     }
 
     /// <summary>
@@ -43,19 +43,19 @@ public class SessionCommand
     {
         var sessionCommand = new Command(name: "session", description: "Manage sessions.");
         
-        sessionCommand.AddCommand(new StartSessionCommand(
+        sessionCommand.Add(new StartSessionCommand(
             _asyncCommandExecutor, sessionCommand.Name, _sessionIdOption, _interactiveOption,
             "start", "Starts a new session."));
         
-        sessionCommand.AddCommand(new GenericSessionCommand(
+        sessionCommand.Add(new GenericSessionCommand(
             _asyncCommandExecutor, sessionCommand.Name, _sessionIdOption,
             "cancel", "Cancels a session that is being executed."));
         
-        sessionCommand.AddCommand(new GenericSessionCommand(
+        sessionCommand.Add(new GenericSessionCommand(
             _asyncCommandExecutor, sessionCommand.Name, _sessionIdOption,
             "pause", "Pauses a session that is being executed."));
         
-        sessionCommand.AddCommand(new GenericSessionCommand(
+        sessionCommand.Add(new GenericSessionCommand(
             _asyncCommandExecutor, sessionCommand.Name, _sessionIdOption,
             "resume", "Resumes a paused session.", _interactiveOption));
         

@@ -11,7 +11,9 @@ public class GenericSessionCommand : Command
 {
     private readonly IAsyncCommandExecutor _asyncCommandExecutor;
     private readonly string _commandParent;
-    
+    private readonly Option<string> _sessionIdOption;
+    private readonly Option<bool>? _interactiveOption;
+
     /// <summary>
     /// Instantiates a <see cref="GenericSessionCommand"/>.
     /// </summary>
@@ -28,43 +30,27 @@ public class GenericSessionCommand : Command
     {
         _asyncCommandExecutor = asyncCommandExecutor;
         _commandParent = commandParent;
-        
-        sessionIdOption.IsRequired = false;
-        AddOption(sessionIdOption);
-        
-        if (interactiveOption != null)
+        _sessionIdOption = sessionIdOption;
+        _interactiveOption = interactiveOption;
+
+        _sessionIdOption.Required = false;
+        Add(_sessionIdOption);
+
+        if (_interactiveOption != null)
         {
-            AddOption(interactiveOption);
-            this.SetHandler(CommandHandler, sessionIdOption, interactiveOption);
-            return;
+            Add(_interactiveOption);
         }
-        this.SetHandler(CommandHandler, sessionIdOption);
+
+        SetAction(ExecuteAsync);
     }
-    
-    /// <summary>
-    /// Sends the request to manage a tiempito session.
-    /// </summary>
-    /// <param name="sessionId">ID of the session to use.</param>
-    private async Task CommandHandler(string sessionId)
+
+    private async Task ExecuteAsync(ParseResult parseResult, CancellationToken cancellationToken)
     {
+        var tty = _interactiveOption is not null && parseResult.GetValue(_interactiveOption);
         var arguments = new Dictionary<string, string>
         {
-            { "session-id", sessionId }
+            { "session-id", parseResult.GetValue(_sessionIdOption) ?? string.Empty },
         };
-        await _asyncCommandExecutor.ExecuteAsync(_commandParent, subcommand: Name, arguments);
-    }
-    
-    /// <summary>
-    /// Sends the request to manage a tiempito session.
-    /// </summary>
-    /// <param name="sessionId">ID of the session to use.</param>
-    /// <param name="interactiveOption">If the session's progress is redirected to the current process.</param>
-    private async Task CommandHandler(string sessionId, bool interactiveOption)
-    {
-        var arguments = new Dictionary<string, string>
-        {
-            { "session-id", sessionId }
-        };
-        await _asyncCommandExecutor.ExecuteAsync(_commandParent, subcommand: Name, arguments, interactiveOption);
+        await _asyncCommandExecutor.ExecuteAsync(_commandParent, subcommand: Name, arguments, tty);
     }
 }
