@@ -1,7 +1,6 @@
 using System.CommandLine;
 
 using Tiempito.CLI.Client.Interfaces;
-using Tiempito.CLI.Session;
 
 namespace Tiempito.CLI.Commands.Session;
 
