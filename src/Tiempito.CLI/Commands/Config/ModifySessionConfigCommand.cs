@@ -2,13 +2,16 @@ using System.CommandLine;
 
 using Tiempito.CLI.Client.Interfaces;
 
-namespace Tiempito.CLI.Config;
+namespace Tiempito.CLI.Commands.Config;
 
 /// <summary>
 /// Represents the command to modify an existing session configuration.
 /// </summary>
 public class ModifySessionConfigCommand : Command
 {
+    private const string CommandName = "modify-session-config";
+    private const string CommandDescription = "Modifies an existing session configuration.";
+
     private readonly IAsyncCommandExecutor _asyncCommandExecutor;
     private readonly string _commandParent;
     private readonly Option<string> _sessionIdOption;
@@ -26,7 +29,7 @@ public class ModifySessionConfigCommand : Command
     public ModifySessionConfigCommand(
         IAsyncCommandExecutor asyncCommandExecutor,
         string commandParent, Option<string> sessionIdOption) 
-        : base("modify-session-config", "Modifies an existing session configuration.")
+        : base(CommandName, CommandDescription)
     {
         _asyncCommandExecutor = asyncCommandExecutor;
         _commandParent = commandParent;
