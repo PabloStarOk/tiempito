@@ -28,12 +28,12 @@ public class CommandExecutor : IAsyncCommandExecutor
     }
 
     /// <inheritdoc/>
-    public async Task ExecuteAsync(string command, string subcommand, IReadOnlyDictionary<string, string> args, bool tty = false)
+    public async Task ExecuteAsync(string command, string subcommand, IReadOnlyDictionary<string, string> args, bool follow = false)
     {
         // Send request.
         try
         {
-            var request = Command.CreateNew(command, subcommand, args, tty);
+            var request = Command.CreateNew(command, subcommand, args, follow);
             await _client.SendRequestAsync(request);
         }
         catch (TimeoutException)
@@ -62,9 +62,9 @@ public class CommandExecutor : IAsyncCommandExecutor
                     throw new InvalidOperationException("Response status code unrecognized.");
             }
 
-            if (tty)
-                Console.CancelKeyPress += (_, _) => tty = false;
-            while (tty)
+            if (follow)
+                Console.CancelKeyPress += (_, _) => follow = false;
+            while (follow)
             {
                 string message = await _client.ReadPipeStdInAsync();
                 await _stdOut.WriteLineAsync(message);

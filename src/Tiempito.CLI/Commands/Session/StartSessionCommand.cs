@@ -16,7 +16,7 @@ public class StartSessionCommand : Command
     private readonly string _commandParent;
     private readonly Option<string> _sessionIdOption;
     private readonly Option<string> _sessionConfigIdOption;
-    private readonly Option<bool>? _interactiveOption;
+    private readonly Option<bool>? _followOption;
 
     /// <summary>
     /// Instantiates a <see cref="StartSessionCommand"/>.
@@ -24,16 +24,16 @@ public class StartSessionCommand : Command
     /// <param name="asyncCommandExecutor">An asynchronous executor of commands.</param>
     /// <param name="commandParent">Command parent of this command.</param>
     /// <param name="sessionIdOption">Session id option.</param>
-    /// <param name="interactiveOption">If the session's progress is redirected to the current process.</param>
+    /// <param name="followOption">Indicates whether to follow session progress.</param>
     public StartSessionCommand(
         IAsyncCommandExecutor asyncCommandExecutor,
         string commandParent, Option<string> sessionIdOption,
-        Option<bool> interactiveOption) : base(CommandName, CommandDescription)
+        Option<bool> followOption) : base(CommandName, CommandDescription)
     {
         _asyncCommandExecutor = asyncCommandExecutor;
         _commandParent = commandParent;
         _sessionIdOption = sessionIdOption;
-        _interactiveOption = interactiveOption;
+        _followOption = followOption;
 
         _sessionIdOption.Required = false;
         _sessionConfigIdOption = new Option<string>("--config-id", "-ci")
@@ -44,18 +44,18 @@ public class StartSessionCommand : Command
 
         Add(_sessionIdOption);
         Add(_sessionConfigIdOption);
-        Add(_interactiveOption);
+        Add(_followOption);
         SetAction(ExecuteAsync);
     }
 
     private async Task ExecuteAsync(ParseResult parseResult, CancellationToken cancellationToken)
     {
-        var tty = _interactiveOption is not null && parseResult.GetValue(_interactiveOption);
+        var follow = _followOption is not null && parseResult.GetValue(_followOption);
         var arguments = new Dictionary<string, string>
         {
             { "session-id", parseResult.GetValue(_sessionIdOption) ?? string.Empty },
             { "session-config-id", parseResult.GetValue(_sessionConfigIdOption) ?? string.Empty },
         };
-        await _asyncCommandExecutor.ExecuteAsync(_commandParent, subcommand: Name, arguments, tty);
+        await _asyncCommandExecutor.ExecuteAsync(_commandParent, subcommand: Name, arguments, follow);
     }
 }

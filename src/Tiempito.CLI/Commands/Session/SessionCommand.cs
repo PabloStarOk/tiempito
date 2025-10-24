@@ -25,9 +25,9 @@ internal sealed class SessionCommand : Command
             Arity = ArgumentArity.ExactlyOne,
         };
 
-        var interactiveOption = new Option<bool>("--tty", "-t")
+        var followOption = new Option<bool>("--follow", "-f")
         {
-            Description = "Redirects the progress of the session to the current process.",
+            Description = "Whether to follow session progress.",
             Arity = ArgumentArity.ZeroOrOne,
             Required = false,
         };
@@ -36,7 +36,7 @@ internal sealed class SessionCommand : Command
             commandExecutor,
             Name,
             sessionIdOption,
-            interactiveOption);
+            followOption);
 
         var cancelCommand = new GenericSessionCommand(
             commandExecutor,
@@ -58,7 +58,7 @@ internal sealed class SessionCommand : Command
             sessionIdOption,
             "resume",
             "Resumes a paused session.",
-            interactiveOption);
+            followOption);
 
         Add(startCommand);
         Add(cancelCommand);
