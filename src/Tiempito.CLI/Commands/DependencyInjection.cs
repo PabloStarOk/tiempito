@@ -1,12 +1,9 @@
 using System.CommandLine;
-using System.IO.Pipes;
 
 using Microsoft.Extensions.DependencyInjection;
 
 using Tiempito.CLI.Commands.Config;
 using Tiempito.CLI.Commands.Session;
-using Tiempito.CLI.Services.Abstractions;
-using Tiempito.CLI.Services.Implementations;
 
 namespace Tiempito.CLI.Commands;
 
@@ -21,7 +18,6 @@ internal static class DependencyInjection
     /// <param name="services">The <see cref="IServiceCollection"/> to configure.</param>
     public static void AddRootCommand(this IServiceCollection services)
     {
-        AddClient(services);
         AddCommands(services);
         services.AddTransient(sp =>
         {
@@ -40,20 +36,5 @@ internal static class DependencyInjection
     {
         services.AddTransient<Command, SessionCommand>();
         services.AddTransient<Command, ConfigCommand>();
-    }
-
-    private static void AddClient(IServiceCollection services)
-    {
-        services.AddSingleton(_ => new NamedPipeClientStream(
-                ".",
-                "tiempito-pipe",
-                PipeDirection.InOut,
-                PipeOptions.Asynchronous)); // TODO: Read config of the host.
-        services.AddSingleton<TextReader>(sp =>
-        {
-            var client = sp.GetRequiredService<NamedPipeClientStream>();
-            return new StreamReader(client);
-        });
-        services.AddSingleton<IClient, Client>();
     }
 }
