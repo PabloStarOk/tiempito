@@ -82,6 +82,23 @@ public record Response : Message
     }
 
     /// <summary>
+    /// Creates a new failed <see cref="Response"/> indicating the daemon is not running.
+    /// </summary>
+    /// <param name="correlationId">Correlation identifier to associate this response with an originating message.</param>
+    /// <returns>
+    /// A newly constructed failed <see cref="Response"/> with <see cref="ResponseStatusCode.Error"/>,
+    /// <see cref="Response.Success"/> set to <c>false</c>, and a message stating the daemon is not running.
+    /// </returns>
+    public static Response DaemonNotRunning(Guid correlationId)
+    {
+        return CreateNew(
+            correlationId,
+            statusCode: ResponseStatusCode.Error,
+            success: false,
+            message: "Daemon is not running");
+    }
+
+    /// <summary>
     /// Creates a new <see cref="Response"/> with a generated id and the current UTC timestamp.
     /// </summary>
     /// <param name="correlationId">Correlation identifier to associate this response with an originating message.</param>

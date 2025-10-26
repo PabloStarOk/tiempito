@@ -1,6 +1,6 @@
 using System.CommandLine;
 
-using Tiempito.CLI.Client.Interfaces;
+using Tiempito.CLI.Services.Abstractions;
 
 namespace Tiempito.CLI.Commands.Session;
 
@@ -15,8 +15,13 @@ internal sealed class SessionCommand : Command
     /// <summary>
     /// Initializes a new instance of the <see cref="SessionCommand"/> class.
     /// </summary>
-    /// <param name="commandExecutor">The command executor to use for session commands.</param>
-    public SessionCommand(IAsyncCommandExecutor commandExecutor)
+    /// <param name="commandSender">The sender used to execute session commands.</param>
+    /// <param name="messageWriter">The writer used to output messages to the terminal.</param>
+    /// <param name="sessionFollower">The follower used to track session progress.</param>
+    public SessionCommand(
+        ICommandSender commandSender,
+        IMessageWriter messageWriter,
+        ISessionFollower sessionFollower)
         : base(CommandName, CommandDescription)
     {
         var sessionIdOption = new Option<string>("--id", "-i")
@@ -33,27 +38,35 @@ internal sealed class SessionCommand : Command
         };
 
         var startCommand = new StartSessionCommand(
-            commandExecutor,
+            commandSender,
+            messageWriter,
+            sessionFollower,
             Name,
             sessionIdOption,
             followOption);
 
         var cancelCommand = new GenericSessionCommand(
-            commandExecutor,
+            commandSender,
+            messageWriter,
+            sessionFollower,
             Name,
             sessionIdOption,
             "cancel",
             "Cancels a session that is being executed.");
 
         var pauseCommand = new GenericSessionCommand(
-            commandExecutor,
+            commandSender,
+            messageWriter,
+            sessionFollower,
             Name,
             sessionIdOption,
             "pause",
             "Pauses a session that is being executed.");
 
         var resumeCommand = new GenericSessionCommand(
-            commandExecutor,
+            commandSender,
+            messageWriter,
+            sessionFollower,
             Name,
             sessionIdOption,
             "resume",

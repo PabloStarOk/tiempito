@@ -1,6 +1,9 @@
 using System.CommandLine;
 
-using Tiempito.CLI.Client.Interfaces;
+using Tiempito.CLI.Services.Abstractions;
+using Tiempito.IPC.Models;
+
+using Command = System.CommandLine.Command;
 
 namespace Tiempito.CLI.Commands.Config;
 
@@ -12,7 +15,8 @@ public class CreateSessionConfigCommand : Command
     private const string CommandName = "create-session";
     private const string CommandDescription = "Creates a new session configuration.";
 
-    private readonly IAsyncCommandExecutor _asyncCommandExecutor;
+    private readonly ICommandSender _commandSender;
+    private readonly IMessageWriter _messageWriter;
     private readonly string _commandParent;
     private readonly Option<string> _sessionIdOption;
     private readonly Option<string> _targetCyclesOption;
@@ -23,15 +27,18 @@ public class CreateSessionConfigCommand : Command
     /// <summary>
     /// Instantiates a <see cref="CreateSessionConfigCommand"/>.
     /// </summary>
-    /// <param name="asyncCommandExecutor">An asynchronous executor of commands.</param>
+    /// <param name="commandSender">The sender used to execute session commands.</param>
+    /// <param name="messageWriter">The writer used to output messages to the terminal.</param>
     /// <param name="commandParent">Command parent of this command.</param>
     /// <param name="sessionIdOption">ID option of the new session configuration.</param>
     public CreateSessionConfigCommand(
-        IAsyncCommandExecutor asyncCommandExecutor,
+        ICommandSender commandSender,
+        IMessageWriter messageWriter,
         string commandParent, Option<string> sessionIdOption) 
         : base(CommandName, CommandDescription)
     {
-        _asyncCommandExecutor = asyncCommandExecutor;
+        _commandSender = commandSender;
+        _messageWriter = messageWriter;
         _commandParent = commandParent;
         _sessionIdOption = sessionIdOption;
         _sessionIdOption.Required = true;
@@ -85,6 +92,16 @@ public class CreateSessionConfigCommand : Command
             { "focus-duration", parseResult.GetRequiredValue(_focusDurationOption) },
             { "break-duration", parseResult.GetRequiredValue(_breakDurationOption) },
         };
-        await _asyncCommandExecutor.ExecuteAsync(_commandParent, subcommand: Name, arguments);
+
+        Response? response = await _commandSender.SendAsync(
+            _commandParent,
+            Name,
+            arguments,
+            cancellationToken: cancellationToken);
+
+        if (response is not null)
+        {
+            await _messageWriter.WriteAsync(error: !response.Success, response.Message, cancellationToken);
+        }
     }
 }
