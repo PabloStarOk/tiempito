@@ -25,7 +25,7 @@ public class ModifySessionConfigCommand : Command
     private readonly Option<string> _breakDurationOption;
 
     /// <summary>
-    /// Instantiates a <see cref="ModifySessionConfigCommand"/>.
+    /// Initializes a new instance of the <see cref="ModifySessionConfigCommand"/> class.
     /// </summary>
     /// <param name="commandSender">The sender used to execute session commands.</param>
     /// <param name="messageWriter">The writer used to output messages to the terminal.</param>
@@ -34,7 +34,8 @@ public class ModifySessionConfigCommand : Command
     public ModifySessionConfigCommand(
         ICommandSender commandSender,
         IMessageWriter messageWriter,
-        string commandParent, Option<string> sessionIdOption) 
+        string commandParent,
+        Option<string> sessionIdOption)
         : base(CommandName, CommandDescription)
     {
         _commandSender = commandSender;
@@ -47,28 +48,28 @@ public class ModifySessionConfigCommand : Command
         {
             Description = "Target cycles to complete.",
             Arity = ArgumentArity.ExactlyOne,
-            Required = false
+            Required = false,
         };
 
         _delayOption = new Option<string>("--delay-between-times", "-d")
         {
             Description = "Delay before starting a time after another has been completed.",
             Arity = ArgumentArity.ExactlyOne,
-            Required = false
+            Required = false,
         };
 
         _focusDurationOption = new Option<string>("--focus-duration", "-f")
         {
             Description = "The duration of a focus time.",
             Arity = ArgumentArity.ExactlyOne,
-            Required = false
+            Required = false,
         };
 
         _breakDurationOption = new Option<string>("--break-duration", "-b")
         {
             Description = "The duration of a break time.",
             Arity = ArgumentArity.ExactlyOne,
-            Required = false
+            Required = false,
         };
 
         Add(_sessionIdOption);

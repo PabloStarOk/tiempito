@@ -21,7 +21,7 @@ public class SetConfigCommand : Command
     private readonly Option<string> _defaultSessionIdOption;
 
     /// <summary>
-    /// Instantiates a <see cref="SetConfigCommand"/>.
+    /// Initializes a new instance of the <see cref="SetConfigCommand"/> class.
     /// </summary>
     /// <param name="commandSender">The sender used to execute session commands.</param>
     /// <param name="messageWriter">The writer used to output messages to the terminal.</param>
@@ -30,7 +30,8 @@ public class SetConfigCommand : Command
     public SetConfigCommand(
         ICommandSender commandSender,
         IMessageWriter messageWriter,
-        string commandParent, Option<string> defaultSessionIdOption) 
+        string commandParent,
+        Option<string> defaultSessionIdOption)
         : base(CommandName, CommandDescription)
     {
         _commandSender = commandSender;

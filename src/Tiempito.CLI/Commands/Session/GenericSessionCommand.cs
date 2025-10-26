@@ -20,7 +20,7 @@ public class GenericSessionCommand : Command
     private readonly Option<bool>? _followOption;
 
     /// <summary>
-    /// Instantiates a <see cref="GenericSessionCommand"/>.
+    /// Initializes a new instance of the <see cref="GenericSessionCommand"/> class.
     /// </summary>
     /// <param name="commandSender">The sender used to execute session commands.</param>
     /// <param name="messageWriter">The writer used to output messages to the terminal.</param>
@@ -34,8 +34,12 @@ public class GenericSessionCommand : Command
         ICommandSender commandSender,
         IMessageWriter messageWriter,
         ISessionFollower sessionFollower,
-        string commandParent, Option<string> sessionIdOption,
-        string name, string description, Option<bool>? followOption = null) : base(name, description)
+        string commandParent,
+        Option<string> sessionIdOption,
+        string name,
+        string description,
+        Option<bool>? followOption = null)
+        : base(name, description)
     {
         _commandSender = commandSender;
         _messageWriter = messageWriter;

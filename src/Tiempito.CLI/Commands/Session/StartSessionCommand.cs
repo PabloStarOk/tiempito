@@ -24,7 +24,7 @@ public class StartSessionCommand : Command
     private readonly Option<bool>? _followOption;
 
     /// <summary>
-    /// Instantiates a <see cref="StartSessionCommand"/>.
+    /// Initializes a new instance of the <see cref="StartSessionCommand"/> class.
     /// </summary>
     /// <param name="commandSender">The sender used to execute session commands.</param>
     /// <param name="messageWriter">The writer used to output messages to the terminal.</param>
@@ -36,8 +36,10 @@ public class StartSessionCommand : Command
         ICommandSender commandSender,
         IMessageWriter messageWriter,
         ISessionFollower sessionFollower,
-        string commandParent, Option<string> sessionIdOption,
-        Option<bool> followOption) : base(CommandName, CommandDescription)
+        string commandParent,
+        Option<string> sessionIdOption,
+        Option<bool> followOption)
+        : base(CommandName, CommandDescription)
     {
         _commandSender = commandSender;
         _messageWriter = messageWriter;

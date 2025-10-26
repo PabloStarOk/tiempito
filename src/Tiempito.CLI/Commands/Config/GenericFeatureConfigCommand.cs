@@ -19,7 +19,7 @@ public class GenericFeatureConfigCommand : Command
     private readonly Argument<string> _featureArgument;
 
     /// <summary>
-    /// Instantiates a <see cref="GenericFeatureConfigCommand"/>.
+    /// Initializes a new instance of the <see cref="GenericFeatureConfigCommand"/> class.
     /// </summary>
     /// <param name="commandSender">The sender used to execute session commands.</param>
     /// <param name="messageWriter">The writer used to output messages to the terminal.</param>
@@ -30,9 +30,11 @@ public class GenericFeatureConfigCommand : Command
     public GenericFeatureConfigCommand(
         ICommandSender commandSender,
         IMessageWriter messageWriter,
-        string commandParent, Argument<string> featureArgument,
-        string name,string description) 
-        : base (name, description)
+        string commandParent,
+        Argument<string> featureArgument,
+        string name,
+        string description)
+        : base(name, description)
     {
         _commandSender = commandSender;
         _messageWriter = messageWriter;
