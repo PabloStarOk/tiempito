@@ -1,6 +1,9 @@
 using System.CommandLine;
 
-using Tiempito.CLI.Client.Interfaces;
+using Tiempito.CLI.Services.Abstractions;
+using Tiempito.IPC.Models;
+
+using Command = System.CommandLine.Command;
 
 namespace Tiempito.CLI.Commands.Config;
 
@@ -12,22 +15,26 @@ public class SetConfigCommand : Command
     private const string CommandName = "set";
     private const string CommandDescription = "Sets the specified user configuration.";
 
-    private readonly IAsyncCommandExecutor _asyncCommandExecutor;
+    private readonly ICommandSender _commandSender;
+    private readonly IMessageWriter _messageWriter;
     private readonly string _commandParent;
     private readonly Option<string> _defaultSessionIdOption;
 
     /// <summary>
     /// Instantiates a <see cref="SetConfigCommand"/>.
     /// </summary>
-    /// <param name="asyncCommandExecutor">An asynchronous executor of commands.</param>
+    /// <param name="commandSender">The sender used to execute session commands.</param>
+    /// <param name="messageWriter">The writer used to output messages to the terminal.</param>
     /// <param name="commandParent">Command parent of this command.</param>
     /// <param name="defaultSessionIdOption">An option to change the default session of the user.</param>
     public SetConfigCommand(
-        IAsyncCommandExecutor asyncCommandExecutor,
+        ICommandSender commandSender,
+        IMessageWriter messageWriter,
         string commandParent, Option<string> defaultSessionIdOption) 
         : base(CommandName, CommandDescription)
     {
-        _asyncCommandExecutor = asyncCommandExecutor;
+        _commandSender = commandSender;
+        _messageWriter = messageWriter;
         _commandParent = commandParent;
         _defaultSessionIdOption = defaultSessionIdOption;
         _defaultSessionIdOption.Required = false;
@@ -41,6 +48,16 @@ public class SetConfigCommand : Command
         {
             { "default-session-id", parseResult.GetRequiredValue(_defaultSessionIdOption) },
         };
-        await _asyncCommandExecutor.ExecuteAsync(_commandParent, subcommand: Name, arguments);
+
+        Response? response = await _commandSender.SendAsync(
+            _commandParent,
+            Name,
+            arguments,
+            cancellationToken: cancellationToken);
+
+        if (response is not null)
+        {
+            await _messageWriter.WriteAsync(error: !response.Success, response.Message, cancellationToken);
+        }
     }
 }

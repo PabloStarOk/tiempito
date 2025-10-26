@@ -3,10 +3,10 @@ using System.IO.Pipes;
 
 using Microsoft.Extensions.DependencyInjection;
 
-using Tiempito.CLI.Client;
-using Tiempito.CLI.Client.Interfaces;
 using Tiempito.CLI.Commands.Config;
 using Tiempito.CLI.Commands.Session;
+using Tiempito.CLI.Services.Abstractions;
+using Tiempito.CLI.Services.Implementations;
 
 namespace Tiempito.CLI.Commands;
 
@@ -38,11 +38,6 @@ internal static class DependencyInjection
 
     private static void AddCommands(IServiceCollection services)
     {
-        services.AddTransient<IAsyncCommandExecutor>(sp =>
-        {
-            var client = sp.GetRequiredService<IClient>();
-            return new CommandExecutor(client, Console.Out, Console.Error);
-        });
         services.AddTransient<Command, SessionCommand>();
         services.AddTransient<Command, ConfigCommand>();
     }
@@ -59,6 +54,6 @@ internal static class DependencyInjection
             var client = sp.GetRequiredService<NamedPipeClientStream>();
             return new StreamReader(client);
         });
-        services.AddSingleton<IClient, Client.Client>();
+        services.AddSingleton<IClient, Client>();
     }
 }

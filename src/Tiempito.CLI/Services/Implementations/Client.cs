@@ -1,10 +1,12 @@
 using System.IO.Pipes;
 
-using Tiempito.CLI.Client.Interfaces;
+using Tiempito.CLI.Services.Abstractions;
 using Tiempito.IPC.Abstractions;
 using Tiempito.IPC.Models;
 
-namespace Tiempito.CLI.Client;
+using IMessageWriter = Tiempito.IPC.Abstractions.IMessageWriter;
+
+namespace Tiempito.CLI.Services.Implementations;
 
 /// <summary>
 /// Client that sends requests to the daemon and receive responses from the daemon.
@@ -37,7 +39,7 @@ public class Client : IClient
     }
 
     /// <inheritdoc/>
-    public async Task SendRequestAsync(Command command, CancellationToken cancellationToken = default)
+    public async Task SendCommandAsync(Command command, CancellationToken cancellationToken = default)
     {
         if (!_pipeClient.IsConnected)
         {

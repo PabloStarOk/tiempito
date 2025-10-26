@@ -1,6 +1,6 @@
 using System.CommandLine;
 
-using Tiempito.CLI.Client.Interfaces;
+using Tiempito.CLI.Services.Abstractions;
 
 namespace Tiempito.CLI.Commands.Config;
 
@@ -15,8 +15,9 @@ internal sealed class ConfigCommand : Command
     /// <summary>
     /// Initializes a new instance of the <see cref="ConfigCommand"/> class.
     /// </summary>
-    /// <param name="commandExecutor">The executor responsible for running asynchronous commands.</param>
-    public ConfigCommand(IAsyncCommandExecutor commandExecutor)
+    /// <param name="commandSender">The sender used to execute session commands.</param>
+    /// <param name="messageWriter">The writer used to output messages to the terminal.</param>
+    public ConfigCommand(ICommandSender commandSender, IMessageWriter messageWriter)
         : base(CommandName, CommandDescription)
     {
         var defaultSessionConfigIdOption = new Option<string>("--default-config", "-d")
@@ -41,29 +42,34 @@ internal sealed class ConfigCommand : Command
         var configCommand = new Command(CommandName, CommandDescription);
 
         var createSessionConfigCommand = new CreateSessionConfigCommand(
-            commandExecutor,
+            commandSender,
+            messageWriter,
             configCommand.Name,
             sessionConfigIdOption);
 
         var modifySessionConfigCommand = new ModifySessionConfigCommand(
-            commandExecutor,
+            commandSender,
+            messageWriter,
             configCommand.Name,
             sessionConfigIdOption);
 
         var setCommand = new SetConfigCommand(
-            commandExecutor,
+            commandSender,
+            messageWriter,
             configCommand.Name,
             defaultSessionConfigIdOption);
 
         var enableFeatCommand = new GenericFeatureConfigCommand(
-            commandExecutor,
+            commandSender,
+            messageWriter,
             configCommand.Name,
             featureArgument,
             "enable",
             "Enables a specified feature in the user's configuration.");
 
         var disableFeatCommand = new GenericFeatureConfigCommand(
-            commandExecutor,
+            commandSender,
+            messageWriter,
             configCommand.Name,
             featureArgument,
             "disable",
