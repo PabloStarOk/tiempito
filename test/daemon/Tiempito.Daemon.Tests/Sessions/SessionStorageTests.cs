@@ -1,8 +1,9 @@
 using Microsoft.Extensions.Logging;
 using Moq;
-using Tiempito.Daemon.Sessions;
-using Tiempito.Daemon.Sessions.Enums;
-using Tiempito.Daemon.Sessions.Objects;
+
+using Tiempito.Daemon.Domain.Sessions;
+using Tiempito.Daemon.Domain.Sessions.Enums;
+using Tiempito.Daemon.Infrastructure.Sessions;
 
 namespace Tiempito.Daemon.Tests.Sessions;
 

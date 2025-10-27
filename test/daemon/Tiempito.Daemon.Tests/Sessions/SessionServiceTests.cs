@@ -2,17 +2,17 @@ using AsyncEvent;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
-using Tiempito.Daemon.Common;
-using Tiempito.Daemon.Configuration.Daemon.Objects;
-using Tiempito.Daemon.Configuration.Session.Interfaces;
-using Tiempito.Daemon.Configuration.Session.Objects;
-using Tiempito.Daemon.Notifications.Enums;
-using Tiempito.Daemon.Notifications.Interfaces;
-using Tiempito.Daemon.Server.Interfaces;
-using Tiempito.Daemon.Sessions;
-using Tiempito.Daemon.Sessions.Enums;
-using Tiempito.Daemon.Sessions.Interfaces;
-using Tiempito.Daemon.Sessions.Objects;
+
+using Tiempito.Daemon.Application.Config.Sessions;
+using Tiempito.Daemon.Application.Notifications;
+using Tiempito.Daemon.Application.Sessions;
+using Tiempito.Daemon.Domain.Config;
+using Tiempito.Daemon.Domain.Notifications.Enums;
+using Tiempito.Daemon.Domain.Sessions;
+using Tiempito.Daemon.Domain.Sessions.Enums;
+using Tiempito.Daemon.Domain.Shared;
+using Tiempito.Daemon.Server;
+using Tiempito.Daemon.Server.Configuration;
 using Tiempito.Daemon.Tests.Sessions.Helpers;
 
 namespace Tiempito.Daemon.Tests.Sessions;
