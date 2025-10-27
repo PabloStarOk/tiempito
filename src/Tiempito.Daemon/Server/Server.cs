@@ -1,9 +1,10 @@
 using System.IO.Pipes;
 using AsyncEvent;
 using Microsoft.Extensions.Options;
-using Tiempito.Daemon.Common.Extensions;
-using Tiempito.Daemon.Configuration.Daemon.Objects;
-using Tiempito.Daemon.Server.Interfaces;
+
+using Tiempito.Daemon.Application.Commands;
+using Tiempito.Daemon.Server.Configuration;
+using Tiempito.Daemon.Server.Extensions;
 using Tiempito.IPC.Abstractions;
 using Tiempito.IPC.Models;
 

@@ -1,5 +1,5 @@
-using Tiempito.Daemon.Configuration.Session.Objects;
-using Tiempito.Daemon.Sessions.Objects;
+using Tiempito.Daemon.Domain.Config;
+using Tiempito.Daemon.Domain.Sessions;
 
 namespace Tiempito.Daemon.Tests.Sessions.Helpers;
 

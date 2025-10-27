@@ -3,29 +3,26 @@ using Microsoft.Extensions.Options;
 using Salaros.Configuration;
 using System.IO.Pipes;
 using Tiempito.Daemon;
-using Tiempito.Daemon.Commands;
-using Tiempito.Daemon.Commands.Configuration;
-using Tiempito.Daemon.Commands.SessionManagement;
-using Tiempito.Daemon.Common;
-using Tiempito.Daemon.Common.Interfaces;
-using Tiempito.Daemon.Configuration;
-using Tiempito.Daemon.Configuration.AppFilesystem;
-using Tiempito.Daemon.Configuration.Daemon.Objects;
-using Tiempito.Daemon.Notifications;
-using Tiempito.Daemon.Notifications.Interfaces;
+using Tiempito.Daemon.Application.Commands;
+using Tiempito.Daemon.Application.Commands.Config;
+using Tiempito.Daemon.Application.Commands.Sessions;
+using Tiempito.Daemon.Application.Config;
+using Tiempito.Daemon.Application.Notifications;
+using Tiempito.Daemon.Application.Sessions;
+using Tiempito.Daemon.Application.Shared.Abstractions;
+using Tiempito.Daemon.Domain.Sessions;
+using Tiempito.Daemon.Infrastructure.Config;
+using Tiempito.Daemon.Infrastructure.Sessions;
 using Tiempito.Daemon.Server;
-using Tiempito.Daemon.Server.Interfaces;
+using Tiempito.Daemon.Server.Configuration;
 #if LINUX
-using Tiempito.Daemon.Notifications.Systems.Linux;
+using Tiempito.Daemon.Infrastructure.Notifications.Linux;
 #elif WINDOWS10_0_17763_0_OR_GREATER
-using Tiempito.Daemon.Notifications.Systems.Windows;
+using Tiempito.Daemon.Infrastructure.Notifications.Windows;
 #endif
-using Tiempito.Daemon.Sessions;
-using Tiempito.Daemon.Sessions.Interfaces;
-using Tiempito.Daemon.Sessions.Objects;
 using Tiempito.IPC;
 
-using TimeSpanConverter = Tiempito.Daemon.Common.Services.TimeSpanConverter;
+using TimeSpanConverter = Tiempito.Daemon.Infrastructure.Config.TimeSpanConverter;
 
 var builder = Host.CreateApplicationBuilder(args);
 

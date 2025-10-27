@@ -1,5 +1,5 @@
-using Tiempito.Daemon.Common;
-using Tiempito.Daemon.Server.Interfaces;
+using Tiempito.Daemon.Application.Shared.Abstractions;
+using Tiempito.Daemon.Server;
 
 namespace Tiempito.Daemon;
 
