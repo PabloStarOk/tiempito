@@ -29,13 +29,12 @@ public static class SessionProvider
     {
         Random random = Random.Shared;
 
-        return new SessionConfig
-        (
+        return new SessionConfig(
             id.ToLower(),
-            targetCycles: random.Next(1, 20),
-            delayBetweenTimes: TimeSpan.FromSeconds(random.Next(0, int.MaxValue)),
-            focusDuration: TimeSpan.FromSeconds(random.Next(1, int.MaxValue)),
-            breakDuration: TimeSpan.FromSeconds(random.Next(1, int.MaxValue)));
+            TargetCycles: random.Next(1, 20),
+            DelayBetweenTimes: TimeSpan.FromSeconds(random.Next(0, int.MaxValue)),
+            FocusDuration: TimeSpan.FromSeconds(random.Next(1, int.MaxValue)),
+            BreakDuration: TimeSpan.FromSeconds(random.Next(1, int.MaxValue)));
     }
     
     /// <summary>
@@ -50,10 +49,10 @@ public static class SessionProvider
 
         return new Session(
             id.ToLower(),
-            config.Value.TargetCycles,
-            config.Value.DelayBetweenTimes,
-            config.Value.FocusDuration,
-            config.Value.BreakDuration);
+            config.TargetCycles,
+            config.DelayBetweenTimes,
+            config.FocusDuration,
+            config.BreakDuration);
     }
 
     /// <summary>
