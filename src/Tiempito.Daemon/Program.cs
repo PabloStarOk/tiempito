@@ -3,9 +3,7 @@ using Microsoft.Extensions.Options;
 using Salaros.Configuration;
 using System.IO.Pipes;
 using Tiempito.Daemon;
-using Tiempito.Daemon.Application.Commands;
-using Tiempito.Daemon.Application.Commands.Config;
-using Tiempito.Daemon.Application.Commands.Sessions;
+using Tiempito.Daemon.Application;
 using Tiempito.Daemon.Application.Config;
 using Tiempito.Daemon.Application.Notifications;
 using Tiempito.Daemon.Application.Sessions;
@@ -99,11 +97,10 @@ builder.Services.AddSingleton<IStandardOutQueue>(sp => sp.GetRequiredService<Sta
 // Add time provider.
 builder.Services.AddSingleton(TimeProvider.System);
 
+builder.Services.AddApplication();
+
 // Server dependencies
 builder.Services.AddSingleton<ITimeSpanConverter, TimeSpanConverter>();
-builder.Services.AddSingleton<CommandCreator, ConfigCommandsCreator>();
-builder.Services.AddSingleton<CommandCreator, SessionCommandsCreator>();
-builder.Services.AddSingleton<ICommandHandler, CommandHandler>();
 builder.Services.AddSingleton<IServer, Server>();
 
 // Session service dependencies
