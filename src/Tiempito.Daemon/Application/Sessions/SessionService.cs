@@ -13,11 +13,10 @@ using Tiempito.Daemon.Server.Configuration;
 
 namespace Tiempito.Daemon.Application.Sessions;
 
-
 /// <summary>
 /// Service to manage sessions.
 /// </summary>
-public sealed class SessionService : Service, ISessionService
+public sealed class SessionService : Service, ISessionService, IDisposable, IAsyncDisposable
 {
     private readonly ISessionConfigService _sessionConfigService;
     private readonly NotificationConfig _notificationConfig;
@@ -25,6 +24,7 @@ public sealed class SessionService : Service, ISessionService
     private readonly IStandardOutQueue _standardOutQueue;
     private readonly TimeProvider _timeProvider;
     private readonly Dictionary<string, Session> _activeSessions;
+    private bool _disposed;
 
     public SessionService(
         ILogger<SessionService> logger,
@@ -49,9 +49,10 @@ public sealed class SessionService : Service, ISessionService
         return Task.FromResult(true);
     }
     
-    protected override Task<bool> OnStopServiceAsync()
+    protected override async Task<bool> OnStopServiceAsync()
     {
-        return Task.FromResult(true);
+        await DisposeAsync();
+        return true;
     }
     
     public OperationResult StartSession(string sessionId = "", string sessionConfigId = "")
@@ -149,7 +150,42 @@ public sealed class SessionService : Service, ISessionService
         }
 
         session.CancelAsync().GetAwaiter().GetResult();
+        session.Dispose();
         return new OperationResult(Success: true, Message: "Session cancelled.");
+    }
+
+    /// <inheritdoc/>
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+        foreach (var session in _activeSessions.Values)
+        {
+            session.Dispose();
+        }
+
+        _activeSessions.Clear();
+    }
+
+    /// <inheritdoc/>
+    public async ValueTask DisposeAsync()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+        foreach (var session in _activeSessions.Values)
+        {
+            await session.DisposeAsync();
+        }
+
+        _activeSessions.Clear();
     }
 
     private void OnSessionStarted(Session _)
@@ -199,6 +235,7 @@ public sealed class SessionService : Service, ISessionService
     private void OnSessionCompleted(Session session)
     {
         _activeSessions.Remove(session.Id);
+        session.Dispose();
 
         var message = $"Session with id {session.Id} was completed";
         _standardOutQueue.QueueMessage(message);
