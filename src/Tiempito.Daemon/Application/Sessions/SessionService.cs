@@ -25,7 +25,6 @@ public sealed class SessionService : Service, ISessionService
     private readonly IStandardOutQueue _standardOutQueue;
     private readonly TimeProvider _timeProvider;
     private readonly Dictionary<string, Session> _activeSessions;
-    private CancellationTokenSource _timerTokenSource;
 
     public SessionService(
         ILogger<SessionService> logger,
@@ -40,7 +39,6 @@ public sealed class SessionService : Service, ISessionService
         _sessionConfigService = sessionConfigService;
         _notificationConfig = notificationOptions.Value;
         _notificationService = notificationService;
-        _timerTokenSource = new CancellationTokenSource();
         _standardOutQueue = standardOutQueue;
         _timeProvider = timeProvider;
         _activeSessions = activeSessions ?? new Dictionary<string, Session>();
@@ -51,13 +49,9 @@ public sealed class SessionService : Service, ISessionService
         return Task.FromResult(true);
     }
     
-    protected async override Task<bool> OnStopServiceAsync()
+    protected override Task<bool> OnStopServiceAsync()
     {
-        if (!_timerTokenSource.IsCancellationRequested)
-            await _timerTokenSource.CancelAsync();
-        _timerTokenSource.Dispose();
-
-        return true;
+        return Task.FromResult(true);
     }
     
     public OperationResult StartSession(string sessionId = "", string sessionConfigId = "")
@@ -87,7 +81,6 @@ public sealed class SessionService : Service, ISessionService
             OnSessionIntervalCompleted,
             OnSessionCompleted);
 
-        _timerTokenSource = RegenerateTokenSource(_timerTokenSource);
         _activeSessions.Add(session.Id, session);
         session.Start();
         OnSessionStarted(session);
