@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Moq;
 
+using Tiempito.Daemon.Domain.Config;
 using Tiempito.Daemon.Domain.Sessions;
 using Tiempito.Daemon.Domain.Sessions.Enums;
 using Tiempito.Daemon.Infrastructure.Sessions;
@@ -17,10 +18,20 @@ public class SessionStorageTests
     {
         var loggerMock = new Mock<ILogger<SessionStorage>>();
         _sessionStorage = new SessionStorage(loggerMock.Object);
-        
-        _session = new Session(id: "TestSession",
-            targetCycles: 1, delayBetweenTimes: TimeSpan.Zero,
-            focusDuration: TimeSpan.Zero, breakDuration: TimeSpan.Zero);
+
+        var sessionConfig = new SessionConfig(
+            Id: "TestConfig",
+            TargetCycles: 1,
+            DelayBetweenTimes: TimeSpan.Zero,
+            FocusDuration: TimeSpan.Zero,
+            BreakDuration: TimeSpan.Zero);
+        _session = Session.Create(
+            id: "TestSession",
+            sessionConfig,
+            TimeProvider.System,
+            _ => { },
+            _ => { },
+            _ => { });
     }
     
     [Theory]
@@ -28,7 +39,7 @@ public class SessionStorageTests
     [InlineData(SessionStatus.Paused)]
     [InlineData(SessionStatus.Cancelled)]
     [InlineData(SessionStatus.Finished)]
-    public void AddSession_should_AddAndChangeItsStatus(
+    public void AddSession_should_AddSession(
         SessionStatus status)
     {
         // Act
@@ -37,9 +48,7 @@ public class SessionStorageTests
         // Assert
         IReadOnlyDictionary<string, Session> dictionary = GetDictionary(status);
         Assert.True(result);
-        Assert.True(dictionary.ContainsKey(_session.Id),
-               "Session was not added to the right dictionary.");
-        Assert.Equal(dictionary[_session.Id].Status, status);
+        Assert.True(dictionary.ContainsKey(_session.Id), "Session was not added to the right dictionary.");
     }
     
     [Theory]
@@ -53,7 +62,19 @@ public class SessionStorageTests
         // Arrange
         _sessionStorage.AddSession(status, _session);
         TimeSpan time = TimeSpan.FromSeconds(10);
-        var newSession = new Session(_session.Id, 20, time, time, time);
+        var sessionConfig = new SessionConfig(
+            Id: "TestConfig",
+            TargetCycles: 20,
+            DelayBetweenTimes: time,
+            FocusDuration: time,
+            BreakDuration: time);
+        var newSession = Session.Create(
+            _session.Id,
+            sessionConfig,
+            TimeProvider.System,
+            _ => { },
+            _ => { },
+            _ => { });
         
         // Act
         bool result = _sessionStorage.AddSession(status, newSession);
@@ -61,50 +82,7 @@ public class SessionStorageTests
         // Assert
         IReadOnlyDictionary<string, Session> dictionary = GetDictionary(status);
         Assert.False(result);
-        Assert.NotEqual(dictionary[_session.Id].TargetCycles, newSession.TargetCycles);
-        Assert.NotEqual(dictionary[_session.Id].DelayBetweenTimes, newSession.DelayBetweenTimes);
-        Assert.NotEqual(dictionary[_session.Id].FocusDuration, newSession.FocusDuration);
-        Assert.NotEqual(dictionary[_session.Id].BreakDuration, newSession.BreakDuration);
-    }
-    
-    [Theory]
-    [InlineData(SessionStatus.Executing)]
-    [InlineData(SessionStatus.Paused)]
-    [InlineData(SessionStatus.Cancelled)]
-    [InlineData(SessionStatus.Finished)]
-    public void UpdateSession_should_Update_when_SessionExistsInTheDictionary(
-        SessionStatus status)
-    {
-        // Arrange
-        int newElapsedTime = GenerateNonZeroInt();
-        _sessionStorage.AddSession(status, _session);
-        
-        // Act
-        _session.Elapsed += TimeSpan.FromSeconds(newElapsedTime);
-        _sessionStorage.UpdateSession(status, _session);
-        
-        // Assert
-        IReadOnlyDictionary<string, Session> dictionary = GetDictionary(status);
-        Assert.Equal(dictionary[_session.Id].Elapsed,
-            TimeSpan.FromSeconds(newElapsedTime));
-    }
-    
-    [Theory]
-    [MemberData(nameof(InvalidStatusPairs))]
-    public void UpdateSession_should_NotUpdate_when_SessionNotExistsInTheDictionary(
-        SessionStatus status, SessionStatus falseStatus)
-    {
-        // Arrange
-        int newElapsedTime = GenerateNonZeroInt();
-        _sessionStorage.AddSession(status, _session);
-        
-        // Act
-        _session.Elapsed += TimeSpan.FromSeconds(newElapsedTime);
-        _sessionStorage.UpdateSession(falseStatus, _session);
-        
-        // Assert
-        IReadOnlyDictionary<string, Session> dictionary = GetDictionary(status);
-        Assert.NotEqual(dictionary[_session.Id].Elapsed, TimeSpan.FromSeconds(newElapsedTime));
+        Assert.NotEqual(dictionary[_session.Id].Configuration, newSession.Configuration);
     }
 
     [Theory]

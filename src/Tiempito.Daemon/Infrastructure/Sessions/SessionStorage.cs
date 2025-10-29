@@ -29,7 +29,6 @@ public class SessionStorage : ISessionStorage
     public bool AddSession(SessionStatus status, Session session)
     {
         Dictionary<string, Session> targetDictionary = GetTargetDictionary(status);
-        session.Status = status;
         return targetDictionary.TryAdd(session.Id, session);
     }
 
