@@ -18,10 +18,10 @@ internal sealed class CancelSessionCommandHandler(ISessionService sessionService
         && command.SubcommandType == "cancel";
 
     /// <inheritdoc/>
-    public ValueTask<OperationResult> HandleAsync(Command command, CancellationToken cancellationToken = default)
+    public async ValueTask<OperationResult> HandleAsync(Command command, CancellationToken cancellationToken = default)
     {
         command.Arguments.TryGetValue("session-id", out string? sessionId);
-        var result = sessionService.CancelSession(sessionId ?? string.Empty);
-        return ValueTask.FromResult(result);
+        var result = await sessionService.CancelSessionAsync(sessionId ?? string.Empty);
+        return result;
     }
 }

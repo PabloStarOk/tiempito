@@ -212,7 +212,7 @@ public class SessionServiceTests : IDisposable
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public void CancelSession_should_CancelSession_when_SessionIsRunning(
+    public async Task CancelSession_should_CancelSession_when_SessionIsRunning(
         bool sessionIdSpecified)
     {
         // Arrange
@@ -222,7 +222,7 @@ public class SessionServiceTests : IDisposable
         _activeSessions.Add(sessionId, session);
 
         // Act
-        OperationResult operationResult = _sessionService.CancelSession(sessionId);
+        OperationResult operationResult = await _sessionService.CancelSessionAsync(sessionId);
         
         // Assert
         Assert.True(operationResult.Success);
@@ -231,7 +231,7 @@ public class SessionServiceTests : IDisposable
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public void CancelSession_should_CancelSession_when_SessionIsPaused(
+    public async Task CancelSession_should_CancelSession_when_SessionIsPaused(
         bool sessionIdSpecified)
     {
         // Arrange
@@ -241,25 +241,25 @@ public class SessionServiceTests : IDisposable
         _activeSessions.Add(sessionId, session);
 
         // Act
-        OperationResult operationResult = _sessionService.CancelSession(sessionId);
+        OperationResult operationResult = await _sessionService.CancelSessionAsync(sessionId);
         
         // Assert
         Assert.True(operationResult.Success);
     }
     
     [Fact]
-    public void CancelSession_should_ReturnFailedOperation_when_ThereAreNoSessionsToCancel()
+    public async Task CancelSession_should_ReturnFailedOperation_when_ThereAreNoSessionsToCancel()
     {
-        OperationResult operationResult = _sessionService.CancelSession();
+        OperationResult operationResult = await _sessionService.CancelSessionAsync();
         Assert.False(operationResult.Success);
     }
     
     [Fact]
-    public void CancelSession_should_ReturnFailedOperation_when_IdNotFound()
+    public async Task CancelSession_should_ReturnFailedOperation_when_IdNotFound()
     {
         string falseSessionId = "AnotherId".ToLower();
         
-        OperationResult operationResult = _sessionService.CancelSession(falseSessionId);
+        OperationResult operationResult = await _sessionService.CancelSessionAsync(falseSessionId);
         
         Assert.False(operationResult.Success);
     }

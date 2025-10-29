@@ -134,7 +134,7 @@ public sealed class SessionService : Service, ISessionService, IDisposable, IAsy
         return new OperationResult(Success: true, Message: "Session resumed.");
     }
 
-    public OperationResult CancelSession(string sessionId = "")
+    public async ValueTask<OperationResult> CancelSessionAsync(string sessionId = "")
     {
         if (_activeSessions.Count < 1)
             return new OperationResult(Success: false, Message: "There are no sessions to cancel.");
@@ -149,8 +149,8 @@ public sealed class SessionService : Service, ISessionService, IDisposable, IAsy
             _activeSessions.Remove(session.Id);
         }
 
-        session.CancelAsync().GetAwaiter().GetResult();
-        session.Dispose();
+        await session.CancelAsync();
+        await session.DisposeAsync();
         return new OperationResult(Success: true, Message: "Session cancelled.");
     }
 
