@@ -89,7 +89,7 @@ public class SessionServiceTests : IDisposable
     [MemberData(nameof(GetSessionWithRandomConfig), true, false)]
     [MemberData(nameof(GetSessionWithRandomConfig), false, true)]
     [MemberData(nameof(GetSessionWithRandomConfig), false, false)]
-    public void StartSession_should_StartSession(
+    public async Task StartSession_should_StartSession(
         SessionConfig config, Session session, bool specifySessionId, bool specifyConfigId)
     {
         // Arrange
@@ -106,12 +106,12 @@ public class SessionServiceTests : IDisposable
         OperationResult operationResult = specifySessionId switch
         {
             // Both IDs specified.
-            true when specifyConfigId => _sessionService.StartSession(session.Id, config.Id),
+            true when specifyConfigId => await _sessionService.StartSessionAsync(session.Id, config.Id),
             // Only session ID specified.
-            true when !specifyConfigId => _sessionService.StartSession(session.Id),
+            true when !specifyConfigId => await _sessionService.StartSessionAsync(session.Id),
             // Only config ID specified.
-            false when specifyConfigId => _sessionService.StartSession(sessionConfigId: config.Id),
-            _ => _sessionService.StartSession()
+            false when specifyConfigId => await _sessionService.StartSessionAsync(sessionConfigId: config.Id),
+            _ => await _sessionService.StartSessionAsync()
         };
         
         // Assert
@@ -119,27 +119,27 @@ public class SessionServiceTests : IDisposable
     }
 
     [Fact]
-    public void StartSession_should_ReturnFailedResult_when_ConfigIdNotExists()
+    public async Task StartSession_should_ReturnFailedResult_when_ConfigIdNotExists()
     {
         SessionConfig config = SessionProvider.CreateRandomConfig();
         
         _sessionConfigServiceMock.Setup(m => m.TryGetConfigById(It.IsAny<string>(), out config))
             .Returns(false);
         
-        OperationResult operationResult = _sessionService.StartSession(sessionConfigId: config.Id);
+        OperationResult operationResult = await _sessionService.StartSessionAsync(sessionConfigId: config.Id);
         
         Assert.False(operationResult.Success);
     }
     
     [Fact]
-    public void StartSession_should_ReturnFailedResult_when_SessionIdAlreadyExists()
+    public async Task StartSession_should_ReturnFailedResult_when_SessionIdAlreadyExists()
     {
         SessionConfig config = SessionProvider.CreateConfig();
         Session session = SessionProvider.CreateRandom();
         _sessionConfigServiceMock.Setup(m => m.DefaultConfig).Returns(config);
         _activeSessions.Add(session.Id, session);
         
-        OperationResult operationResult = _sessionService.StartSession(session.Id);
+        OperationResult operationResult = await _sessionService.StartSessionAsync(session.Id);
         
         Assert.False(operationResult.Success);
     }

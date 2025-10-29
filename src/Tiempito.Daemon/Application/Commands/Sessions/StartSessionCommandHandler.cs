@@ -18,11 +18,11 @@ internal sealed class StartSessionCommandHandler(ISessionService sessionService)
         && command.SubcommandType == "start";
 
     /// <inheritdoc/>
-    public ValueTask<OperationResult> HandleAsync(Command command, CancellationToken cancellationToken = default)
+    public async ValueTask<OperationResult> HandleAsync(Command command, CancellationToken cancellationToken = default)
     {
         command.Arguments.TryGetValue("session-id", out string? sessionId);
         command.Arguments.TryGetValue("session-config-id", out string? sessionConfigId);
-        var result = sessionService.StartSession(sessionId ?? string.Empty, sessionConfigId ?? string.Empty);
-        return ValueTask.FromResult(result);
+        var result = await sessionService.StartSessionAsync(sessionId ?? string.Empty, sessionConfigId ?? string.Empty);
+        return result;
     }
 }

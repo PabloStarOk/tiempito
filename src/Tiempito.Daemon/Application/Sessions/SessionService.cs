@@ -61,7 +61,7 @@ public sealed class SessionService : Service, ISessionService, IDisposable, IAsy
         return true;
     }
     
-    public OperationResult StartSession(string sessionId = "", string sessionConfigId = "")
+    public async ValueTask<OperationResult> StartSessionAsync(string sessionId = "", string sessionConfigId = "")
     {
         // Try to get the config
         SessionConfig sessionConfig;
@@ -91,7 +91,7 @@ public sealed class SessionService : Service, ISessionService, IDisposable, IAsy
 
         _activeSessions.Add(session.Id, session);
         session.Start(_hostApplicationLifetime.ApplicationStopping);
-        OnSessionStarted(session);
+        await OnSessionStartedAsync(session);
         
         return new OperationResult(Success: true, Message: "Session started.");
     }
@@ -194,13 +194,13 @@ public sealed class SessionService : Service, ISessionService, IDisposable, IAsy
         _activeSessions.Clear();
     }
 
-    private void OnSessionStarted(Session _)
+    private async Task OnSessionStartedAsync(Session _)
     {
-        _notificationService.CloseLastNotificationAsync().GetAwaiter().GetResult();
-        _notificationService.NotifyAsync(
+        await _notificationService.CloseLastNotificationAsync();
+        await _notificationService.NotifyAsync(
             summary: _notificationConfig.SessionStartedSummary,
             body: _notificationConfig.SessionStartedBody,
-            NotificationSoundType.SessionStarted).GetAwaiter().GetResult();
+            NotificationSoundType.SessionStarted);
     }
 
     private ValueTask OnSessionSecondElapsedAsync(Session session)
