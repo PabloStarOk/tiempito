@@ -112,8 +112,8 @@ public sealed class Session : IDisposable, IAsyncDisposable
     /// <param name="cancellationToken">A cancellation token used to stop the session.</param>
     public void Start(CancellationToken cancellationToken = default)
     {
-        _timer = new PeriodicTimer(SecondInterval, _timeProvider);
         State = State.WithStatus(SessionStatus.Executing);
+        _timer = new PeriodicTimer(SecondInterval, _timeProvider);
         _runTask = RunAsync(cancellationToken);
     }
 
@@ -123,8 +123,8 @@ public sealed class Session : IDisposable, IAsyncDisposable
     /// <returns>A <see cref="ValueTask"/> that completes when cancellation and cleanup are finished.</returns>
     public async ValueTask CancelAsync()
     {
-        await DisposeAsync();
         State = State.WithStatus(SessionStatus.Cancelled);
+        await DisposeAsync();
     }
 
     /// <summary>
@@ -132,12 +132,11 @@ public sealed class Session : IDisposable, IAsyncDisposable
     /// </summary>
     public void Pause()
     {
+        State = State.WithStatus(SessionStatus.Paused);
         if (_timer is not null)
         {
             _timer.Period = Timeout.InfiniteTimeSpan;
         }
-
-        State = State.WithStatus(SessionStatus.Paused);
     }
 
     /// <summary>
@@ -145,12 +144,11 @@ public sealed class Session : IDisposable, IAsyncDisposable
     /// </summary>
     public void Resume()
     {
+        State = State.WithStatus(SessionStatus.Executing);
         if (_timer is not null)
         {
             _timer.Period = SecondInterval;
         }
-
-        State = State.WithStatus(SessionStatus.Executing);
     }
 
     /// <inheritdoc/>
@@ -251,9 +249,9 @@ public sealed class Session : IDisposable, IAsyncDisposable
 
     private async ValueTask CompleteAsync()
     {
+        State = State.WithStatus(SessionStatus.Finished);
         await DisposeAsync();
         await _onSessionCompletedAsync(this);
-        State = State.WithStatus(SessionStatus.Finished);
     }
 
     private (SessionIntervalType, TimeSpan) DetermineNextInterval()
