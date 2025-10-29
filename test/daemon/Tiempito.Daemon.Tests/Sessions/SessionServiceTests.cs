@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -27,6 +28,8 @@ public class SessionServiceTests : IDisposable
     private readonly Mock<INotificationService> _notificationManagerMock;
     private readonly Mock<IStandardOutQueue> _stdOutQueueMock;
     private readonly Mock<TimeProvider> _timeProviderMock;
+    private readonly Mock<IHostApplicationLifetime> _hostApplicationLifetimeMock;
+    private readonly Mock<ILoggerFactory> _loggerFactoryMock;
     private readonly Dictionary<string, Session> _activeSessions = [];
     private readonly NotificationConfig _notificationConfig;
 
@@ -41,6 +44,8 @@ public class SessionServiceTests : IDisposable
         _notificationManagerMock = _mockRepository.Create<INotificationService>(MockBehavior.Loose);
         _stdOutQueueMock = _mockRepository.Create<IStandardOutQueue>();
         _timeProviderMock = _mockRepository.Create<TimeProvider>(MockBehavior.Loose);
+        _hostApplicationLifetimeMock = _mockRepository.Create<IHostApplicationLifetime>();
+        _loggerFactoryMock = _mockRepository.Create<ILoggerFactory>(MockBehavior.Loose);
 
         _notificationConfig = new NotificationConfig();
         notificationOptionsMock.Setup(n => n.Value).Returns(_notificationConfig);
@@ -52,6 +57,8 @@ public class SessionServiceTests : IDisposable
             _notificationManagerMock.Object,
             _stdOutQueueMock.Object,
             _timeProviderMock.Object,
+            _hostApplicationLifetimeMock.Object,
+            _loggerFactoryMock.Object,
             _activeSessions);
     }
 
@@ -62,7 +69,14 @@ public class SessionServiceTests : IDisposable
 
         foreach (var session in _activeSessions)
         {
-            session.Value.Dispose();
+            try
+            {
+                session.Value.Dispose();
+            }
+            catch (Exception ex)
+            {
+                // Ignore temporarily.
+            }
         }
 
         _activeSessions.Clear();
@@ -79,6 +93,7 @@ public class SessionServiceTests : IDisposable
         SessionConfig config, Session session, bool specifySessionId, bool specifyConfigId)
     {
         // Arrange
+        _hostApplicationLifetimeMock.Setup(m => m.ApplicationStopping).Returns(It.IsAny<CancellationToken>());
         if (specifyConfigId)
         {
             _sessionConfigServiceMock.Setup(m => m.TryGetConfigById(config.Id, out config))

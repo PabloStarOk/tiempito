@@ -23,6 +23,8 @@ public sealed class SessionService : Service, ISessionService, IDisposable, IAsy
     private readonly INotificationService _notificationService;
     private readonly IStandardOutQueue _standardOutQueue;
     private readonly TimeProvider _timeProvider;
+    private readonly IHostApplicationLifetime _hostApplicationLifetime;
+    private readonly ILoggerFactory _loggerFactory;
     private readonly Dictionary<string, Session> _activeSessions;
     private bool _disposed;
 
@@ -33,6 +35,8 @@ public sealed class SessionService : Service, ISessionService, IDisposable, IAsy
         INotificationService notificationService,
         IStandardOutQueue standardOutQueue,
         TimeProvider timeProvider,
+        IHostApplicationLifetime hostApplicationLifetime,
+        ILoggerFactory loggerFactory,
         Dictionary<string, Session>? activeSessions = null)
         : base(logger)
     {
@@ -41,6 +45,8 @@ public sealed class SessionService : Service, ISessionService, IDisposable, IAsy
         _notificationService = notificationService;
         _standardOutQueue = standardOutQueue;
         _timeProvider = timeProvider;
+        _hostApplicationLifetime = hostApplicationLifetime;
+        _loggerFactory = loggerFactory;
         _activeSessions = activeSessions ?? new Dictionary<string, Session>();
     }
 
@@ -75,15 +81,16 @@ public sealed class SessionService : Service, ISessionService, IDisposable, IAsy
             return new OperationResult(Success: false, Message: "There's already a started session with the same ID.");
 
         var session = Session.Create(
+            _loggerFactory.CreateLogger<Session>(),
             sessionId,
             sessionConfig,
             _timeProvider,
-            OnSessionSecondElapsed,
-            OnSessionIntervalCompleted,
-            OnSessionCompleted);
+            OnSessionSecondElapsedAsync,
+            OnSessionIntervalCompletedAsync,
+            OnSessionCompletedAsync);
 
         _activeSessions.Add(session.Id, session);
-        session.Start();
+        session.Start(_hostApplicationLifetime.ApplicationStopping);
         OnSessionStarted(session);
         
         return new OperationResult(Success: true, Message: "Session started.");
@@ -150,7 +157,6 @@ public sealed class SessionService : Service, ISessionService, IDisposable, IAsy
         }
 
         await session.CancelAsync();
-        await session.DisposeAsync();
         return new OperationResult(Success: true, Message: "Session cancelled.");
     }
 
@@ -197,13 +203,14 @@ public sealed class SessionService : Service, ISessionService, IDisposable, IAsy
             NotificationSoundType.SessionStarted).GetAwaiter().GetResult();
     }
 
-    private void OnSessionSecondElapsed(Session session)
+    private ValueTask OnSessionSecondElapsedAsync(Session session)
     {
         var message = $"{session.State.IntervalType.ToString()} time: {session.State.ElapsedTime}";
         _standardOutQueue.QueueMessage(message);
+        return ValueTask.CompletedTask;
     }
 
-    private void OnSessionIntervalCompleted(Session session)
+    private async ValueTask OnSessionIntervalCompletedAsync(Session session)
     {
         if (session.State.IntervalType is SessionIntervalType.Delay)
         {
@@ -213,7 +220,7 @@ public sealed class SessionService : Service, ISessionService, IDisposable, IAsy
         var message = $"{session.State.IntervalType.ToString()} time completed.";
         _standardOutQueue.QueueMessage(message);
 
-        _notificationService.CloseLastNotificationAsync().GetAwaiter().GetResult();
+        await _notificationService.CloseLastNotificationAsync();
 
         string summary;
         string body;
@@ -229,19 +236,18 @@ public sealed class SessionService : Service, ISessionService, IDisposable, IAsy
             body = _notificationConfig.BreakCompletedBody;
         }
 
-        _notificationService.NotifyAsync(summary, body, NotificationSoundType.TimeCompleted).GetAwaiter().GetResult();
+        await _notificationService.NotifyAsync(summary, body, NotificationSoundType.TimeCompleted);
     }
 
-    private void OnSessionCompleted(Session session)
+    private async ValueTask OnSessionCompletedAsync(Session session)
     {
         _activeSessions.Remove(session.Id);
-        session.Dispose();
 
         var message = $"Session with id {session.Id} was completed";
         _standardOutQueue.QueueMessage(message);
 
-        _notificationService.CloseLastNotificationAsync();
-        _notificationService.NotifyAsync(
+        await _notificationService.CloseLastNotificationAsync();
+        await _notificationService.NotifyAsync(
             summary: _notificationConfig.SessionFinishedSummary,
             body: _notificationConfig.SessionFinishedBody,
             NotificationSoundType.SessionFinished);

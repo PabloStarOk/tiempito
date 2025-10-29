@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Logging;
+
 using Tiempito.Daemon.Domain.Config;
 using Tiempito.Daemon.Domain.Sessions;
 
@@ -8,6 +10,8 @@ namespace Tiempito.Daemon.Tests.Sessions.Helpers;
 /// </summary>
 public static class SessionProvider
 {
+    public static LoggerFactory LoggerFactory = new ();
+
     /// <summary>
     /// Creates a configuration with fixed data.
     /// </summary>
@@ -48,12 +52,13 @@ public static class SessionProvider
         config ??= CreateConfig();
 
         return Session.Create(
+            LoggerFactory.CreateLogger<Session>(),
             id.ToLower(),
             config,
             TimeProvider.System,
-            _ => { },
-            _ => { },
-            _ => { });
+            _ => ValueTask.CompletedTask,
+            _ => ValueTask.CompletedTask,
+            _ => ValueTask.CompletedTask);
     }
 
     /// <summary>
@@ -72,11 +77,12 @@ public static class SessionProvider
             FocusDuration: TimeSpan.FromSeconds(random.Next(1, int.MaxValue)),
             BreakDuration: TimeSpan.FromSeconds(random.Next(1, int.MaxValue)));
         return Session.Create(
+            LoggerFactory.CreateLogger<Session>(),
             id.ToLower(),
             sessionConfig,
             TimeProvider.System,
-            _ => { },
-            _ => { },
-            _ => { });
+            _ => ValueTask.CompletedTask,
+            _ => ValueTask.CompletedTask,
+            _ => ValueTask.CompletedTask);
     }
 }
