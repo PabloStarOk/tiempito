@@ -109,7 +109,6 @@ builder.Services.AddSingleton(sessionProgress);
 builder.Services.AddSingleton<IProgress<Session>>(sessionProgress);
 builder.Services.AddSingleton<ISessionStorage, SessionStorage>();
 builder.Services.AddKeyedSingleton(typeof(TimeSpan), "TimingInterval", (_, _) => TimeSpan.FromSeconds(1));
-builder.Services.AddSingleton<ISessionTimer, SessionTimer>();
 
 builder.Services.AddSingleton<SessionService>();
 builder.Services.AddSingleton<NotificationService>();

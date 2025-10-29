@@ -16,7 +16,12 @@ public class SessionConfigService : Service, ISessionConfigService
     private Dictionary<string, SessionConfig> _configs;
     
     /// <inheritdoc/>
-    public SessionConfig DefaultConfig { get; private set; }
+    public SessionConfig DefaultConfig { get; private set; } = new SessionConfig(
+        Id: "Default",
+        TargetCycles: 4,
+        DelayBetweenTimes: TimeSpan.FromSeconds(10),
+        FocusDuration: TimeSpan.FromMinutes(25),
+        BreakDuration: TimeSpan.FromMinutes(5));
 
     /// <inheritdoc/>
     public IReadOnlyDictionary<string, SessionConfig> Configs => _configs.ToDictionary().AsReadOnly();
