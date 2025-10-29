@@ -25,9 +25,9 @@ public class SessionServiceTests : IDisposable
     private readonly MockRepository _mockRepository;
     private readonly Mock<ISessionConfigService> _sessionConfigServiceMock;
     private readonly Mock<INotificationService> _notificationManagerMock;
-    private readonly Mock<ISessionStorage> _sessionStorageMock;
     private readonly Mock<IStandardOutQueue> _stdOutQueueMock;
     private readonly Mock<TimeProvider> _timeProviderMock;
+    private readonly Dictionary<string, Session> _activeSessions = [];
     private readonly NotificationConfig _notificationConfig;
 
     public SessionServiceTests(ITestOutputHelper testOutputHelper)
@@ -39,7 +39,6 @@ public class SessionServiceTests : IDisposable
         _sessionConfigServiceMock = _mockRepository.Create<ISessionConfigService>();
         Mock<IOptions<NotificationConfig>> notificationOptionsMock = _mockRepository.Create<IOptions<NotificationConfig>>();
         _notificationManagerMock = _mockRepository.Create<INotificationService>(MockBehavior.Loose);
-        _sessionStorageMock = _mockRepository.Create<ISessionStorage>();
         _stdOutQueueMock = _mockRepository.Create<IStandardOutQueue>();
         _timeProviderMock = _mockRepository.Create<TimeProvider>(MockBehavior.Loose);
 
@@ -51,15 +50,22 @@ public class SessionServiceTests : IDisposable
             _sessionConfigServiceMock.Object,
             notificationOptionsMock.Object,
             _notificationManagerMock.Object,
-            _sessionStorageMock.Object,
             _stdOutQueueMock.Object,
-            _timeProviderMock.Object);
+            _timeProviderMock.Object,
+            _activeSessions);
     }
 
     public void Dispose()
     {
         // Global Arrange
         _mockRepository.VerifyAll();
+
+        foreach (var session in _activeSessions)
+        {
+            session.Value.Dispose();
+        }
+
+        _activeSessions.Clear();
     }
     
     #region StartSession
@@ -80,9 +86,6 @@ public class SessionServiceTests : IDisposable
         }
         else
             _sessionConfigServiceMock.Setup(m => m.DefaultConfig).Returns(config);
-        _sessionStorageMock.Setup(m => m.RunningSessions).Returns(new Dictionary<string, Session>());
-        _sessionStorageMock.Setup(m => m.PausedSessions).Returns(new Dictionary<string, Session>());
-        _sessionStorageMock.Setup(m => m.AddSession(SessionStatus.Executing, It.IsAny<Session>())).Returns(true);
 
         // Act
         OperationResult operationResult = specifySessionId switch
@@ -118,11 +121,8 @@ public class SessionServiceTests : IDisposable
     {
         SessionConfig config = SessionProvider.CreateConfig();
         Session session = SessionProvider.CreateRandom();
-        Dictionary<string, Session> runningSessions = CreateSessionsDictionary(session);
-        
         _sessionConfigServiceMock.Setup(m => m.DefaultConfig).Returns(config);
-        _sessionStorageMock.Setup(m => m.RunningSessions).Returns(runningSessions);
-        _sessionStorageMock.Setup(m => m.PausedSessions).Returns(new Dictionary<string, Session>());
+        _activeSessions.Add(session.Id, session);
         
         OperationResult operationResult = _sessionService.StartSession(session.Id);
         
@@ -139,14 +139,11 @@ public class SessionServiceTests : IDisposable
     public void PauseSession_should_PauseSession(
         bool specifySessionId)
     {
-        Session session = SessionProvider.Create();
-        Dictionary<string, Session> runningSessions = CreateSessionsDictionary(session);
+        Session session = SessionProvider.CreateRandom();
         string sessionId = specifySessionId ? session.Id : string.Empty;
-        
-        _sessionStorageMock.Setup(m => m.RunningSessions).Returns(runningSessions);
-        _sessionStorageMock.Setup(m => m.RemoveSession(SessionStatus.Executing, session.Id)).Returns(session);
-        _sessionStorageMock.Setup(m => m.AddSession(SessionStatus.Paused, session)).Returns(true);
-        
+        session.Start();
+        _activeSessions.Add(sessionId, session);
+
         OperationResult operationResult = _sessionService.PauseSession(sessionId);
      
         Assert.True(operationResult.Success);
@@ -155,8 +152,6 @@ public class SessionServiceTests : IDisposable
     [Fact]
     public void PauseSession_should_ReturnErrorResult_when_ThereAreNoSessionsToPause()
     {
-        _sessionStorageMock.Setup(m => m.RunningSessions).Returns(new Dictionary<string, Session>());
-        
         OperationResult operationResult = _sessionService.PauseSession();
      
         Assert.False(operationResult.Success);
@@ -165,11 +160,7 @@ public class SessionServiceTests : IDisposable
     [Fact]
     public void PauseSession_should_ReturnErrorResult_when_SessionIdNotFound()
     {
-        Session session = SessionProvider.Create();
-        Dictionary<string, Session> runningSessions = CreateSessionsDictionary(session);
         string falseSessionId = "AnotherId".ToLower();
-        
-        _sessionStorageMock.Setup(m => m.RunningSessions).Returns(runningSessions);
         
         OperationResult operationResult = _sessionService.PauseSession(falseSessionId);
      
@@ -187,12 +178,9 @@ public class SessionServiceTests : IDisposable
         bool sessionIdSpecified)
     {
         Session session = SessionProvider.CreateRandom();
-        Dictionary<string, Session> pausedSessions = CreateSessionsDictionary(session);
         string sessionId = sessionIdSpecified ? session.Id : string.Empty;
-
-        _sessionStorageMock.Setup(m => m.PausedSessions).Returns(pausedSessions);
-        _sessionStorageMock.Setup(m => m.RemoveSession(SessionStatus.Paused, session.Id)).Returns(session);
-        _sessionStorageMock.Setup(m => m.AddSession(SessionStatus.Executing, session)).Returns(true);
+        session.Pause();
+        _activeSessions.Add(sessionId, session);
 
         OperationResult operationResult = _sessionService.ResumeSession(sessionId);
         
@@ -202,9 +190,6 @@ public class SessionServiceTests : IDisposable
     [Fact]
     public void ResumeSession_should_ReturnFailedOperation_when_ThereAreNoSessionsToResume()
     {
-        _sessionStorageMock.Setup(m => m.PausedSessions)
-            .Returns(new Dictionary<string, Session>());
-
         OperationResult operationResult = _sessionService.ResumeSession();
         
         Assert.False(operationResult.Success, operationResult.Message);
@@ -213,11 +198,7 @@ public class SessionServiceTests : IDisposable
     [Fact]
     public void ResumeSession_should_ReturnFailedOperation_when_IdNotFound()
     {
-        Session session = SessionProvider.CreateRandom();
-        Dictionary<string, Session> pausedSessions = CreateSessionsDictionary(session);
         string falseSessionId = "AnotherId".ToLower();
-        
-        _sessionStorageMock.Setup(m => m.PausedSessions).Returns(pausedSessions);
 
         OperationResult operationResult = _sessionService.ResumeSession(falseSessionId);
         
@@ -238,12 +219,7 @@ public class SessionServiceTests : IDisposable
         Session session = SessionProvider.CreateRandom();
         string sessionId = sessionIdSpecified ? session.Id : string.Empty;
         session.Start();
-        Dictionary<string, Session> runningSessions = CreateSessionsDictionary(session);
-        
-        _sessionStorageMock.Setup(m => m.RemoveSession(SessionStatus.Executing, session.Id)).Returns(session);
-        _sessionStorageMock.Setup(m => m.RunningSessions).Returns(runningSessions);
-        _sessionStorageMock.Setup(m => m.PausedSessions).Returns(new Dictionary<string, Session>());
-        _sessionStorageMock.Setup(m => m.AddSession(SessionStatus.Cancelled, session)).Returns(true);
+        _activeSessions.Add(sessionId, session);
 
         // Act
         OperationResult operationResult = _sessionService.CancelSession(sessionId);
@@ -261,14 +237,8 @@ public class SessionServiceTests : IDisposable
         // Arrange
         Session session = SessionProvider.CreateRandom();
         string sessionId = sessionIdSpecified ? session.Id : string.Empty;
-        session.Start();
         session.Pause();
-        Dictionary<string, Session> pausedSessions = CreateSessionsDictionary(session);
-        
-        _sessionStorageMock.Setup(m => m.RemoveSession(SessionStatus.Paused, session.Id)).Returns(session);
-        _sessionStorageMock.Setup(m => m.RunningSessions).Returns(new Dictionary<string, Session>());
-        _sessionStorageMock.Setup(m => m.PausedSessions).Returns(pausedSessions);
-        _sessionStorageMock.Setup(m => m.AddSession(SessionStatus.Cancelled, session)).Returns(true);
+        _activeSessions.Add(sessionId, session);
 
         // Act
         OperationResult operationResult = _sessionService.CancelSession(sessionId);
@@ -280,26 +250,14 @@ public class SessionServiceTests : IDisposable
     [Fact]
     public void CancelSession_should_ReturnFailedOperation_when_ThereAreNoSessionsToCancel()
     {
-        Dictionary<string, Session> emptyDictionary = CreateSessionsDictionary();
-
-        _sessionStorageMock.Setup(m => m.RunningSessions).Returns(emptyDictionary);
-        _sessionStorageMock.Setup(m => m.PausedSessions).Returns(emptyDictionary);
-        
         OperationResult operationResult = _sessionService.CancelSession();
-        
         Assert.False(operationResult.Success);
     }
     
     [Fact]
     public void CancelSession_should_ReturnFailedOperation_when_IdNotFound()
     {
-        Session session = SessionProvider.CreateRandom("FooSession");
-        Dictionary<string, Session> runningSessions = CreateSessionsDictionary(session);
-        Dictionary<string, Session> pausedSessions = CreateSessionsDictionary();
         string falseSessionId = "AnotherId".ToLower();
-
-        _sessionStorageMock.Setup(m => m.RunningSessions).Returns(runningSessions);
-        _sessionStorageMock.Setup(m => m.PausedSessions).Returns(pausedSessions);
         
         OperationResult operationResult = _sessionService.CancelSession(falseSessionId);
         

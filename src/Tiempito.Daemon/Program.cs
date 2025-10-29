@@ -10,7 +10,6 @@ using Tiempito.Daemon.Application.Sessions;
 using Tiempito.Daemon.Application.Shared.Abstractions;
 using Tiempito.Daemon.Domain.Sessions;
 using Tiempito.Daemon.Infrastructure.Config;
-using Tiempito.Daemon.Infrastructure.Sessions;
 using Tiempito.Daemon.Server;
 using Tiempito.Daemon.Server.Configuration;
 #if LINUX
@@ -107,7 +106,6 @@ builder.Services.AddSingleton<IServer, Server>();
 var sessionProgress = new Progress<Session>();
 builder.Services.AddSingleton(sessionProgress);
 builder.Services.AddSingleton<IProgress<Session>>(sessionProgress);
-builder.Services.AddSingleton<ISessionStorage, SessionStorage>();
 builder.Services.AddKeyedSingleton(typeof(TimeSpan), "TimingInterval", (_, _) => TimeSpan.FromSeconds(1));
 
 builder.Services.AddSingleton<SessionService>();

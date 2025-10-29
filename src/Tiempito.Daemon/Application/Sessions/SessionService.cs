@@ -1,5 +1,3 @@
-using System.Collections.ObjectModel;
-
 using Microsoft.Extensions.Options;
 
 using Tiempito.Daemon.Application.Config.Sessions;
@@ -15,6 +13,7 @@ using Tiempito.Daemon.Server.Configuration;
 
 namespace Tiempito.Daemon.Application.Sessions;
 
+
 /// <summary>
 /// Service to manage sessions.
 /// </summary>
@@ -23,9 +22,9 @@ public sealed class SessionService : Service, ISessionService
     private readonly ISessionConfigService _sessionConfigService;
     private readonly NotificationConfig _notificationConfig;
     private readonly INotificationService _notificationService;
-    private readonly ISessionStorage _sessionStorage;
     private readonly IStandardOutQueue _standardOutQueue;
     private readonly TimeProvider _timeProvider;
+    private readonly Dictionary<string, Session> _activeSessions;
     private CancellationTokenSource _timerTokenSource;
 
     public SessionService(
@@ -33,17 +32,18 @@ public sealed class SessionService : Service, ISessionService
         ISessionConfigService sessionConfigService,
         IOptions<NotificationConfig> notificationOptions,
         INotificationService notificationService,
-        ISessionStorage sessionStorage,
         IStandardOutQueue standardOutQueue,
-        TimeProvider timeProvider) : base(logger)
+        TimeProvider timeProvider,
+        Dictionary<string, Session>? activeSessions = null)
+        : base(logger)
     {
         _sessionConfigService = sessionConfigService;
         _notificationConfig = notificationOptions.Value;
         _notificationService = notificationService;
-        _sessionStorage = sessionStorage;
         _timerTokenSource = new CancellationTokenSource();
         _standardOutQueue = standardOutQueue;
         _timeProvider = timeProvider;
+        _activeSessions = activeSessions ?? new Dictionary<string, Session>();
     }
 
     protected override Task<bool> OnStartServiceAsync()
@@ -76,9 +76,7 @@ public sealed class SessionService : Service, ISessionService
             sessionId = sessionConfig.Id;
         
         // Verify if the session id already exists.
-        ReadOnlyDictionary<string, Session> startedSessions = 
-            _sessionStorage.RunningSessions.Concat(_sessionStorage.PausedSessions).ToDictionary().AsReadOnly();
-        if (startedSessions.ContainsKey(sessionId))
+        if (_activeSessions.ContainsKey(sessionId))
             return new OperationResult(Success: false, Message: "There's already a started session with the same ID.");
 
         var session = Session.Create(
@@ -90,7 +88,7 @@ public sealed class SessionService : Service, ISessionService
             OnSessionCompleted);
 
         _timerTokenSource = RegenerateTokenSource(_timerTokenSource);
-        _sessionStorage.AddSession(SessionStatus.Executing, session);
+        _activeSessions.Add(session.Id, session);
         session.Start();
         OnSessionStarted(session);
         
@@ -99,21 +97,22 @@ public sealed class SessionService : Service, ISessionService
 
     public OperationResult PauseSession(string sessionId = "")
     {
-        if (_sessionStorage.RunningSessions.Count < 1 )
+        var executingSessions = _activeSessions
+            .Where(s => s.Value.State.Status is SessionStatus.Executing)
+            .ToDictionary(s => s.Key, s => s.Value);
+        
+        if (executingSessions.Count < 1 )
             return new OperationResult(Success: false, Message: "There are no running sessions to pause.");
 
         Session? session = null;
-        if (!string.IsNullOrWhiteSpace(sessionId)
-            && !_sessionStorage.RunningSessions.TryGetValue(sessionId, out session))
+        if (!string.IsNullOrWhiteSpace(sessionId) && !executingSessions.TryGetValue(sessionId, out session))
             return new OperationResult(Success: false, Message: $"Running session with ID '{sessionId}' was not found.");
 
         if (string.IsNullOrWhiteSpace(sessionId) || session is null)
         {
-            session = _sessionStorage.RunningSessions.First().Value;
+            session = executingSessions.First().Value;
         }
 
-        _sessionStorage.RemoveSession(SessionStatus.Executing, session.Id);
-        _sessionStorage.AddSession(SessionStatus.Paused, session);
         session.Pause();
 
         return new OperationResult(Success: true, Message: "Session paused.");
@@ -121,48 +120,41 @@ public sealed class SessionService : Service, ISessionService
 
     public OperationResult ResumeSession(string sessionId = "")
     {
-        if (_sessionStorage.PausedSessions.Count < 1 )
+        var pausedSessions = _activeSessions
+            .Where(s => s.Value.State.Status is SessionStatus.Paused)
+            .ToDictionary(s => s.Key, s => s.Value);
+
+        if (pausedSessions.Count < 1 )
             return new OperationResult(Success: false, Message: "There are no paused sessions to resume.");
 
         Session? session = null;
-        if (!string.IsNullOrWhiteSpace(sessionId) 
-            && !_sessionStorage.PausedSessions.TryGetValue(sessionId, out session))
+        if (!string.IsNullOrWhiteSpace(sessionId) && !pausedSessions.TryGetValue(sessionId, out session))
             return new OperationResult(Success: false, Message: $"Paused session with ID '{sessionId}' was not found.");
 
         if (string.IsNullOrWhiteSpace(sessionId) || session is null)
         {
-            session = _sessionStorage.PausedSessions.First().Value;
+            session = pausedSessions.First().Value;
         }
 
-        _sessionStorage.RemoveSession(SessionStatus.Paused, session.Id);
-        _sessionStorage.AddSession(SessionStatus.Executing, session);
         session.Resume();
-
         return new OperationResult(Success: true, Message: "Session resumed.");
     }
 
     public OperationResult CancelSession(string sessionId = "")
     {
-        ReadOnlyDictionary<string, Session> startedSessions = 
-            _sessionStorage.RunningSessions.Concat(_sessionStorage.PausedSessions).ToDictionary().AsReadOnly();
-        
-        if (startedSessions.Count < 1)
+        if (_activeSessions.Count < 1)
             return new OperationResult(Success: false, Message: "There are no sessions to cancel.");
         
         Session? session = null;
-        if (!string.IsNullOrWhiteSpace(sessionId) 
-            && !startedSessions.TryGetValue(sessionId, out session))
+        if (!string.IsNullOrWhiteSpace(sessionId) && !_activeSessions.Remove(sessionId, out session))
             return new OperationResult(Success: false, Message: $"Started session with ID '{sessionId}' was not found.");
         
         if (string.IsNullOrWhiteSpace(sessionId) || session is null)
         {
-            session = startedSessions.First().Value;
+            session = _activeSessions.First().Value;
+            _activeSessions.Remove(session.Id);
         }
 
-        _sessionStorage.RemoveSession(
-                session.State.Status is SessionStatus.Executing ? SessionStatus.Executing : SessionStatus.Paused,
-                session.Id);
-        _sessionStorage.AddSession(SessionStatus.Cancelled, session);
         session.CancelAsync().GetAwaiter().GetResult();
         return new OperationResult(Success: true, Message: "Session cancelled.");
     }
@@ -213,7 +205,7 @@ public sealed class SessionService : Service, ISessionService
 
     private void OnSessionCompleted(Session session)
     {
-        _sessionStorage.AddSession(SessionStatus.Finished, session);
+        _activeSessions.Remove(session.Id);
 
         var message = $"Session with id {session.Id} was completed";
         _standardOutQueue.QueueMessage(message);
