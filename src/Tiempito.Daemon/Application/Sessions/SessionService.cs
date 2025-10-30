@@ -1,14 +1,11 @@
 using Microsoft.Extensions.Options;
 
-using Tiempito.Daemon.Application.Config.Sessions;
 using Tiempito.Daemon.Application.Notifications;
 using Tiempito.Daemon.Application.Shared.Abstractions;
-using Tiempito.Daemon.Domain.Config;
 using Tiempito.Daemon.Domain.Notifications.Enums;
 using Tiempito.Daemon.Domain.Sessions;
 using Tiempito.Daemon.Domain.Sessions.Enums;
 using Tiempito.Daemon.Domain.Shared;
-using Tiempito.Daemon.Server;
 using Tiempito.Daemon.Server.Configuration;
 
 namespace Tiempito.Daemon.Application.Sessions;
@@ -20,7 +17,7 @@ public sealed class SessionService : Service, ISessionService, IAsyncDisposable
 {
     private readonly NotificationConfig _notificationConfig;
     private readonly INotificationService _notificationService;
-    private readonly IStandardOutQueue _standardOutQueue;
+    private readonly IStandardOutQueueWriter _standardOutQueueWriter;
     private readonly IHostApplicationLifetime _hostApplicationLifetime;
     private readonly ISessionFactory _sessionFactory;
     private readonly Dictionary<string, Session> _activeSessions;
@@ -30,7 +27,7 @@ public sealed class SessionService : Service, ISessionService, IAsyncDisposable
         ILogger<SessionService> logger,
         IOptions<NotificationConfig> notificationOptions,
         INotificationService notificationService,
-        IStandardOutQueue standardOutQueue,
+        IStandardOutQueueWriter standardOutQueueWriter,
         IHostApplicationLifetime hostApplicationLifetime,
         ISessionFactory sessionFactory,
         Dictionary<string, Session>? activeSessions = null)
@@ -38,7 +35,7 @@ public sealed class SessionService : Service, ISessionService, IAsyncDisposable
     {
         _notificationConfig = notificationOptions.Value;
         _notificationService = notificationService;
-        _standardOutQueue = standardOutQueue;
+        _standardOutQueueWriter = standardOutQueueWriter;
         _hostApplicationLifetime = hostApplicationLifetime;
         _sessionFactory = sessionFactory;
         _activeSessions = activeSessions ?? new Dictionary<string, Session>();
@@ -175,11 +172,10 @@ public sealed class SessionService : Service, ISessionService, IAsyncDisposable
             NotificationSoundType.SessionStarted);
     }
 
-    private ValueTask OnSessionSecondElapsedAsync(Session session)
+    private async ValueTask OnSessionSecondElapsedAsync(Session session)
     {
         var message = $"{session.State.IntervalType.ToString()} time: {session.State.ElapsedTime}";
-        _standardOutQueue.QueueMessage(message);
-        return ValueTask.CompletedTask;
+        await _standardOutQueueWriter.WriteAsync(message);
     }
 
     private async ValueTask OnSessionIntervalCompletedAsync(Session session)
@@ -190,7 +186,7 @@ public sealed class SessionService : Service, ISessionService, IAsyncDisposable
         }
 
         var message = $"{session.State.IntervalType.ToString()} time completed.";
-        _standardOutQueue.QueueMessage(message);
+        await _standardOutQueueWriter.WriteAsync(message);
 
         await _notificationService.CloseLastNotificationAsync();
 
@@ -216,7 +212,7 @@ public sealed class SessionService : Service, ISessionService, IAsyncDisposable
         _activeSessions.Remove(session.Id);
 
         var message = $"Session with id {session.Id} was completed";
-        _standardOutQueue.QueueMessage(message);
+        await _standardOutQueueWriter.WriteAsync(message);
 
         await _notificationService.CloseLastNotificationAsync();
         await _notificationService.NotifyAsync(

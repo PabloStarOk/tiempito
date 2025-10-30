@@ -8,7 +8,6 @@ using Tiempito.Daemon.Application.Sessions;
 using Tiempito.Daemon.Domain.Config;
 using Tiempito.Daemon.Domain.Sessions;
 using Tiempito.Daemon.Domain.Shared;
-using Tiempito.Daemon.Server;
 using Tiempito.Daemon.Server.Configuration;
 using Tiempito.Daemon.Tests.Sessions.Helpers;
 
@@ -23,7 +22,7 @@ public class SessionServiceTests : IDisposable
     private readonly SessionService _sessionService;
     private readonly MockRepository _mockRepository;
     private readonly Mock<INotificationService> _notificationManagerMock;
-    private readonly Mock<IStandardOutQueue> _stdOutQueueMock;
+    private readonly Mock<IStandardOutQueueWriter> _stdOutQueueWriterMock;
     private readonly Mock<IHostApplicationLifetime> _hostApplicationLifetimeMock;
     private readonly Mock<ISessionFactory> _sessionFactoryMock;
     private readonly Dictionary<string, Session> _activeSessions = [];
@@ -37,7 +36,7 @@ public class SessionServiceTests : IDisposable
         Mock<ILogger<SessionService>> loggerMock = _mockRepository.Create<ILogger<SessionService>>();
         Mock<IOptions<NotificationConfig>> notificationOptionsMock = _mockRepository.Create<IOptions<NotificationConfig>>();
         _notificationManagerMock = _mockRepository.Create<INotificationService>(MockBehavior.Loose);
-        _stdOutQueueMock = _mockRepository.Create<IStandardOutQueue>();
+        _stdOutQueueWriterMock = _mockRepository.Create<IStandardOutQueueWriter>();
         _hostApplicationLifetimeMock = _mockRepository.Create<IHostApplicationLifetime>();
         _sessionFactoryMock = _mockRepository.Create<ISessionFactory>();
 
@@ -48,7 +47,7 @@ public class SessionServiceTests : IDisposable
             loggerMock.Object,
             notificationOptionsMock.Object,
             _notificationManagerMock.Object,
-            _stdOutQueueMock.Object,
+            _stdOutQueueWriterMock.Object,
             _hostApplicationLifetimeMock.Object,
             _sessionFactoryMock.Object,
             _activeSessions);

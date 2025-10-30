@@ -3,6 +3,7 @@ using AsyncEvent;
 using Microsoft.Extensions.Options;
 
 using Tiempito.Daemon.Application.Commands;
+using Tiempito.Daemon.Application.Notifications;
 using Tiempito.Daemon.Server.Configuration;
 using Tiempito.Daemon.Server.Extensions;
 using Tiempito.IPC.Abstractions;
@@ -18,13 +19,14 @@ public class Server : IServer
     private readonly ILogger<Server> _logger;
     private readonly PipeConfig _pipeConfig;
     private readonly NamedPipeServerStream _pipeServer;
-    private readonly IStandardOutSink _stdOutSink;
     private readonly ICommandDispatcher _commandDispatcher;
+    private readonly IStandardOutQueueReader _stdOutQueueReader;
     private readonly IMessageWriter _messageWriter;
     private readonly IMessageReader _messageReader;
     private readonly int _maxRestartAttempts;
     private string _currentConnectedUser = string.Empty;
     private int _currentRestartAttempts;
+    private Task? _stdOutMessagesSendTask;
 
     public event AsyncEventHandler? OnFailed;
 
@@ -32,7 +34,7 @@ public class Server : IServer
         ILogger<Server> logger,
         IOptions<PipeConfig> daemonConfigOptions,
         NamedPipeServerStream pipeServer,
-        IStandardOutSink stdOutSink,
+        IStandardOutQueueReader stdOutQueueReader,
         ICommandDispatcher commandDispatcher,
         IMessageWriter messageWriter,
         IMessageReader messageReader)
@@ -40,7 +42,7 @@ public class Server : IServer
         _logger = logger;
         _pipeConfig = daemonConfigOptions.Value;
         _pipeServer = pipeServer;
-        _stdOutSink = stdOutSink;
+        _stdOutQueueReader = stdOutQueueReader;
         _commandDispatcher = commandDispatcher;
         _maxRestartAttempts = daemonConfigOptions.Value.MaxRestartAttempts;
         _messageWriter = messageWriter;
@@ -50,6 +52,7 @@ public class Server : IServer
     public Task StartAsync(CancellationToken cancellationToken)
     {
         Task.Run(() => RunAsync(cancellationToken), cancellationToken).Forget();
+        _stdOutMessagesSendTask = SendStandardOutMessagesAsync(cancellationToken);
         _logger.LogInformation("Server started");
         return Task.CompletedTask;
     }
@@ -59,6 +62,12 @@ public class Server : IServer
         if (_pipeServer.IsConnected)
             await DisconnectAsync();
         
+        if (_stdOutMessagesSendTask is not null)
+        {
+            await _stdOutMessagesSendTask;
+            _stdOutMessagesSendTask.Dispose();
+        }
+
         await _pipeServer.DisposeAsync();
         
         _logger.LogInformation("Server stopped");
@@ -107,9 +116,6 @@ public class Server : IServer
 
                 Response response = await _commandDispatcher.DispatchAsync(command, cancellationToken);
                 await SendResponseAsync(response, cancellationToken);
-                
-                if (command.RedirectProgress)
-                    _stdOutSink.Start(cancellationToken);
             }
         }
         catch (Exception ex)
@@ -142,7 +148,6 @@ public class Server : IServer
     /// </summary>
     private async Task DisconnectAsync()
     {
-        await _stdOutSink.StopAsync();
         _pipeServer.Disconnect();
         _logger.LogInformation("Command server disconnected from client {User}", _currentConnectedUser);
         _currentConnectedUser = string.Empty;
@@ -208,5 +213,28 @@ public class Server : IServer
             return user;
         }
         return user;
+    }
+
+    private async Task SendStandardOutMessagesAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            while (await _stdOutQueueReader.Reader.WaitToReadAsync(cancellationToken))
+            {
+                string message = await _stdOutQueueReader.Reader.ReadAsync(cancellationToken);
+                if (!_pipeServer.IsConnected)
+                {
+                    _logger.LogDebug("Cannot send standard output message, client is disconnected: {Message}", message);
+                    continue;
+                }
+
+                await _messageWriter.WriteAsync(_pipeServer, message, cancellationToken);
+                _logger.LogDebug("Sent standard output message to client {User}: {Message}", _currentConnectedUser, message);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Ignore
+        }
     }
 }
