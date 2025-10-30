@@ -14,7 +14,7 @@ namespace Tiempito.Daemon.Server;
 /// <summary>
 /// Represents the server to receive requests and send responses to the client.
 /// </summary>
-public class Server : IServer
+public sealed class Server : BackgroundService, IAsyncDisposable
 {
     private readonly ILogger<Server> _logger;
     private readonly PipeConfig _pipeConfig;
@@ -27,8 +27,6 @@ public class Server : IServer
     private string _currentConnectedUser = string.Empty;
     private int _currentRestartAttempts;
     private Task? _stdOutMessagesSendTask;
-
-    public event AsyncEventHandler? OnFailed;
 
     public Server(
         ILogger<Server> logger,
@@ -49,28 +47,55 @@ public class Server : IServer
         _messageReader = messageReader;
     }
 
-    public Task StartAsync(CancellationToken cancellationToken)
-    {
-        Task.Run(() => RunAsync(cancellationToken), cancellationToken).Forget();
-        _stdOutMessagesSendTask = SendStandardOutMessagesAsync(cancellationToken);
-        _logger.LogInformation("Server started");
-        return Task.CompletedTask;
-    }
-
-    public async Task StopAsync()
+    /// <inheritdoc/>
+    public override async Task StopAsync(CancellationToken cancellationToken)
     {
         if (_pipeServer.IsConnected)
-            await DisconnectAsync();
-        
-        if (_stdOutMessagesSendTask is not null)
         {
-            await _stdOutMessagesSendTask;
-            _stdOutMessagesSendTask.Dispose();
+            await DisconnectAsync();
+        }
+
+        await base.StopAsync(cancellationToken);
+        _logger.LogInformation("Server stopped at {Time}", DateTimeOffset.UtcNow);
+    }
+
+    /// <inheritdoc/>
+    public async ValueTask DisposeAsync()
+    {
+        if (_pipeServer.IsConnected)
+        {
+            await DisconnectAsync();
+        }
+
+        if (_stdOutMessagesSendTask is not null && !_stdOutMessagesSendTask.IsCompleted)
+        {
+            try
+            {
+                await _stdOutMessagesSendTask;
+            }
+            catch (OperationCanceledException)
+            {
+                // Ignore
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while disposing std-out-messages send task");
+            }
+            finally
+            {
+                _stdOutMessagesSendTask.Dispose();
+            }
         }
 
         await _pipeServer.DisposeAsync();
-        
-        _logger.LogInformation("Server stopped");
+    }
+
+    /// <inheritdoc/>
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        _logger.LogInformation("Server started at {Time}", DateTimeOffset.UtcNow);
+        _stdOutMessagesSendTask = SendStandardOutMessagesAsync(stoppingToken);
+        await RunAsync(stoppingToken);
     }
 
     /// <summary>
@@ -82,8 +107,6 @@ public class Server : IServer
         if (_maxRestartAttempts > 0 && _currentRestartAttempts > _maxRestartAttempts)
         {
             _logger.LogError("Maximum restart attempts reached, command server will not restart.");
-            if (OnFailed is not null)
-                await OnFailed.InvokeAsync(this, EventArgs.Empty);
         }
         
         if (_pipeServer.IsConnected)
