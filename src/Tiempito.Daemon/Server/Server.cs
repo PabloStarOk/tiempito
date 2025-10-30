@@ -129,11 +129,12 @@ public sealed class Server : BackgroundService, IAsyncDisposable
     /// </summary>
     private void Disconnect()
     {
-        if (_pipeServer.IsConnected)
+        if (!_pipeServer.IsConnected)
         {
-            _pipeServer.Disconnect();
+            return;
         }
 
+        _pipeServer.Disconnect();
         _logger.LogInformation("Client {User} disconnected", _currentConnectedUser);
         _currentConnectedUser = string.Empty;
     }
