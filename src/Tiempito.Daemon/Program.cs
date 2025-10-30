@@ -7,7 +7,6 @@ using Tiempito.Daemon.Application;
 using Tiempito.Daemon.Application.Config;
 using Tiempito.Daemon.Application.Notifications;
 using Tiempito.Daemon.Application.Sessions;
-using Tiempito.Daemon.Application.Shared.Abstractions;
 using Tiempito.Daemon.Domain.Sessions;
 using Tiempito.Daemon.Infrastructure.Config;
 using Tiempito.Daemon.Server;

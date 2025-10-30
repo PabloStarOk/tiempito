@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Options;
 
 using Tiempito.Daemon.Application.Notifications;
-using Tiempito.Daemon.Application.Shared.Abstractions;
 using Tiempito.Daemon.Domain.Notifications.Enums;
 using Tiempito.Daemon.Domain.Sessions;
 using Tiempito.Daemon.Domain.Sessions.Enums;

@@ -1,5 +1,4 @@
 using Tiempito.Daemon.Application.Config.User;
-using Tiempito.Daemon.Application.Shared.Abstractions;
 using Tiempito.Daemon.Domain.Config;
 using Tiempito.Daemon.Domain.Shared;
 
