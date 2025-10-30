@@ -14,7 +14,6 @@ public class PipeConfig
     public PipeDirection PipeDirection { get; init; } = PipeDirection.InOut;
     public int PipeMaxInstances { get; init; } = 1;
     public string PipeEncoding { get; init; } = "utf8";
-    public int MaxRestartAttempts { get; init; } = 3;
     public bool DisplayImpersonationUser { get; init; } = true;
 
     /// <summary>

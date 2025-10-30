@@ -1,11 +1,9 @@
 using System.IO.Pipes;
-using AsyncEvent;
 using Microsoft.Extensions.Options;
 
 using Tiempito.Daemon.Application.Commands;
 using Tiempito.Daemon.Application.Notifications;
 using Tiempito.Daemon.Server.Configuration;
-using Tiempito.Daemon.Server.Extensions;
 using Tiempito.IPC.Abstractions;
 using Tiempito.IPC.Models;
 
@@ -23,9 +21,7 @@ public sealed class Server : BackgroundService, IAsyncDisposable
     private readonly IStandardOutQueueReader _stdOutQueueReader;
     private readonly IMessageWriter _messageWriter;
     private readonly IMessageReader _messageReader;
-    private readonly int _maxRestartAttempts;
     private string _currentConnectedUser = string.Empty;
-    private int _currentRestartAttempts;
     private Task? _stdOutMessagesSendTask;
 
     public Server(
@@ -42,7 +38,6 @@ public sealed class Server : BackgroundService, IAsyncDisposable
         _pipeServer = pipeServer;
         _stdOutQueueReader = stdOutQueueReader;
         _commandDispatcher = commandDispatcher;
-        _maxRestartAttempts = daemonConfigOptions.Value.MaxRestartAttempts;
         _messageWriter = messageWriter;
         _messageReader = messageReader;
     }
@@ -50,11 +45,7 @@ public sealed class Server : BackgroundService, IAsyncDisposable
     /// <inheritdoc/>
     public override async Task StopAsync(CancellationToken cancellationToken)
     {
-        if (_pipeServer.IsConnected)
-        {
-            await DisconnectAsync();
-        }
-
+        Disconnect();
         await base.StopAsync(cancellationToken);
         _logger.LogInformation("Server stopped at {Time}", DateTimeOffset.UtcNow);
     }
@@ -62,10 +53,7 @@ public sealed class Server : BackgroundService, IAsyncDisposable
     /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {
-        if (_pipeServer.IsConnected)
-        {
-            await DisconnectAsync();
-        }
+        Disconnect();
 
         if (_stdOutMessagesSendTask is not null && !_stdOutMessagesSendTask.IsCompleted)
         {
@@ -99,55 +87,25 @@ public sealed class Server : BackgroundService, IAsyncDisposable
     }
 
     /// <summary>
-    /// Restarts the server.
-    /// </summary>
-    private async Task RestartAsync(CancellationToken cancellationToken)
-    {
-        _currentRestartAttempts++;
-        if (_maxRestartAttempts > 0 && _currentRestartAttempts > _maxRestartAttempts)
-        {
-            _logger.LogError("Maximum restart attempts reached, command server will not restart.");
-        }
-        
-        if (_pipeServer.IsConnected)
-            _pipeServer.Disconnect();
-        
-        Task.Run(() => RunAsync(cancellationToken), cancellationToken).Forget();
-        _logger.LogCritical("Command server restarted.");
-    }
-
-    /// <summary>
     /// Runs the server to connect and disconnect from the client and handle requests.
     /// </summary>
     private async Task RunAsync(CancellationToken cancellationToken)
     {
-        try
+        while (!cancellationToken.IsCancellationRequested)
         {
-            while (!cancellationToken.IsCancellationRequested)
-            {
-                if (!_pipeServer.IsConnected)
-                    await ConnectAsync(cancellationToken);
-                
-                // Handle client requests
-                Command? command = await ReceiveRequestsAsync(cancellationToken);
+            if (!_pipeServer.IsConnected)
+                await ConnectAsync(cancellationToken);
 
-                if (command is null) // TODO: Replace with a termination request.
-                {
-                    await DisconnectAsync();
-                    continue;
-                }
+            Command? command = await _messageReader.ReadAsync<Command>(_pipeServer, cancellationToken);
 
-                Response response = await _commandDispatcher.DispatchAsync(command, cancellationToken);
-                await SendResponseAsync(response, cancellationToken);
-            }
-        }
-        catch (Exception ex)
-        {
-            if (!cancellationToken.IsCancellationRequested)
+            if (command is null) // TODO: Replace with a termination request.
             {
-                _logger.LogCritical(ex,"Error while running command server at {Time}", DateTimeOffset.Now);
-                await RestartAsync(cancellationToken);
+                Disconnect();
+                continue;
             }
+
+            Response response = await _commandDispatcher.DispatchAsync(command, cancellationToken);
+            await SendResponseAsync(response, cancellationToken);
         }
     }
 
@@ -163,38 +121,21 @@ public sealed class Server : BackgroundService, IAsyncDisposable
             return;
         
         _currentConnectedUser = GetConnectedUser();
-        _logger.LogInformation("Command server connected to client {User}", _currentConnectedUser);
+        _logger.LogInformation("Client {User} connected", _currentConnectedUser);
     }
     
     /// <summary>
     /// Disconnects from the current connected client.
     /// </summary>
-    private async Task DisconnectAsync()
+    private void Disconnect()
     {
-        _pipeServer.Disconnect();
-        _logger.LogInformation("Command server disconnected from client {User}", _currentConnectedUser);
-        _currentConnectedUser = string.Empty;
-    }
-
-    /// <summary>
-    /// Receives all incoming requests from the current connected client.
-    /// </summary>
-    /// <param name="cancellationToken">Token to stop the task.</param>
-    /// <returns>A string with the received message.</returns>
-    private async Task<Command?> ReceiveRequestsAsync(CancellationToken cancellationToken)
-    {
-        while (!cancellationToken.IsCancellationRequested)
+        if (_pipeServer.IsConnected)
         {
-            if (!_pipeServer.IsConnected)
-                break;
-            
-            if (!_pipeServer.CanRead)
-                _logger.LogError("Named pipe stream doesn't support read operations.");
-
-            return await _messageReader.ReadAsync<Command>(_pipeServer, cancellationToken);
+            _pipeServer.Disconnect();
         }
 
-        return null;
+        _logger.LogInformation("Client {User} disconnected", _currentConnectedUser);
+        _currentConnectedUser = string.Empty;
     }
     
     /// <summary>
@@ -207,12 +148,6 @@ public sealed class Server : BackgroundService, IAsyncDisposable
         if (!_pipeServer.IsConnected)
         {
             _logger.LogError("Could not send a response to the client, it is disconnected.");
-            return;
-        }
-        
-        if (!_pipeServer.CanWrite)
-        {
-            _logger.LogError("Named pipe stream does not support write operations.");
             return;
         }
 
@@ -231,7 +166,7 @@ public sealed class Server : BackgroundService, IAsyncDisposable
             if (_pipeConfig.DisplayImpersonationUser)
                 user = _pipeServer.GetImpersonationUserName();
         }
-        catch
+        catch (IOException)
         {
             return user;
         }
