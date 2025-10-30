@@ -2,7 +2,6 @@ using Microsoft.Extensions.Options;
 
 using Tiempito.Daemon.Application.Config;
 using Tiempito.Daemon.Application.Config.User;
-using Tiempito.Daemon.Application.Shared.Abstractions;
 using Tiempito.Daemon.Domain.Notifications.Enums;
 using Tiempito.Daemon.Server.Configuration;
 
@@ -13,7 +12,7 @@ namespace Tiempito.Daemon.Application.Notifications;
 /// <summary>
 /// Concrete class to display or close notifications.
 /// </summary>
-public class NotificationService : Service, INotificationService
+public class NotificationService : INotificationService, IHostedService
 {
     private readonly ISystemNotifier _systemNotifier;
     private readonly IAppFilesystemPathProvider _appFilesystemPathProvider;
@@ -34,7 +33,7 @@ public class NotificationService : Service, INotificationService
 #if LINUX
         , ISystemAsyncIconLoader systemAsyncIconLoader
 #endif
-        ) : base(logger)
+        )
     {
         _baseNotification = new Notification(
             notificationConfigOptions.CurrentValue.AppName,
@@ -50,24 +49,23 @@ public class NotificationService : Service, INotificationService
         _appIconFilePath = appFilesystemPathProvider.ApplicationIconPath;
     }
 
-    protected async override Task<bool> OnStartServiceAsync()
+    public async Task StartAsync(CancellationToken cancellationToken = default)
     {
 #if LINUX
         if (!Path.Exists(_appIconFilePath))
-            return false;
+            return;
         NotificationImageData appImgData = await _systemAsyncIconLoader.LoadAsync(_appIconFilePath);
         _baseNotification.Hints.TryAdd("image-data", appImgData.GetVariantValue());
         _baseNotification.Hints.TryAdd("category", VariantValue.String("im"));
 #elif WINDOWS10_0_17763_0_OR_GREATER
         _baseNotification.Icon = _appIconFilePath;
 #endif
-        return true;
     }
 
-    protected override Task<bool> OnStopServiceAsync()
+    public Task StopAsync(CancellationToken cancellationToken = default)
     {
         _systemNotifier.CleanUp();
-        return Task.FromResult(true);
+        return Task.CompletedTask;
     }
     
     public async Task NotifyAsync(string summary, string body, NotificationSoundType notificationSoundType)
