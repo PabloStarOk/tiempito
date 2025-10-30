@@ -23,9 +23,7 @@ public sealed class Server : BackgroundService, IAsyncDisposable
     private readonly IStandardOutQueueReader _stdOutQueueReader;
     private readonly IMessageWriter _messageWriter;
     private readonly IMessageReader _messageReader;
-    private readonly int _maxRestartAttempts;
     private string _currentConnectedUser = string.Empty;
-    private int _currentRestartAttempts;
     private Task? _stdOutMessagesSendTask;
 
     public Server(
@@ -42,7 +40,6 @@ public sealed class Server : BackgroundService, IAsyncDisposable
         _pipeServer = pipeServer;
         _stdOutQueueReader = stdOutQueueReader;
         _commandDispatcher = commandDispatcher;
-        _maxRestartAttempts = daemonConfigOptions.Value.MaxRestartAttempts;
         _messageWriter = messageWriter;
         _messageReader = messageReader;
     }
@@ -99,55 +96,26 @@ public sealed class Server : BackgroundService, IAsyncDisposable
     }
 
     /// <summary>
-    /// Restarts the server.
-    /// </summary>
-    private async Task RestartAsync(CancellationToken cancellationToken)
-    {
-        _currentRestartAttempts++;
-        if (_maxRestartAttempts > 0 && _currentRestartAttempts > _maxRestartAttempts)
-        {
-            _logger.LogError("Maximum restart attempts reached, command server will not restart.");
-        }
-        
-        if (_pipeServer.IsConnected)
-            _pipeServer.Disconnect();
-        
-        Task.Run(() => RunAsync(cancellationToken), cancellationToken).Forget();
-        _logger.LogCritical("Command server restarted.");
-    }
-
-    /// <summary>
     /// Runs the server to connect and disconnect from the client and handle requests.
     /// </summary>
     private async Task RunAsync(CancellationToken cancellationToken)
     {
-        try
+        while (!cancellationToken.IsCancellationRequested)
         {
-            while (!cancellationToken.IsCancellationRequested)
-            {
-                if (!_pipeServer.IsConnected)
-                    await ConnectAsync(cancellationToken);
-                
-                // Handle client requests
-                Command? command = await ReceiveRequestsAsync(cancellationToken);
+            if (!_pipeServer.IsConnected)
+                await ConnectAsync(cancellationToken);
 
-                if (command is null) // TODO: Replace with a termination request.
-                {
-                    await DisconnectAsync();
-                    continue;
-                }
+            // Handle client requests
+            Command? command = await ReceiveRequestsAsync(cancellationToken);
 
-                Response response = await _commandDispatcher.DispatchAsync(command, cancellationToken);
-                await SendResponseAsync(response, cancellationToken);
-            }
-        }
-        catch (Exception ex)
-        {
-            if (!cancellationToken.IsCancellationRequested)
+            if (command is null) // TODO: Replace with a termination request.
             {
-                _logger.LogCritical(ex,"Error while running command server at {Time}", DateTimeOffset.Now);
-                await RestartAsync(cancellationToken);
+                await DisconnectAsync();
+                continue;
             }
+
+            Response response = await _commandDispatcher.DispatchAsync(command, cancellationToken);
+            await SendResponseAsync(response, cancellationToken);
         }
     }
 
