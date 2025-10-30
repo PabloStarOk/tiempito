@@ -13,7 +13,7 @@ public interface ISessionService
     /// <param name="sessionId">ID of the session to start.</param>
     /// <param name="sessionConfigId">ID of the session configuration to use.</param>
     /// <returns>An <see cref="OperationResult"/> to know if the session was started successfully.</returns>
-    public OperationResult StartSession(string sessionId = "", string sessionConfigId = "");
+    public ValueTask<OperationResult> StartSessionAsync(string sessionId = "", string sessionConfigId = "");
 
     /// <summary>
     /// Pauses a session that is currently executing.
@@ -34,5 +34,5 @@ public interface ISessionService
     /// </summary>
     /// <param name="sessionId">ID of the session to cancel.</param>
     /// <returns>An <see cref="OperationResult"/> to know if the session was cancelled successfully.</returns>
-    public OperationResult CancelSession(string sessionId = "");
+    public ValueTask<OperationResult> CancelSessionAsync(string sessionId = "");
 }

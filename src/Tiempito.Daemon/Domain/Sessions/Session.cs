@@ -7,7 +7,7 @@ namespace Tiempito.Daemon.Domain.Sessions;
 /// <summary>
 /// Represents a session with timed intervals and state management.
 /// </summary>
-public sealed class Session : IDisposable, IAsyncDisposable
+public sealed class Session : IAsyncDisposable
 {
     /// <summary>
     /// Gets the unique identifier for the session.
@@ -25,48 +25,55 @@ public sealed class Session : IDisposable, IAsyncDisposable
     public SessionState State { get; private set; }
 
     private static readonly TimeSpan SecondInterval = TimeSpan.FromSeconds(1);
+    private readonly ILogger<Session> _logger;
     private readonly TimeProvider _timeProvider;
     private readonly SessionIntervalType[] _intervalsSequence;
-    private readonly Action<Session> _onSecondElapsed;
-    private readonly Action<Session> _onIntervalCompleted;
-    private readonly Action<Session> _onSessionCompleted;
-    private ITimer? _timer;
+    private readonly Func<Session, ValueTask> _onSecondElapsedAsync;
+    private readonly Func<Session, ValueTask> _onIntervalCompletedAsync;
+    private readonly Func<Session, ValueTask> _onSessionCompletedAsync;
+    private Task? _runTask;
+    private PeriodicTimer? _timer;
     private int _currentIntervalIndex;
+    private bool _disposed;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Session"/> class.
     /// </summary>
+    /// <param name="logger">The logger instance.</param>
     /// <param name="id">The unique identifier for the session.</param>
     /// <param name="configuration">The configuration settings for the session.</param>
     /// <param name="state">The initial state of the session.</param>
     /// <param name="timeProvider">The time provider used for interval timing.</param>
     /// <param name="intervalsSequence">The sequence of intervals for the session.</param>
-    /// <param name="onSecondElapsed">Callback invoked when a second elapses.</param>
-    /// <param name="onIntervalCompleted">Callback invoked when an interval is completed.</param>
-    /// <param name="onSessionCompleted">Callback invoked when the session is completed.</param>
+    /// <param name="onSecondElapsedAsync">Callback invoked when a second elapses.</param>
+    /// <param name="onIntervalCompletedAsync">Callback invoked when an interval is completed.</param>
+    /// <param name="onSessionCompletedAsync">Callback invoked when the session is completed.</param>
     private Session(
+        ILogger<Session> logger,
         string id,
         SessionConfig configuration,
         SessionState state,
         TimeProvider timeProvider,
         SessionIntervalType[] intervalsSequence,
-        Action<Session> onSecondElapsed,
-        Action<Session> onIntervalCompleted,
-        Action<Session> onSessionCompleted)
+        Func<Session, ValueTask> onSecondElapsedAsync,
+        Func<Session, ValueTask> onIntervalCompletedAsync,
+        Func<Session, ValueTask> onSessionCompletedAsync)
     {
         Id = id;
         Configuration = configuration;
         State = state;
+        _logger = logger;
         _timeProvider = timeProvider;
         _intervalsSequence = intervalsSequence;
-        _onSecondElapsed = onSecondElapsed;
-        _onIntervalCompleted = onIntervalCompleted;
-        _onSessionCompleted = onSessionCompleted;
+        _onSecondElapsedAsync = onSecondElapsedAsync;
+        _onIntervalCompletedAsync = onIntervalCompletedAsync;
+        _onSessionCompletedAsync = onSessionCompletedAsync;
     }
 
     /// <summary>
     /// Creates a new <see cref="Session"/> instance with the specified parameters.
     /// </summary>
+    /// <param name="logger">The logger instance.</param>
     /// <param name="id">The unique identifier for the session.</param>
     /// <param name="configuration">The configuration settings for the session.</param>
     /// <param name="timeProvider">The time provider used for interval timing.</param>
@@ -75,18 +82,20 @@ public sealed class Session : IDisposable, IAsyncDisposable
     /// <param name="onSessionCompleted">Callback invoked when the session is completed.</param>
     /// <returns>A new <see cref="Session"/> instance.</returns>
     public static Session Create(
+        ILogger<Session> logger,
         string id,
         SessionConfig configuration,
         TimeProvider timeProvider,
-        Action<Session> onSecondElapsed,
-        Action<Session> onIntervalCompleted,
-        Action<Session> onSessionCompleted)
+        Func<Session, ValueTask> onSecondElapsed,
+        Func<Session, ValueTask> onIntervalCompleted,
+        Func<Session, ValueTask> onSessionCompleted)
     {
         SessionIntervalType[] intervalsSequence = configuration.DelayBetweenTimes > TimeSpan.Zero
             ? [SessionIntervalType.Focus, SessionIntervalType.Delay, SessionIntervalType.Break, SessionIntervalType.Delay]
             : [SessionIntervalType.Focus, SessionIntervalType.Break];
 
         return new Session(
+            logger,
             id,
             configuration,
             state: SessionState.CreateInitial(configuration.FocusDuration),
@@ -100,25 +109,22 @@ public sealed class Session : IDisposable, IAsyncDisposable
     /// <summary>
     /// Starts the session.
     /// </summary>
-    public void Start()
+    /// <param name="cancellationToken">A cancellation token used to stop the session.</param>
+    public void Start(CancellationToken cancellationToken = default)
     {
-        _timer = _timeProvider.CreateTimer(OnSecondElapsed, state: null, SecondInterval, SecondInterval);
         State = State.WithStatus(SessionStatus.Executing);
+        _timer = new PeriodicTimer(SecondInterval, _timeProvider);
+        _runTask = RunAsync(cancellationToken);
     }
 
     /// <summary>
-    /// Asynchronously cancels the session.
+    /// Cancels the session and releases resources.
     /// </summary>
-    /// <returns>A <see cref="ValueTask"/> representing the asynchronous operation.</returns>
+    /// <returns>A <see cref="ValueTask"/> that completes when cancellation and cleanup are finished.</returns>
     public async ValueTask CancelAsync()
     {
-        if (_timer is not null)
-        {
-            await _timer.DisposeAsync();
-            _timer = null;
-        }
-
         State = State.WithStatus(SessionStatus.Cancelled);
+        await DisposeAsync();
     }
 
     /// <summary>
@@ -126,8 +132,11 @@ public sealed class Session : IDisposable, IAsyncDisposable
     /// </summary>
     public void Pause()
     {
-        _timer?.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
         State = State.WithStatus(SessionStatus.Paused);
+        if (_timer is not null)
+        {
+            _timer.Period = Timeout.InfiniteTimeSpan;
+        }
     }
 
     /// <summary>
@@ -135,50 +144,88 @@ public sealed class Session : IDisposable, IAsyncDisposable
     /// </summary>
     public void Resume()
     {
-        _timer?.Change(SecondInterval, SecondInterval);
         State = State.WithStatus(SessionStatus.Executing);
-    }
-
-    /// <inheritdoc/>
-    public void Dispose()
-    {
-        _timer?.Dispose();
+        if (_timer is not null)
+        {
+            _timer.Period = SecondInterval;
+        }
     }
 
     /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {
-        if (_timer is not null)
+        if (_disposed)
         {
-            await _timer.DisposeAsync();
+            return;
+        }
+
+        _disposed = true;
+
+        _timer?.Dispose();
+        _timer = null;
+
+        if (_runTask is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await _runTask;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Session {Id}: An error occurred while disposing the session.", Id);
+        }
+
+        _runTask.Dispose();
+        _runTask = null;
+    }
+
+    private async Task RunAsync(CancellationToken cancellationToken)
+    {
+        if (_timer is null)
+        {
+            return;
+        }
+
+        try
+        {
+            while (await _timer.WaitForNextTickAsync(cancellationToken))
+            {
+                await OnSecondElapsedAsync();
+            }
+        }
+        catch (OperationCanceledException)
+        {
         }
     }
 
-    private void OnSecondElapsed(object? state)
+    private async ValueTask OnSecondElapsedAsync()
     {
         State = State.WithElapsedSecond();
-        _onSecondElapsed(this);
+        await _onSecondElapsedAsync(this);
 
         if (State.ElapsedTime < State.TargetDuration)
         {
             return;
         }
 
-        _onIntervalCompleted(this);
+        await _onIntervalCompletedAsync(this);
         (SessionIntervalType nextInterval, TimeSpan nextTargetDuration) = DetermineNextInterval();
         State = State.WithNewInterval(nextInterval, nextTargetDuration);
 
         if (Configuration.TargetCycles > 0 && State.Cycle >= Configuration.TargetCycles)
         {
-            Complete();
+            await CompleteAsync();
         }
     }
 
-    private void Complete()
+    private async ValueTask CompleteAsync()
     {
-        _timer?.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
-        _onSessionCompleted(this);
         State = State.WithStatus(SessionStatus.Finished);
+        await DisposeAsync();
+        await _onSessionCompletedAsync(this);
     }
 
     private (SessionIntervalType, TimeSpan) DetermineNextInterval()

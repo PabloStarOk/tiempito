@@ -1,5 +1,3 @@
-using System.Collections.ObjectModel;
-
 using Microsoft.Extensions.Options;
 
 using Tiempito.Daemon.Application.Config.Sessions;
@@ -18,32 +16,32 @@ namespace Tiempito.Daemon.Application.Sessions;
 /// <summary>
 /// Service to manage sessions.
 /// </summary>
-public sealed class SessionService : Service, ISessionService
+public sealed class SessionService : Service, ISessionService, IAsyncDisposable
 {
-    private readonly ISessionConfigService _sessionConfigService;
     private readonly NotificationConfig _notificationConfig;
     private readonly INotificationService _notificationService;
-    private readonly ISessionStorage _sessionStorage;
     private readonly IStandardOutQueue _standardOutQueue;
-    private readonly TimeProvider _timeProvider;
-    private CancellationTokenSource _timerTokenSource;
+    private readonly IHostApplicationLifetime _hostApplicationLifetime;
+    private readonly ISessionFactory _sessionFactory;
+    private readonly Dictionary<string, Session> _activeSessions;
+    private bool _disposed;
 
     public SessionService(
         ILogger<SessionService> logger,
-        ISessionConfigService sessionConfigService,
         IOptions<NotificationConfig> notificationOptions,
         INotificationService notificationService,
-        ISessionStorage sessionStorage,
         IStandardOutQueue standardOutQueue,
-        TimeProvider timeProvider) : base(logger)
+        IHostApplicationLifetime hostApplicationLifetime,
+        ISessionFactory sessionFactory,
+        Dictionary<string, Session>? activeSessions = null)
+        : base(logger)
     {
-        _sessionConfigService = sessionConfigService;
         _notificationConfig = notificationOptions.Value;
         _notificationService = notificationService;
-        _sessionStorage = sessionStorage;
-        _timerTokenSource = new CancellationTokenSource();
         _standardOutQueue = standardOutQueue;
-        _timeProvider = timeProvider;
+        _hostApplicationLifetime = hostApplicationLifetime;
+        _sessionFactory = sessionFactory;
+        _activeSessions = activeSessions ?? new Dictionary<string, Session>();
     }
 
     protected override Task<bool> OnStartServiceAsync()
@@ -51,69 +49,60 @@ public sealed class SessionService : Service, ISessionService
         return Task.FromResult(true);
     }
     
-    protected async override Task<bool> OnStopServiceAsync()
+    protected override async Task<bool> OnStopServiceAsync()
     {
-        if (!_timerTokenSource.IsCancellationRequested)
-            await _timerTokenSource.CancelAsync();
-        _timerTokenSource.Dispose();
-
+        await DisposeAsync();
         return true;
     }
     
-    public OperationResult StartSession(string sessionId = "", string sessionConfigId = "")
+    public async ValueTask<OperationResult> StartSessionAsync(string sessionId = "", string sessionConfigId = "")
     {
         // Try to get the config
-        SessionConfig sessionConfig;
-        if (string.IsNullOrWhiteSpace(sessionConfigId))
-            sessionConfig = _sessionConfigService.DefaultConfig;
-        else if (_sessionConfigService.TryGetConfigById(sessionConfigId, out SessionConfig foundSessionConfig))
-            sessionConfig = foundSessionConfig;
-        else
+        if (!string.IsNullOrWhiteSpace(sessionConfigId) && !_sessionFactory.ExistsConfig(sessionConfigId))
+        {
             return new OperationResult(Success: false, Message: $"Session configuration with ID '{sessionConfigId}' was not found");
+        }
 
         // Use session config ID in empty string case
         if (string.IsNullOrWhiteSpace(sessionId))
-            sessionId = sessionConfig.Id;
-        
+            sessionId = sessionConfigId;
+
         // Verify if the session id already exists.
-        ReadOnlyDictionary<string, Session> startedSessions = 
-            _sessionStorage.RunningSessions.Concat(_sessionStorage.PausedSessions).ToDictionary().AsReadOnly();
-        if (startedSessions.ContainsKey(sessionId))
+        if (_activeSessions.ContainsKey(sessionId))
             return new OperationResult(Success: false, Message: "There's already a started session with the same ID.");
 
-        var session = Session.Create(
+        var session = _sessionFactory.Create(
             sessionId,
-            sessionConfig,
-            _timeProvider,
-            OnSessionSecondElapsed,
-            OnSessionIntervalCompleted,
-            OnSessionCompleted);
+            sessionConfigId,
+            OnSessionSecondElapsedAsync,
+            OnSessionIntervalCompletedAsync,
+            OnSessionCompletedAsync);
 
-        _timerTokenSource = RegenerateTokenSource(_timerTokenSource);
-        _sessionStorage.AddSession(SessionStatus.Executing, session);
-        session.Start();
-        OnSessionStarted(session);
+        _activeSessions.Add(session.Id, session);
+        session.Start(_hostApplicationLifetime.ApplicationStopping);
+        await OnSessionStartedAsync(session);
         
         return new OperationResult(Success: true, Message: "Session started.");
     }
 
     public OperationResult PauseSession(string sessionId = "")
     {
-        if (_sessionStorage.RunningSessions.Count < 1 )
+        var executingSessions = _activeSessions
+            .Where(s => s.Value.State.Status is SessionStatus.Executing)
+            .ToDictionary(s => s.Key, s => s.Value);
+        
+        if (executingSessions.Count < 1 )
             return new OperationResult(Success: false, Message: "There are no running sessions to pause.");
 
         Session? session = null;
-        if (!string.IsNullOrWhiteSpace(sessionId)
-            && !_sessionStorage.RunningSessions.TryGetValue(sessionId, out session))
+        if (!string.IsNullOrWhiteSpace(sessionId) && !executingSessions.TryGetValue(sessionId, out session))
             return new OperationResult(Success: false, Message: $"Running session with ID '{sessionId}' was not found.");
 
         if (string.IsNullOrWhiteSpace(sessionId) || session is null)
         {
-            session = _sessionStorage.RunningSessions.First().Value;
+            session = executingSessions.First().Value;
         }
 
-        _sessionStorage.RemoveSession(SessionStatus.Executing, session.Id);
-        _sessionStorage.AddSession(SessionStatus.Paused, session);
         session.Pause();
 
         return new OperationResult(Success: true, Message: "Session paused.");
@@ -121,68 +110,79 @@ public sealed class SessionService : Service, ISessionService
 
     public OperationResult ResumeSession(string sessionId = "")
     {
-        if (_sessionStorage.PausedSessions.Count < 1 )
+        var pausedSessions = _activeSessions
+            .Where(s => s.Value.State.Status is SessionStatus.Paused)
+            .ToDictionary(s => s.Key, s => s.Value);
+
+        if (pausedSessions.Count < 1 )
             return new OperationResult(Success: false, Message: "There are no paused sessions to resume.");
 
         Session? session = null;
-        if (!string.IsNullOrWhiteSpace(sessionId) 
-            && !_sessionStorage.PausedSessions.TryGetValue(sessionId, out session))
+        if (!string.IsNullOrWhiteSpace(sessionId) && !pausedSessions.TryGetValue(sessionId, out session))
             return new OperationResult(Success: false, Message: $"Paused session with ID '{sessionId}' was not found.");
 
         if (string.IsNullOrWhiteSpace(sessionId) || session is null)
         {
-            session = _sessionStorage.PausedSessions.First().Value;
+            session = pausedSessions.First().Value;
         }
 
-        _sessionStorage.RemoveSession(SessionStatus.Paused, session.Id);
-        _sessionStorage.AddSession(SessionStatus.Executing, session);
         session.Resume();
-
         return new OperationResult(Success: true, Message: "Session resumed.");
     }
 
-    public OperationResult CancelSession(string sessionId = "")
+    public async ValueTask<OperationResult> CancelSessionAsync(string sessionId = "")
     {
-        ReadOnlyDictionary<string, Session> startedSessions = 
-            _sessionStorage.RunningSessions.Concat(_sessionStorage.PausedSessions).ToDictionary().AsReadOnly();
-        
-        if (startedSessions.Count < 1)
+        if (_activeSessions.Count < 1)
             return new OperationResult(Success: false, Message: "There are no sessions to cancel.");
         
         Session? session = null;
-        if (!string.IsNullOrWhiteSpace(sessionId) 
-            && !startedSessions.TryGetValue(sessionId, out session))
+        if (!string.IsNullOrWhiteSpace(sessionId) && !_activeSessions.Remove(sessionId, out session))
             return new OperationResult(Success: false, Message: $"Started session with ID '{sessionId}' was not found.");
         
         if (string.IsNullOrWhiteSpace(sessionId) || session is null)
         {
-            session = startedSessions.First().Value;
+            session = _activeSessions.First().Value;
+            _activeSessions.Remove(session.Id);
         }
 
-        _sessionStorage.RemoveSession(
-                session.State.Status is SessionStatus.Executing ? SessionStatus.Executing : SessionStatus.Paused,
-                session.Id);
-        _sessionStorage.AddSession(SessionStatus.Cancelled, session);
-        session.CancelAsync().GetAwaiter().GetResult();
+        await session.CancelAsync();
         return new OperationResult(Success: true, Message: "Session cancelled.");
     }
 
-    private void OnSessionStarted(Session _)
+    /// <inheritdoc/>
+    public async ValueTask DisposeAsync()
     {
-        _notificationService.CloseLastNotificationAsync().GetAwaiter().GetResult();
-        _notificationService.NotifyAsync(
-            summary: _notificationConfig.SessionStartedSummary,
-            body: _notificationConfig.SessionStartedBody,
-            NotificationSoundType.SessionStarted).GetAwaiter().GetResult();
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+        foreach (var session in _activeSessions.Values)
+        {
+            await session.DisposeAsync();
+        }
+
+        _activeSessions.Clear();
     }
 
-    private void OnSessionSecondElapsed(Session session)
+    private async Task OnSessionStartedAsync(Session _)
+    {
+        await _notificationService.CloseLastNotificationAsync();
+        await _notificationService.NotifyAsync(
+            summary: _notificationConfig.SessionStartedSummary,
+            body: _notificationConfig.SessionStartedBody,
+            NotificationSoundType.SessionStarted);
+    }
+
+    private ValueTask OnSessionSecondElapsedAsync(Session session)
     {
         var message = $"{session.State.IntervalType.ToString()} time: {session.State.ElapsedTime}";
         _standardOutQueue.QueueMessage(message);
+        return ValueTask.CompletedTask;
     }
 
-    private void OnSessionIntervalCompleted(Session session)
+    private async ValueTask OnSessionIntervalCompletedAsync(Session session)
     {
         if (session.State.IntervalType is SessionIntervalType.Delay)
         {
@@ -192,7 +192,7 @@ public sealed class SessionService : Service, ISessionService
         var message = $"{session.State.IntervalType.ToString()} time completed.";
         _standardOutQueue.QueueMessage(message);
 
-        _notificationService.CloseLastNotificationAsync().GetAwaiter().GetResult();
+        await _notificationService.CloseLastNotificationAsync();
 
         string summary;
         string body;
@@ -208,18 +208,18 @@ public sealed class SessionService : Service, ISessionService
             body = _notificationConfig.BreakCompletedBody;
         }
 
-        _notificationService.NotifyAsync(summary, body, NotificationSoundType.TimeCompleted).GetAwaiter().GetResult();
+        await _notificationService.NotifyAsync(summary, body, NotificationSoundType.TimeCompleted);
     }
 
-    private void OnSessionCompleted(Session session)
+    private async ValueTask OnSessionCompletedAsync(Session session)
     {
-        _sessionStorage.AddSession(SessionStatus.Finished, session);
+        _activeSessions.Remove(session.Id);
 
         var message = $"Session with id {session.Id} was completed";
         _standardOutQueue.QueueMessage(message);
 
-        _notificationService.CloseLastNotificationAsync();
-        _notificationService.NotifyAsync(
+        await _notificationService.CloseLastNotificationAsync();
+        await _notificationService.NotifyAsync(
             summary: _notificationConfig.SessionFinishedSummary,
             body: _notificationConfig.SessionFinishedBody,
             NotificationSoundType.SessionFinished);
