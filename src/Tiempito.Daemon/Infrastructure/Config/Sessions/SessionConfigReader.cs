@@ -21,7 +21,7 @@ public class SessionConfigReader : ISessionConfigReader
     /// <param name="configParser">Parser of the user's configuration file.</param>
     /// <param name="timeSpanConverter">A <see cref="ITimeSpanConverter"/> to convert <see cref="TimeSpan"/> to string values.</param>
     public SessionConfigReader(
-        [FromKeyedServices(AppConfigConstants.UserConfigParserServiceKey)] ConfigParser configParser,
+        ConfigParser configParser,
         ITimeSpanConverter timeSpanConverter)
     {
         _configParser = configParser;

@@ -21,7 +21,7 @@ public class UserConfigWriter : IUserConfigWriter
     /// </summary>
     /// <param name="configParser">Parser of the user's configuration file.</param>
     public UserConfigWriter(
-        [FromKeyedServices(AppConfigConstants.UserConfigParserServiceKey)] ConfigParser configParser)
+        ConfigParser configParser)
     {
         _configParser = configParser;
     }
