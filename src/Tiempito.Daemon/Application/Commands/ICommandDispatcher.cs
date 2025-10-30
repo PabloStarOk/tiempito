@@ -2,9 +2,6 @@ using Tiempito.IPC.Models;
 
 namespace Tiempito.Daemon.Application.Commands;
 
-// TODO: Add docs.
-// TODO: Commit changes.
-
 /// <summary>
 /// Defines a dispatcher for handling <see cref="Command"/> instances asynchronously.
 /// </summary>
