@@ -1,6 +1,5 @@
 using Tiempito.Daemon.Application.Config.Sessions;
 using Tiempito.Daemon.Application.Config.User;
-using Tiempito.Daemon.Application.Shared.Abstractions;
 using Tiempito.Daemon.Infrastructure.Config.Sessions;
 using Tiempito.Daemon.Infrastructure.Config.User;
 
@@ -32,7 +31,7 @@ public static class ConfigurationDependencyInjection
         serviceCollection.AddSingleton<ISessionConfigService>(sp => sp.GetRequiredService<SessionConfigService>());
 
         serviceCollection.AddSingleton<IHostedService>(sp => sp.GetRequiredService<UserConfigService>());
-        serviceCollection.AddSingleton<Service>(sp => sp.GetRequiredService<SessionConfigService>());
+        serviceCollection.AddSingleton<IHostedService>(sp => sp.GetRequiredService<SessionConfigService>());
         
         return serviceCollection;
     }

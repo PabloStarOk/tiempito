@@ -8,7 +8,7 @@ namespace Tiempito.Daemon.Application.Config.Sessions;
 /// <summary>
 /// Service to manage user's session configurations.
 /// </summary>
-public class SessionConfigService : Service, ISessionConfigService
+public class SessionConfigService : ISessionConfigService, IHostedService
 {
     private readonly IUserConfigService _userConfigService;
     private readonly ISessionConfigWriter _configWriter;
@@ -29,15 +29,13 @@ public class SessionConfigService : Service, ISessionConfigService
     /// <summary>
     /// Instantiates a new <see cref="SessionConfigService"/>.
     /// </summary>
-    /// <param name="logger">Logger to register special events.</param>
     /// <param name="userConfigService">Service of user's configuration.</param>
     /// <param name="configWriter">Writer of the user's configuration file.</param>
     /// <param name="configReader">Reader of the user's configuration file.</param>
     public SessionConfigService(
-        ILogger<SessionConfigService> logger,
         IUserConfigService userConfigService,
         ISessionConfigWriter configWriter,
-        ISessionConfigReader configReader) : base(logger)
+        ISessionConfigReader configReader)
     {
         _userConfigService = userConfigService;
         _configWriter = configWriter;
@@ -105,19 +103,19 @@ public class SessionConfigService : Service, ISessionConfigService
     }
 
     /// <inheritdoc/>
-    protected override Task<bool> OnStartServiceAsync()
+    public Task StartAsync(CancellationToken cancellationToken = default)
     {
         _configs = _configReader.ReadSessions(AppConfigConstants.SessionSectionPrefix).ToDictionary();
         OnUserConfigChangedHandler(this, EventArgs.Empty); // Set default config.
         _userConfigService.OnConfigChanged += OnUserConfigChangedHandler;
-        return Task.FromResult(true);
+        return Task.CompletedTask;
     }
 
     /// <inheritdoc/>
-    protected override Task<bool> OnStopServiceAsync()
+    public Task StopAsync(CancellationToken cancellationToken = default)
     {
         _userConfigService.OnConfigChanged -= OnUserConfigChangedHandler;
-        return Task.FromResult(true);
+        return Task.CompletedTask;
     }
     
     /// <summary>
