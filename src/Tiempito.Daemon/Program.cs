@@ -77,22 +77,6 @@ builder.Services.AddSingleton(sp =>
         );
     } );
 
-// Add stdout handler
-
-builder.Services.AddSingleton<TextWriter>(sp =>
-    {
-        var stream = sp.GetRequiredService<NamedPipeServerStream>();
-        return new StreamWriter(stream);
-    });
-builder.Services.AddSingleton(sp =>
-    {
-        var pipeStdOut = sp.GetRequiredService<TextWriter>();
-        return new StandardOutMessageProcessor([], pipeStdOut);
-    }
-);
-builder.Services.AddSingleton<IStandardOutSink>(sp => sp.GetRequiredService<StandardOutMessageProcessor>());
-builder.Services.AddSingleton<IStandardOutQueue>(sp => sp.GetRequiredService<StandardOutMessageProcessor>());
-
 // Add time provider.
 builder.Services.AddSingleton(TimeProvider.System);
 

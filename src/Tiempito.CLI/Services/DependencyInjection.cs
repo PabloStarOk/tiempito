@@ -31,11 +31,6 @@ internal static class DependencyInjection
             "tiempito-pipe",
             PipeDirection.InOut,
             PipeOptions.Asynchronous)); // TODO: Read config of the host.
-        services.AddSingleton<TextReader>(sp =>
-        {
-            var client = sp.GetRequiredService<NamedPipeClientStream>();
-            return new StreamReader(client);
-        });
         services.AddSingleton<IClient, Client>();
     }
 }

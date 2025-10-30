@@ -1,8 +1,12 @@
+using System.Threading.Channels;
+
 using Tiempito.Daemon.Application.Commands;
 using Tiempito.Daemon.Application.Commands.Config;
 using Tiempito.Daemon.Application.Commands.Sessions;
 using Tiempito.Daemon.Application.Config.User;
+using Tiempito.Daemon.Application.Notifications;
 using Tiempito.Daemon.Application.Sessions;
+using Tiempito.Daemon.Infrastructure.Notifications;
 using Tiempito.Daemon.Infrastructure.Sessions;
 
 namespace Tiempito.Daemon.Application;
@@ -20,6 +24,7 @@ internal static class DependencyInjection
     {
         AddSessionServices(services);
         AddCommandDispatcher(services);
+        AddNotificationServices(services);
     }
 
     private static void AddCommandDispatcher(IServiceCollection services)
@@ -48,5 +53,21 @@ internal static class DependencyInjection
     private static void AddSessionServices(IServiceCollection services)
     {
         services.AddSingleton<ISessionFactory, SessionFactory>();
+    }
+
+    private static void AddNotificationServices(IServiceCollection services)
+    {
+        services.AddSingleton(_ =>
+        {
+            var channelOptions = new UnboundedChannelOptions
+            {
+                SingleReader = true,
+                SingleWriter = false,
+            };
+            var channel = Channel.CreateUnbounded<string>(channelOptions);
+            return new StandardOutQueue(channel);
+        });
+        services.AddSingleton<IStandardOutQueueWriter>(sp => sp.GetRequiredService<StandardOutQueue>());
+        services.AddSingleton<IStandardOutQueueReader>(sp => sp.GetRequiredService<StandardOutQueue>());
     }
 }
