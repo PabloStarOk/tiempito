@@ -5,7 +5,6 @@ using Tiempito.Daemon.Application.Config.Sessions;
 using Tiempito.Daemon.Application.Config.User;
 using Tiempito.Daemon.Application.Notifications;
 using Tiempito.Daemon.Application.Sessions;
-using Tiempito.Daemon.Server.Configuration;
 
 namespace Tiempito.Daemon.Application;
 

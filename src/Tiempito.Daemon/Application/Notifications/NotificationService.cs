@@ -3,7 +3,6 @@ using Microsoft.Extensions.Options;
 using Tiempito.Daemon.Application.Config;
 using Tiempito.Daemon.Application.Config.User;
 using Tiempito.Daemon.Domain.Notifications.Enums;
-using Tiempito.Daemon.Server.Configuration;
 
 using Tmds.DBus.Protocol;
 

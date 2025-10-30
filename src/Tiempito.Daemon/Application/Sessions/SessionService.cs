@@ -5,7 +5,6 @@ using Tiempito.Daemon.Domain.Notifications.Enums;
 using Tiempito.Daemon.Domain.Sessions;
 using Tiempito.Daemon.Domain.Sessions.Enums;
 using Tiempito.Daemon.Domain.Shared;
-using Tiempito.Daemon.Server.Configuration;
 
 namespace Tiempito.Daemon.Application.Sessions;
 

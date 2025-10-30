@@ -1,4 +1,4 @@
-namespace Tiempito.Daemon.Server.Configuration;
+namespace Tiempito.Daemon.Application.Notifications;
 
 /// <summary>
 /// Represents the configuration of the notifications displayed by the daemon.

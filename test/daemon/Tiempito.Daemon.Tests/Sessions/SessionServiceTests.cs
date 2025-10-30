@@ -8,7 +8,6 @@ using Tiempito.Daemon.Application.Sessions;
 using Tiempito.Daemon.Domain.Config;
 using Tiempito.Daemon.Domain.Sessions;
 using Tiempito.Daemon.Domain.Shared;
-using Tiempito.Daemon.Server.Configuration;
 using Tiempito.Daemon.Tests.Sessions.Helpers;
 
 using Xunit.Abstractions;
