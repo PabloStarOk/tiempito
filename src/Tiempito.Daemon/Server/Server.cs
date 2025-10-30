@@ -1,11 +1,9 @@
 using System.IO.Pipes;
-using AsyncEvent;
 using Microsoft.Extensions.Options;
 
 using Tiempito.Daemon.Application.Commands;
 using Tiempito.Daemon.Application.Notifications;
 using Tiempito.Daemon.Server.Configuration;
-using Tiempito.Daemon.Server.Extensions;
 using Tiempito.IPC.Abstractions;
 using Tiempito.IPC.Models;
 
@@ -47,11 +45,7 @@ public sealed class Server : BackgroundService, IAsyncDisposable
     /// <inheritdoc/>
     public override async Task StopAsync(CancellationToken cancellationToken)
     {
-        if (_pipeServer.IsConnected)
-        {
-            await DisconnectAsync();
-        }
-
+        Disconnect();
         await base.StopAsync(cancellationToken);
         _logger.LogInformation("Server stopped at {Time}", DateTimeOffset.UtcNow);
     }
@@ -59,10 +53,7 @@ public sealed class Server : BackgroundService, IAsyncDisposable
     /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {
-        if (_pipeServer.IsConnected)
-        {
-            await DisconnectAsync();
-        }
+        Disconnect();
 
         if (_stdOutMessagesSendTask is not null && !_stdOutMessagesSendTask.IsCompleted)
         {
@@ -105,12 +96,11 @@ public sealed class Server : BackgroundService, IAsyncDisposable
             if (!_pipeServer.IsConnected)
                 await ConnectAsync(cancellationToken);
 
-            // Handle client requests
-            Command? command = await ReceiveRequestsAsync(cancellationToken);
+            Command? command = await _messageReader.ReadAsync<Command>(_pipeServer, cancellationToken);
 
             if (command is null) // TODO: Replace with a termination request.
             {
-                await DisconnectAsync();
+                Disconnect();
                 continue;
             }
 
@@ -131,38 +121,21 @@ public sealed class Server : BackgroundService, IAsyncDisposable
             return;
         
         _currentConnectedUser = GetConnectedUser();
-        _logger.LogInformation("Command server connected to client {User}", _currentConnectedUser);
+        _logger.LogInformation("Client {User} connected", _currentConnectedUser);
     }
     
     /// <summary>
     /// Disconnects from the current connected client.
     /// </summary>
-    private async Task DisconnectAsync()
+    private void Disconnect()
     {
-        _pipeServer.Disconnect();
-        _logger.LogInformation("Command server disconnected from client {User}", _currentConnectedUser);
-        _currentConnectedUser = string.Empty;
-    }
-
-    /// <summary>
-    /// Receives all incoming requests from the current connected client.
-    /// </summary>
-    /// <param name="cancellationToken">Token to stop the task.</param>
-    /// <returns>A string with the received message.</returns>
-    private async Task<Command?> ReceiveRequestsAsync(CancellationToken cancellationToken)
-    {
-        while (!cancellationToken.IsCancellationRequested)
+        if (_pipeServer.IsConnected)
         {
-            if (!_pipeServer.IsConnected)
-                break;
-            
-            if (!_pipeServer.CanRead)
-                _logger.LogError("Named pipe stream doesn't support read operations.");
-
-            return await _messageReader.ReadAsync<Command>(_pipeServer, cancellationToken);
+            _pipeServer.Disconnect();
         }
 
-        return null;
+        _logger.LogInformation("Client {User} disconnected", _currentConnectedUser);
+        _currentConnectedUser = string.Empty;
     }
     
     /// <summary>
@@ -175,12 +148,6 @@ public sealed class Server : BackgroundService, IAsyncDisposable
         if (!_pipeServer.IsConnected)
         {
             _logger.LogError("Could not send a response to the client, it is disconnected.");
-            return;
-        }
-        
-        if (!_pipeServer.CanWrite)
-        {
-            _logger.LogError("Named pipe stream does not support write operations.");
             return;
         }
 
@@ -199,7 +166,7 @@ public sealed class Server : BackgroundService, IAsyncDisposable
             if (_pipeConfig.DisplayImpersonationUser)
                 user = _pipeServer.GetImpersonationUserName();
         }
-        catch
+        catch (IOException)
         {
             return user;
         }
