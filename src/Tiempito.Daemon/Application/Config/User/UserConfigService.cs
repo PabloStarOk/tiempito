@@ -9,8 +9,9 @@ namespace Tiempito.Daemon.Application.Config.User;
 /// <summary>
 /// Service for manage user's configuration.
 /// </summary>
-public class UserConfigService : Service, IUserConfigService
+public class UserConfigService : IUserConfigService, IHostedService
 {
+    private readonly ILogger<UserConfigService> _logger;
     private readonly IUserConfigReader _userConfigReader;
     private readonly IUserConfigWriter _userConfigWriter;
     private readonly IFileProvider _userDirectoryFileProvider;
@@ -30,8 +31,8 @@ public class UserConfigService : Service, IUserConfigService
         IUserConfigReader userConfigReader,
         IUserConfigWriter userConfigWriter,
         [FromKeyedServices(AppConfigConstants.UserConfigFileProviderKey)] IFileProvider userDirectoryFileProvider)
-        : base(logger)
     {
+        _logger = logger;
         _userDirectoryFileProvider = userDirectoryFileProvider;
         _userConfigReader = userConfigReader;
         _userConfigWriter = userConfigWriter;
@@ -104,17 +105,16 @@ public class UserConfigService : Service, IUserConfigService
     }
     
     /// <inheritdoc/>
-    protected override async Task<bool> OnStartServiceAsync()
+    public async Task StartAsync(CancellationToken cancellationToken = default)
     {
         await CreateUserConfigAsync();
         UserConfig = _userConfigReader.Read();
-        return true;
     }
 
     /// <inheritdoc/>
-    protected override Task<bool> OnStopServiceAsync()
+    public Task StopAsync(CancellationToken cancellationToken = default)
     {
-        return Task.FromResult(true);
+        return Task.CompletedTask;
     }
 
     /// <summary>

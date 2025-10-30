@@ -30,8 +30,8 @@ public static class ConfigurationDependencyInjection
         
         serviceCollection.AddSingleton<IUserConfigService>(sp => sp.GetRequiredService<UserConfigService>());
         serviceCollection.AddSingleton<ISessionConfigService>(sp => sp.GetRequiredService<SessionConfigService>());
-        
-        serviceCollection.AddSingleton<Service>(sp => sp.GetRequiredService<UserConfigService>());
+
+        serviceCollection.AddSingleton<IHostedService>(sp => sp.GetRequiredService<UserConfigService>());
         serviceCollection.AddSingleton<Service>(sp => sp.GetRequiredService<SessionConfigService>());
         
         return serviceCollection;
