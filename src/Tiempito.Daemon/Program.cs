@@ -2,7 +2,6 @@ using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
 using Salaros.Configuration;
 using System.IO.Pipes;
-using Tiempito.Daemon;
 using Tiempito.Daemon.Application;
 using Tiempito.Daemon.Application.Config;
 using Tiempito.Daemon.Application.Notifications;
@@ -83,7 +82,6 @@ builder.Services.AddApplication();
 
 // Server dependencies
 builder.Services.AddSingleton<ITimeSpanConverter, TimeSpanConverter>();
-builder.Services.AddSingleton<IServer, Server>();
 
 // Session service dependencies
 var sessionProgress = new Progress<Session>();
@@ -99,7 +97,7 @@ builder.Services.AddSingleton<INotificationService>(sp => sp.GetService<Notifica
 
 builder.Services.AddSingleton<IHostedService>(sp => sp.GetRequiredService<NotificationService>());
 
-builder.Services.AddHostedService<DaemonWorker>();
+builder.Services.AddHostedService<Server>();
 
 var host = builder.Build();
 host.Run();
