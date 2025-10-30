@@ -16,7 +16,7 @@ namespace Tiempito.Daemon.Application.Sessions;
 /// <summary>
 /// Service to manage sessions.
 /// </summary>
-public sealed class SessionService : Service, ISessionService, IDisposable, IAsyncDisposable
+public sealed class SessionService : Service, ISessionService, IAsyncDisposable
 {
     private readonly NotificationConfig _notificationConfig;
     private readonly INotificationService _notificationService;
@@ -147,23 +147,6 @@ public sealed class SessionService : Service, ISessionService, IDisposable, IAsy
 
         await session.CancelAsync();
         return new OperationResult(Success: true, Message: "Session cancelled.");
-    }
-
-    /// <inheritdoc/>
-    public void Dispose()
-    {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _disposed = true;
-        foreach (var session in _activeSessions.Values)
-        {
-            session.Dispose();
-        }
-
-        _activeSessions.Clear();
     }
 
     /// <inheritdoc/>

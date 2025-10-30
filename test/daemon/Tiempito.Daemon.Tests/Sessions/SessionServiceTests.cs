@@ -54,6 +54,7 @@ public class SessionServiceTests : IDisposable
             _activeSessions);
     }
 
+    /// <inheritdoc/>
     public void Dispose()
     {
         // Global Arrange
@@ -63,7 +64,7 @@ public class SessionServiceTests : IDisposable
         {
             try
             {
-                session.Value.Dispose();
+                session.Value.DisposeAsync().AsTask().GetAwaiter().GetResult();
             }
             catch (Exception ex)
             {

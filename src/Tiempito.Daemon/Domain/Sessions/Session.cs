@@ -7,7 +7,7 @@ namespace Tiempito.Daemon.Domain.Sessions;
 /// <summary>
 /// Represents a session with timed intervals and state management.
 /// </summary>
-public sealed class Session : IDisposable, IAsyncDisposable
+public sealed class Session : IAsyncDisposable
 {
     /// <summary>
     /// Gets the unique identifier for the session.
@@ -149,32 +149,6 @@ public sealed class Session : IDisposable, IAsyncDisposable
         {
             _timer.Period = SecondInterval;
         }
-    }
-
-    /// <inheritdoc/>
-    public void Dispose()
-    {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _disposed = true;
-
-        _timer?.Dispose();
-        _timer = null;
-
-        try
-        {
-            _runTask?.GetAwaiter().GetResult();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Session {Id}: An error occurred while disposing the session.", Id);
-        }
-
-        _runTask?.Dispose();
-        _runTask = null;
     }
 
     /// <inheritdoc/>
