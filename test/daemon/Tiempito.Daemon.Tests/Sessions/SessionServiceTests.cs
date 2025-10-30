@@ -3,12 +3,10 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 
-using Tiempito.Daemon.Application.Config.Sessions;
 using Tiempito.Daemon.Application.Notifications;
 using Tiempito.Daemon.Application.Sessions;
 using Tiempito.Daemon.Domain.Config;
 using Tiempito.Daemon.Domain.Sessions;
-using Tiempito.Daemon.Domain.Sessions.Enums;
 using Tiempito.Daemon.Domain.Shared;
 using Tiempito.Daemon.Server;
 using Tiempito.Daemon.Server.Configuration;
@@ -24,12 +22,10 @@ public class SessionServiceTests : IDisposable
     private readonly ITestOutputHelper _testOutputHelper;
     private readonly SessionService _sessionService;
     private readonly MockRepository _mockRepository;
-    private readonly Mock<ISessionConfigService> _sessionConfigServiceMock;
     private readonly Mock<INotificationService> _notificationManagerMock;
     private readonly Mock<IStandardOutQueue> _stdOutQueueMock;
-    private readonly Mock<TimeProvider> _timeProviderMock;
     private readonly Mock<IHostApplicationLifetime> _hostApplicationLifetimeMock;
-    private readonly Mock<ILoggerFactory> _loggerFactoryMock;
+    private readonly Mock<ISessionFactory> _sessionFactoryMock;
     private readonly Dictionary<string, Session> _activeSessions = [];
     private readonly NotificationConfig _notificationConfig;
 
@@ -39,26 +35,22 @@ public class SessionServiceTests : IDisposable
         _mockRepository = new MockRepository(MockBehavior.Strict);
         
         Mock<ILogger<SessionService>> loggerMock = _mockRepository.Create<ILogger<SessionService>>();
-        _sessionConfigServiceMock = _mockRepository.Create<ISessionConfigService>();
         Mock<IOptions<NotificationConfig>> notificationOptionsMock = _mockRepository.Create<IOptions<NotificationConfig>>();
         _notificationManagerMock = _mockRepository.Create<INotificationService>(MockBehavior.Loose);
         _stdOutQueueMock = _mockRepository.Create<IStandardOutQueue>();
-        _timeProviderMock = _mockRepository.Create<TimeProvider>(MockBehavior.Loose);
         _hostApplicationLifetimeMock = _mockRepository.Create<IHostApplicationLifetime>();
-        _loggerFactoryMock = _mockRepository.Create<ILoggerFactory>(MockBehavior.Loose);
+        _sessionFactoryMock = _mockRepository.Create<ISessionFactory>();
 
         _notificationConfig = new NotificationConfig();
         notificationOptionsMock.Setup(n => n.Value).Returns(_notificationConfig);
         
         _sessionService = new SessionService(
             loggerMock.Object,
-            _sessionConfigServiceMock.Object,
             notificationOptionsMock.Object,
             _notificationManagerMock.Object,
             _stdOutQueueMock.Object,
-            _timeProviderMock.Object,
             _hostApplicationLifetimeMock.Object,
-            _loggerFactoryMock.Object,
+            _sessionFactoryMock.Object,
             _activeSessions);
     }
 
@@ -96,11 +88,15 @@ public class SessionServiceTests : IDisposable
         _hostApplicationLifetimeMock.Setup(m => m.ApplicationStopping).Returns(It.IsAny<CancellationToken>());
         if (specifyConfigId)
         {
-            _sessionConfigServiceMock.Setup(m => m.TryGetConfigById(config.Id, out config))
-                .Returns(true);
+            _sessionFactoryMock.Setup(m => m.ExistsConfig(config.Id)).Returns(true);
         }
-        else
-            _sessionConfigServiceMock.Setup(m => m.DefaultConfig).Returns(config);
+
+        _sessionFactoryMock.Setup(m => m.Create(
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.IsAny<Func<Session, ValueTask>>(),
+            It.IsAny<Func<Session, ValueTask>>(),
+            It.IsAny<Func<Session, ValueTask>>())).Returns(session);
 
         // Act
         OperationResult operationResult = specifySessionId switch
@@ -123,8 +119,7 @@ public class SessionServiceTests : IDisposable
     {
         SessionConfig config = SessionProvider.CreateRandomConfig();
         
-        _sessionConfigServiceMock.Setup(m => m.TryGetConfigById(It.IsAny<string>(), out config))
-            .Returns(false);
+        _sessionFactoryMock.Setup(m => m.ExistsConfig(config.Id)).Returns(false);
         
         OperationResult operationResult = await _sessionService.StartSessionAsync(sessionConfigId: config.Id);
         
@@ -134,9 +129,7 @@ public class SessionServiceTests : IDisposable
     [Fact]
     public async Task StartSession_should_ReturnFailedResult_when_SessionIdAlreadyExists()
     {
-        SessionConfig config = SessionProvider.CreateConfig();
         Session session = SessionProvider.CreateRandom();
-        _sessionConfigServiceMock.Setup(m => m.DefaultConfig).Returns(config);
         _activeSessions.Add(session.Id, session);
         
         OperationResult operationResult = await _sessionService.StartSessionAsync(session.Id);

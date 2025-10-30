@@ -2,6 +2,8 @@ using Tiempito.Daemon.Application.Commands;
 using Tiempito.Daemon.Application.Commands.Config;
 using Tiempito.Daemon.Application.Commands.Sessions;
 using Tiempito.Daemon.Application.Config.User;
+using Tiempito.Daemon.Application.Sessions;
+using Tiempito.Daemon.Infrastructure.Sessions;
 
 namespace Tiempito.Daemon.Application;
 
@@ -16,6 +18,7 @@ internal static class DependencyInjection
     /// <param name="services">The service collection to add dependencies to.</param>
     public static void AddApplication(this IServiceCollection services)
     {
+        AddSessionServices(services);
         AddCommandDispatcher(services);
     }
 
@@ -40,5 +43,10 @@ internal static class DependencyInjection
             var userConfigService = sp.GetRequiredService<IUserConfigService>();
             return new UserFeatureConfigCommandHandler(userConfigService, enable);
         });
+    }
+
+    private static void AddSessionServices(IServiceCollection services)
+    {
+        services.AddSingleton<ISessionFactory, SessionFactory>();
     }
 }

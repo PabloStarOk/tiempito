@@ -18,35 +18,29 @@ namespace Tiempito.Daemon.Application.Sessions;
 /// </summary>
 public sealed class SessionService : Service, ISessionService, IDisposable, IAsyncDisposable
 {
-    private readonly ISessionConfigService _sessionConfigService;
     private readonly NotificationConfig _notificationConfig;
     private readonly INotificationService _notificationService;
     private readonly IStandardOutQueue _standardOutQueue;
-    private readonly TimeProvider _timeProvider;
     private readonly IHostApplicationLifetime _hostApplicationLifetime;
-    private readonly ILoggerFactory _loggerFactory;
+    private readonly ISessionFactory _sessionFactory;
     private readonly Dictionary<string, Session> _activeSessions;
     private bool _disposed;
 
     public SessionService(
         ILogger<SessionService> logger,
-        ISessionConfigService sessionConfigService,
         IOptions<NotificationConfig> notificationOptions,
         INotificationService notificationService,
         IStandardOutQueue standardOutQueue,
-        TimeProvider timeProvider,
         IHostApplicationLifetime hostApplicationLifetime,
-        ILoggerFactory loggerFactory,
+        ISessionFactory sessionFactory,
         Dictionary<string, Session>? activeSessions = null)
         : base(logger)
     {
-        _sessionConfigService = sessionConfigService;
         _notificationConfig = notificationOptions.Value;
         _notificationService = notificationService;
         _standardOutQueue = standardOutQueue;
-        _timeProvider = timeProvider;
         _hostApplicationLifetime = hostApplicationLifetime;
-        _loggerFactory = loggerFactory;
+        _sessionFactory = sessionFactory;
         _activeSessions = activeSessions ?? new Dictionary<string, Session>();
     }
 
@@ -64,27 +58,22 @@ public sealed class SessionService : Service, ISessionService, IDisposable, IAsy
     public async ValueTask<OperationResult> StartSessionAsync(string sessionId = "", string sessionConfigId = "")
     {
         // Try to get the config
-        SessionConfig sessionConfig;
-        if (string.IsNullOrWhiteSpace(sessionConfigId))
-            sessionConfig = _sessionConfigService.DefaultConfig;
-        else if (_sessionConfigService.TryGetConfigById(sessionConfigId, out SessionConfig foundSessionConfig))
-            sessionConfig = foundSessionConfig;
-        else
+        if (!string.IsNullOrWhiteSpace(sessionConfigId) && !_sessionFactory.ExistsConfig(sessionConfigId))
+        {
             return new OperationResult(Success: false, Message: $"Session configuration with ID '{sessionConfigId}' was not found");
+        }
 
         // Use session config ID in empty string case
         if (string.IsNullOrWhiteSpace(sessionId))
-            sessionId = sessionConfig.Id;
-        
+            sessionId = sessionConfigId;
+
         // Verify if the session id already exists.
         if (_activeSessions.ContainsKey(sessionId))
             return new OperationResult(Success: false, Message: "There's already a started session with the same ID.");
 
-        var session = Session.Create(
-            _loggerFactory.CreateLogger<Session>(),
+        var session = _sessionFactory.Create(
             sessionId,
-            sessionConfig,
-            _timeProvider,
+            sessionConfigId,
             OnSessionSecondElapsedAsync,
             OnSessionIntervalCompletedAsync,
             OnSessionCompletedAsync);
