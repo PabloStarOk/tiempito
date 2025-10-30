@@ -13,7 +13,7 @@ namespace Tiempito.Daemon.Application.Sessions;
 /// <summary>
 /// Service to manage sessions.
 /// </summary>
-public sealed class SessionService : Service, ISessionService, IAsyncDisposable
+public sealed class SessionService : ISessionService, IAsyncDisposable
 {
     private readonly NotificationConfig _notificationConfig;
     private readonly INotificationService _notificationService;
@@ -31,7 +31,6 @@ public sealed class SessionService : Service, ISessionService, IAsyncDisposable
         IHostApplicationLifetime hostApplicationLifetime,
         ISessionFactory sessionFactory,
         Dictionary<string, Session>? activeSessions = null)
-        : base(logger)
     {
         _notificationConfig = notificationOptions.Value;
         _notificationService = notificationService;
@@ -41,17 +40,6 @@ public sealed class SessionService : Service, ISessionService, IAsyncDisposable
         _activeSessions = activeSessions ?? new Dictionary<string, Session>();
     }
 
-    protected override Task<bool> OnStartServiceAsync()
-    {
-        return Task.FromResult(true);
-    }
-    
-    protected override async Task<bool> OnStopServiceAsync()
-    {
-        await DisposeAsync();
-        return true;
-    }
-    
     public async ValueTask<OperationResult> StartSessionAsync(string sessionId = "", string sessionConfigId = "")
     {
         // Try to get the config

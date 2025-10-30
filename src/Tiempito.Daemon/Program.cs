@@ -98,7 +98,6 @@ builder.Services.AddSingleton<NotificationService>();
 builder.Services.AddSingleton<ISessionService>(sp => sp.GetService<SessionService>()!);
 builder.Services.AddSingleton<INotificationService>(sp => sp.GetService<NotificationService>()!);
 
-builder.Services.AddSingleton<Service>(sp => sp.GetService<SessionService>()!);
 builder.Services.AddSingleton<Service>(sp => sp.GetService<NotificationService>()!);
 
 builder.Services.AddHostedService<DaemonWorker>();
