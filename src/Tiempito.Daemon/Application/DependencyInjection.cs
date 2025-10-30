@@ -1,13 +1,11 @@
-using System.Threading.Channels;
-
 using Tiempito.Daemon.Application.Commands;
 using Tiempito.Daemon.Application.Commands.Config;
 using Tiempito.Daemon.Application.Commands.Sessions;
+using Tiempito.Daemon.Application.Config.Sessions;
 using Tiempito.Daemon.Application.Config.User;
 using Tiempito.Daemon.Application.Notifications;
 using Tiempito.Daemon.Application.Sessions;
-using Tiempito.Daemon.Infrastructure.Notifications;
-using Tiempito.Daemon.Infrastructure.Sessions;
+using Tiempito.Daemon.Server.Configuration;
 
 namespace Tiempito.Daemon.Application;
 
@@ -20,11 +18,13 @@ internal static class DependencyInjection
     /// Registers application-level services and command handlers in the provided <see cref="IServiceCollection"/>.
     /// </summary>
     /// <param name="services">The service collection to add dependencies to.</param>
-    public static void AddApplication(this IServiceCollection services)
+    /// <param name="configuration">The application configuration to use for service setup.</param>
+    public static void AddApplication(this IServiceCollection services, IConfiguration configuration)
     {
-        AddSessionServices(services);
+        AddConfigServices(services);
         AddCommandDispatcher(services);
-        AddNotificationServices(services);
+        AddNotificationServices(services, configuration);
+        AddSessionServices(services);
     }
 
     private static void AddCommandDispatcher(IServiceCollection services)
@@ -50,24 +50,27 @@ internal static class DependencyInjection
         });
     }
 
-    private static void AddSessionServices(IServiceCollection services)
+    private static void AddConfigServices(IServiceCollection services)
     {
-        services.AddSingleton<ISessionFactory, SessionFactory>();
+        services.AddSingleton<UserConfigService>();
+        services.AddSingleton<IUserConfigService>(sp => sp.GetRequiredService<UserConfigService>());
+        services.AddHostedService(sp => sp.GetRequiredService<UserConfigService>());
+
+        services.AddSingleton<SessionConfigService>();
+        services.AddSingleton<ISessionConfigService>(sp => sp.GetRequiredService<SessionConfigService>());
+        services.AddHostedService(sp => sp.GetRequiredService<SessionConfigService>());
     }
 
-    private static void AddNotificationServices(IServiceCollection services)
+    private static void AddNotificationServices(IServiceCollection services, IConfiguration configuration)
     {
-        services.AddSingleton(_ =>
-        {
-            var channelOptions = new UnboundedChannelOptions
-            {
-                SingleReader = true,
-                SingleWriter = false,
-            };
-            var channel = Channel.CreateUnbounded<string>(channelOptions);
-            return new StandardOutQueue(channel);
-        });
-        services.AddSingleton<IStandardOutQueueWriter>(sp => sp.GetRequiredService<StandardOutQueue>());
-        services.AddSingleton<IStandardOutQueueReader>(sp => sp.GetRequiredService<StandardOutQueue>());
+        services.Configure<NotificationConfig>(configuration.GetSection(NotificationConfig.Notification));
+        services.AddSingleton<NotificationService>();
+        services.AddSingleton<INotificationService>(sp => sp.GetRequiredService<NotificationService>());
+        services.AddHostedService(sp => sp.GetRequiredService<NotificationService>());
+    }
+
+    private static void AddSessionServices(IServiceCollection services)
+    {
+        services.AddSingleton<ISessionService, SessionService>();
     }
 }

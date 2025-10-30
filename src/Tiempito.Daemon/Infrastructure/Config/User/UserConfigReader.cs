@@ -19,7 +19,7 @@ public class UserConfigReader : IUserConfigReader
     /// </summary>
     /// <param name="configParser">Parser of the user's configuration file.</param>
     public UserConfigReader(
-        [FromKeyedServices(AppConfigConstants.UserConfigParserServiceKey)] ConfigParser configParser)
+        ConfigParser configParser)
     {
         _configParser = configParser;
     }

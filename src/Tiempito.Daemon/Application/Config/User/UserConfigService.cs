@@ -29,7 +29,7 @@ public class UserConfigService : IUserConfigService, IHostedService
         ILogger<UserConfigService> logger,
         IUserConfigReader userConfigReader,
         IUserConfigWriter userConfigWriter,
-        [FromKeyedServices(AppConfigConstants.UserConfigFileProviderKey)] IFileProvider userDirectoryFileProvider)
+        IFileProvider userDirectoryFileProvider)
     {
         _logger = logger;
         _userDirectoryFileProvider = userDirectoryFileProvider;
