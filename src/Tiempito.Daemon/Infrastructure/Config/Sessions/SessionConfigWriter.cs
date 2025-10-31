@@ -14,9 +14,9 @@ public class SessionConfigWriter : ISessionConfigWriter
 {
     private readonly ConfigParser _configParser;
     private readonly ITimeSpanConverter _timeSpanConverter;
-    
+
     /// <summary>
-    /// Instantiates a new <see cref="SessionConfigWriter"/>.
+    /// Initializes a new instance of the <see cref="SessionConfigWriter"/> class.
     /// </summary>
     /// <param name="configParser">Parser of the user's configuration file.</param>
     /// <param name="timeSpanConverter">A <see cref="ITimeSpanConverter"/> to convert <see cref="TimeSpan"/> to string values.</param>
@@ -27,8 +27,10 @@ public class SessionConfigWriter : ISessionConfigWriter
         _configParser = configParser;
         _timeSpanConverter = timeSpanConverter;
     }
-    
+
     // TODO: Make method asynchronous.
+
+    /// <inheritdoc/>
     public bool Write(string prefixSectionName, SessionConfig sessionConfig)
     {
         string sectionName = prefixSectionName + sessionConfig.Id;
@@ -36,12 +38,12 @@ public class SessionConfigWriter : ISessionConfigWriter
         var delayBetweenTimes = _timeSpanConverter.ConvertToString(sessionConfig.DelayBetweenTimes);
         string focusDuration = _timeSpanConverter.ConvertToString(sessionConfig.FocusDuration);
         string breakDuration = _timeSpanConverter.ConvertToString(sessionConfig.BreakDuration);
-        
+
         bool wasWritten =
-            _configParser.SetValue(sectionName, SessionConfigKeyword.TargetCycles.ToString(), targetCycles)
-            && _configParser.SetValue(sectionName, SessionConfigKeyword.DelayBetweenTimes.ToString(), delayBetweenTimes)
-            && _configParser.SetValue(sectionName, SessionConfigKeyword.FocusDuration.ToString(), focusDuration)
-            && _configParser.SetValue(sectionName, SessionConfigKeyword.BreakDuration.ToString(), breakDuration);
+            _configParser.SetValue(sectionName, nameof(SessionConfigKeyword.TargetCycles), targetCycles)
+            && _configParser.SetValue(sectionName, nameof(SessionConfigKeyword.DelayBetweenTimes), delayBetweenTimes)
+            && _configParser.SetValue(sectionName, nameof(SessionConfigKeyword.FocusDuration), focusDuration)
+            && _configParser.SetValue(sectionName, nameof(SessionConfigKeyword.BreakDuration), breakDuration);
 
         return wasWritten && _configParser.Save();
     }

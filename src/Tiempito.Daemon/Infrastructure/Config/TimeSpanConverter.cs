@@ -4,41 +4,48 @@ using Tiempito.Daemon.Domain.Config.Enums;
 namespace Tiempito.Daemon.Infrastructure.Config;
 
 /// <summary>
-/// Converts a <see cref="string"/> to <see cref="TimeSpan"/>
-/// and vice versa.
+/// Converts a <see cref="string"/> to <see cref="TimeSpan"/> and vice versa.
 /// </summary>
 public class TimeSpanConverter : ITimeSpanConverter
 {
     /// <summary>
     /// Maps enum <see cref="TimeUnit"/> to a string representing that unit in lower case.
     /// </summary>
-    private readonly Dictionary<TimeUnit, string> _timeUnitsSymbols = new()
+    private readonly Dictionary<TimeUnit, string> _timeUnitsSymbols = new ()
     {
         { TimeUnit.Millisecond, "ms" },
         { TimeUnit.Second, "s" },
         { TimeUnit.Minute, "m" },
         { TimeUnit.Hour, "h" },
-        { TimeUnit.Day, "d" }
+        { TimeUnit.Day, "d" },
     };
-    
+
     /// <inheritdoc/>
     public bool TryConvert(string value, out TimeSpan result)
     {
         result = TimeSpan.Zero;
 
         if (string.IsNullOrWhiteSpace(value))
+        {
             return false;
+        }
 
         if (value is "0")
+        {
             return true;
+        }
 
         if (!TryGetTimeUnit(value, out TimeUnit timeUnit))
+        {
             return false;
-        
-        string amountStr = value.Replace(_timeUnitsSymbols[timeUnit], "");
-        
+        }
+
+        string amountStr = value.Replace(_timeUnitsSymbols[timeUnit], string.Empty);
+
         if (!double.TryParse(amountStr, out double timeSpanAmount))
+        {
             return false;
+        }
 
         result = timeUnit switch
         {
@@ -49,7 +56,7 @@ public class TimeSpanConverter : ITimeSpanConverter
             TimeUnit.Day => TimeSpan.FromDays(timeSpanAmount),
             _ => throw new ArgumentOutOfRangeException(nameof(value))
         };
-        
+
         return true;
     }
 
@@ -57,17 +64,28 @@ public class TimeSpanConverter : ITimeSpanConverter
     public string ConvertToString(TimeSpan value)
     {
         if (value.Days > 0)
+        {
             return $"{value.TotalDays:0.##}{_timeUnitsSymbols[TimeUnit.Day]}";
+        }
+
         if (value.Hours > 0)
+        {
             return $"{value.TotalHours:0.##}{_timeUnitsSymbols[TimeUnit.Hour]}";
+        }
+
         if (value.Minutes > 0)
+        {
             return $"{value.TotalMinutes:0.##}{_timeUnitsSymbols[TimeUnit.Minute]}";
+        }
+
         if (value.Seconds > 0)
+        {
             return $"{value.TotalSeconds:0.##}{_timeUnitsSymbols[TimeUnit.Second]}";
-        
+        }
+
         return $"{value.TotalMilliseconds:0.##}{_timeUnitsSymbols[TimeUnit.Millisecond]}";
     }
-    
+
     /// <summary>
     /// Tries to determine the <see cref="TimeUnit"/> from the given string value.
     /// </summary>
@@ -78,16 +96,18 @@ public class TimeSpanConverter : ITimeSpanConverter
     {
         timeUnit = 0;
         TimeUnit[] timeUnits = Enum.GetValues<TimeUnit>();
-        
+
         foreach (TimeUnit unit in timeUnits)
         {
             if (!value.EndsWith(_timeUnitsSymbols[unit]))
+            {
                 continue;
-    
+            }
+
             timeUnit = unit;
             return true;
         }
-    
+
         return false;
     }
 }

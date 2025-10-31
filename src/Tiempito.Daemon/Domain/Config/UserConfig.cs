@@ -7,36 +7,33 @@ namespace Tiempito.Daemon.Domain.Config;
 /// </summary>
 public struct UserConfig
 {
-    private readonly List<string> _enabledFeatures = [];
-    
     /// <summary>
-    /// The id of the default session to start by the daemon.
+    /// Gets allowed features that can be understood by the daemon.
+    /// </summary>
+    public static ImmutableArray<UserConfigFeature> AllowedFeatures { get; } =
+    [
+        new (Name: "notification", Aliases: ["nc"])
+    ];
+
+    /// <summary>
+    /// Gets the id of the default session to start by the daemon.
     /// </summary>
     public string DefaultSessionId { get; private set; }
 
     /// <summary>
-    /// If the notifications feature is enabled.
+    /// Gets a value indicating whether if the notifications feature is enabled.
     /// </summary>
     public bool NotificationsEnabled => _enabledFeatures.Contains("notification");
-    
-    /// <summary>
-    /// All enabled features.
-    /// </summary>
-    public IReadOnlyList<string> EnabledFeatures => _enabledFeatures;
-    
-    /// <summary>
-    /// Allowed features that can be understood by the daemon.
-    /// </summary>
-    public static ImmutableArray<UserConfigFeature> AllowedFeatures { get; }  =
-    [
-        ..new UserConfigFeature[]
-        {
-            new(Name: "notification", Aliases: ["nc"])
-        }
-    ];
 
     /// <summary>
-    /// Instantiates a new <see cref="UserConfig"/>.
+    /// Gets all enabled features.
+    /// </summary>
+    public IReadOnlyList<string> EnabledFeatures => _enabledFeatures;
+
+    private readonly List<string> _enabledFeatures = [];
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="UserConfig"/> struct.
     /// </summary>
     public UserConfig()
     {
@@ -44,7 +41,7 @@ public struct UserConfig
     }
 
     /// <summary>
-    /// Instantiates a new <see cref="UserConfig"/>.
+    /// Initializes a new instance of the <see cref="UserConfig"/> struct.
     /// </summary>
     /// <param name="defaultSessionId">ID of the default session of the user.</param>
     public UserConfig(string defaultSessionId)
@@ -60,7 +57,7 @@ public struct UserConfig
     {
         DefaultSessionId = id;
     }
-    
+
     /// <summary>
     /// Add the given feature to the enabled ones.
     /// </summary>
@@ -69,7 +66,7 @@ public struct UserConfig
     {
         _enabledFeatures.Add(configFeature.Name);
     }
-    
+
     /// <summary>
     /// Add the given feature to the enabled ones.
     /// </summary>
@@ -78,7 +75,7 @@ public struct UserConfig
     {
         _enabledFeatures.Add(feature);
     }
-    
+
     /// <summary>
     /// Remove a feature from the enabled ones.
     /// </summary>

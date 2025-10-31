@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 using Tiempito.Daemon.Application.Config.User;
 using Tiempito.Daemon.Domain.Config;
 using Tiempito.Daemon.Domain.Shared;
@@ -13,9 +15,9 @@ public class SessionConfigService : ISessionConfigService, IHostedService
     private readonly ISessionConfigWriter _configWriter;
     private readonly ISessionConfigReader _configReader;
     private Dictionary<string, SessionConfig> _configs;
-    
+
     /// <inheritdoc/>
-    public SessionConfig DefaultConfig { get; private set; } = new SessionConfig(
+    public SessionConfig DefaultConfig { get; private set; } = new (
         Id: "Default",
         TargetCycles: 4,
         DelayBetweenTimes: TimeSpan.FromSeconds(10),
@@ -24,9 +26,9 @@ public class SessionConfigService : ISessionConfigService, IHostedService
 
     /// <inheritdoc/>
     public IReadOnlyDictionary<string, SessionConfig> Configs => _configs.ToDictionary().AsReadOnly();
-    
+
     /// <summary>
-    /// Instantiates a new <see cref="SessionConfigService"/>.
+    /// Initializes a new instance of the <see cref="SessionConfigService"/> class.
     /// </summary>
     /// <param name="userConfigService">Service of user's configuration.</param>
     /// <param name="configWriter">Writer of the user's configuration file.</param>
@@ -43,25 +45,24 @@ public class SessionConfigService : ISessionConfigService, IHostedService
     }
 
     /// <inheritdoc/>
-    public bool TryGetConfigById(string id, out SessionConfig config)
+    public bool TryGetConfigById(string id, [NotNullWhen(true)] out SessionConfig? config)
     {
         return _configs.TryGetValue(id, out config);
     }
-    
+
     /// <inheritdoc/>
     public Task<OperationResult> AddConfigAsync(SessionConfig config)
     {
-        if (_configs.ContainsKey(config.Id))
+        if (!_configs.TryAdd(config.Id, config))
         {
             return Task.FromResult(new OperationResult(
-                Success: false, 
-                Message: $"There's already a session configuration with the same ID \"{config.Id}\"")); 
+                Success: false,
+                Message: $"There's already a session configuration with the same ID \"{config.Id}\""));
         }
-        
-        _configs.Add(config.Id, config);
+
         bool wasSaved = _configWriter.Write(AppConfigConstants.SessionSectionPrefix, config);
-        string message = wasSaved 
-            ? "Session configuration added." 
+        string message = wasSaved
+            ? "Session configuration added."
             : "An error occurred while saving the configuration in the file.";
         return Task.FromResult(new OperationResult(wasSaved, message));
     }
@@ -74,11 +75,11 @@ public class SessionConfigService : ISessionConfigService, IHostedService
         TimeSpan? focusDuration = null,
         TimeSpan? breakDuration = null)
     {
-        if (!TryGetConfigById(configId, out SessionConfig config))
+        if (!TryGetConfigById(configId, out SessionConfig? config))
         {
             return Task.FromResult(new OperationResult(
-                Success: false, 
-                Message: $"Session configuration with \"{configId}\" wasn't found.")); 
+                Success: false,
+                Message: $"Session configuration with \"{configId}\" wasn't found."));
         }
 
         SessionConfig modifiedConfig = config with
@@ -92,11 +93,13 @@ public class SessionConfigService : ISessionConfigService, IHostedService
         _configs[configId] = modifiedConfig;
 
         if (_userConfigService.UserConfig.DefaultSessionId == modifiedConfig.Id)
+        {
             DefaultConfig = modifiedConfig;
-        
+        }
+
         bool wasSaved = _configWriter.Write(AppConfigConstants.SessionSectionPrefix, modifiedConfig);
-        string message = wasSaved 
-            ? "Session configuration modified." 
+        string message = wasSaved
+            ? "Session configuration modified."
             : "An error occurred while modifying the configuration of the file.";
         return Task.FromResult(new OperationResult(wasSaved, message));
     }
@@ -116,18 +119,19 @@ public class SessionConfigService : ISessionConfigService, IHostedService
         _userConfigService.OnConfigChanged -= OnUserConfigChangedHandler;
         return Task.CompletedTask;
     }
-    
+
     /// <summary>
-    /// Executed when the <see cref="ISessionConfigService"/>
-    /// change the user's configuration to set the default
+    /// Executed when the <see cref="ISessionConfigService"/> change the user's configuration to set the default.
     /// </summary>
     /// <param name="sender">Sender of the event.</param>
     /// <param name="e">Empty arguments.</param>
     private void OnUserConfigChangedHandler(object? sender, EventArgs e)
     {
         if (DefaultConfig.Id == _userConfigService.UserConfig.DefaultSessionId)
+        {
             return;
-        
+        }
+
         switch (_configs.Count)
         {
             case < 1:
@@ -137,8 +141,8 @@ public class SessionConfigService : ISessionConfigService, IHostedService
                 return;
         }
 
-        string configId = _userConfigService.UserConfig.DefaultSessionId; 
-        if (_configs.TryGetValue(configId, out SessionConfig sessionConfig))
+        string configId = _userConfigService.UserConfig.DefaultSessionId;
+        if (_configs.TryGetValue(configId, out SessionConfig? sessionConfig))
         {
             DefaultConfig = sessionConfig;
             return;

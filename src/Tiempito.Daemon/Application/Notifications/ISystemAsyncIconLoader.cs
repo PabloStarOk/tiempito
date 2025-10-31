@@ -1,5 +1,3 @@
-using Tiempito.Daemon.Infrastructure.Notifications;
-
 namespace Tiempito.Daemon.Application.Notifications;
 
 /// <summary>

@@ -3,7 +3,7 @@ using Tiempito.Daemon.Domain.Config;
 namespace Tiempito.Daemon.Application.Config.User;
 
 /// <summary>
-/// Defines a reader of user's configuration
+/// Defines a reader of user's configuration.
 /// </summary>
 public interface IUserConfigReader
 {

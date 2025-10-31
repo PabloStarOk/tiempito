@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 
@@ -31,8 +30,7 @@ public class SessionServiceTests : IDisposable
     {
         _testOutputHelper = testOutputHelper;
         _mockRepository = new MockRepository(MockBehavior.Strict);
-        
-        Mock<ILogger<SessionService>> loggerMock = _mockRepository.Create<ILogger<SessionService>>();
+
         Mock<IOptions<NotificationConfig>> notificationOptionsMock = _mockRepository.Create<IOptions<NotificationConfig>>();
         _notificationManagerMock = _mockRepository.Create<INotificationService>(MockBehavior.Loose);
         _stdOutQueueWriterMock = _mockRepository.Create<IStandardOutQueueWriter>();
@@ -41,9 +39,8 @@ public class SessionServiceTests : IDisposable
 
         _notificationConfig = new NotificationConfig();
         notificationOptionsMock.Setup(n => n.Value).Returns(_notificationConfig);
-        
+
         _sessionService = new SessionService(
-            loggerMock.Object,
             notificationOptionsMock.Object,
             _notificationManagerMock.Object,
             _stdOutQueueWriterMock.Object,

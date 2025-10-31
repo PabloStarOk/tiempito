@@ -15,7 +15,7 @@ public interface INotificationService
     /// <param name="notificationSoundType">Type of sound to play along with the notification.</param>
     /// <returns>A task representing the operation.</returns>
     public Task NotifyAsync(string summary, string body, NotificationSoundType notificationSoundType);
-    
+
     /// <summary>
     /// Closes the last notification displayed.
     /// </summary>

@@ -8,37 +8,37 @@ namespace Tiempito.Daemon.Application.Notifications;
 public readonly struct NotificationImageData
 {
     /// <summary>
-    /// Width of image in pixels
+    /// Gets width of image in pixels.
     /// </summary>
     public int Width { get; init; }
-    
+
     /// <summary>
-    /// Height of image in pixels
+    /// Gets height of image in pixels.
     /// </summary>
     public int Height { get; init; }
-    
+
     /// <summary>
-    /// Distance in bytes between row starts
+    /// Gets distance in bytes between row starts.
     /// </summary>
     public int RowStride { get; init; }
-    
+
     /// <summary>
-    /// Whether the image has an alpha channel
+    /// Gets a value indicating whether the image has an alpha channel.
     /// </summary>
     public bool HasAlpha { get; init; }
-    
+
     /// <summary>
-    /// Must always be 8.
+    /// Gets must always be 8.
     /// </summary>
     public int BitsPerSample { get; init; }
-    
+
     /// <summary>
-    /// If HasAlpha is TRUE, must be 4, otherwise 3
+    /// Gets if HasAlpha is TRUE, must be 4, otherwise 3.
     /// </summary>
     public int Channels { get; init; }
-    
+
     /// <summary>
-    /// The image data, in RGB byte order.
+    /// Gets the image data, in RGB byte order.
     /// </summary>
     public byte[] Data { get; init; }
 
@@ -55,7 +55,7 @@ public readonly struct NotificationImageData
         VariantValue bitsPerSample = VariantValue.Int32(BitsPerSample);
         VariantValue channels = VariantValue.Int32(Channels);
         VariantValue data = VariantValue.Array(Data);
-        
+
         return VariantValue.Struct(width, height, rowStride, hasAlpha, bitsPerSample, channels, data);
     }
 }

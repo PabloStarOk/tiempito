@@ -21,8 +21,16 @@ public sealed class SessionService : ISessionService, IAsyncDisposable
     private readonly Dictionary<string, Session> _activeSessions;
     private bool _disposed;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SessionService"/> class.
+    /// </summary>
+    /// <param name="notificationOptions">Options for notification configuration.</param>
+    /// <param name="notificationService">Service for sending notifications.</param>
+    /// <param name="standardOutQueueWriter">Writer for standard output queue.</param>
+    /// <param name="hostApplicationLifetime">Application lifetime manager.</param>
+    /// <param name="sessionFactory">Factory for creating sessions.</param>
+    /// <param name="activeSessions">Optional dictionary of active sessions.</param>
     public SessionService(
-        ILogger<SessionService> logger,
         IOptions<NotificationConfig> notificationOptions,
         INotificationService notificationService,
         IStandardOutQueueWriter standardOutQueueWriter,
@@ -38,6 +46,7 @@ public sealed class SessionService : ISessionService, IAsyncDisposable
         _activeSessions = activeSessions ?? new Dictionary<string, Session>();
     }
 
+    /// <inheritdoc/>
     public async ValueTask<OperationResult> StartSessionAsync(string sessionId = "", string sessionConfigId = "")
     {
         // Try to get the config
@@ -48,11 +57,15 @@ public sealed class SessionService : ISessionService, IAsyncDisposable
 
         // Use session config ID in empty string case
         if (string.IsNullOrWhiteSpace(sessionId))
+        {
             sessionId = sessionConfigId;
+        }
 
         // Verify if the session id already exists.
         if (_activeSessions.ContainsKey(sessionId))
+        {
             return new OperationResult(Success: false, Message: "There's already a started session with the same ID.");
+        }
 
         var session = _sessionFactory.Create(
             sessionId,
@@ -64,22 +77,27 @@ public sealed class SessionService : ISessionService, IAsyncDisposable
         _activeSessions.Add(session.Id, session);
         session.Start(_hostApplicationLifetime.ApplicationStopping);
         await OnSessionStartedAsync(session);
-        
+
         return new OperationResult(Success: true, Message: "Session started.");
     }
 
+    /// <inheritdoc/>
     public OperationResult PauseSession(string sessionId = "")
     {
         var executingSessions = _activeSessions
             .Where(s => s.Value.State.Status is SessionStatus.Executing)
             .ToDictionary(s => s.Key, s => s.Value);
-        
-        if (executingSessions.Count < 1 )
+
+        if (executingSessions.Count < 1)
+        {
             return new OperationResult(Success: false, Message: "There are no running sessions to pause.");
+        }
 
         Session? session = null;
         if (!string.IsNullOrWhiteSpace(sessionId) && !executingSessions.TryGetValue(sessionId, out session))
+        {
             return new OperationResult(Success: false, Message: $"Running session with ID '{sessionId}' was not found.");
+        }
 
         if (string.IsNullOrWhiteSpace(sessionId) || session is null)
         {
@@ -91,18 +109,23 @@ public sealed class SessionService : ISessionService, IAsyncDisposable
         return new OperationResult(Success: true, Message: "Session paused.");
     }
 
+    /// <inheritdoc/>
     public OperationResult ResumeSession(string sessionId = "")
     {
         var pausedSessions = _activeSessions
             .Where(s => s.Value.State.Status is SessionStatus.Paused)
             .ToDictionary(s => s.Key, s => s.Value);
 
-        if (pausedSessions.Count < 1 )
+        if (pausedSessions.Count < 1)
+        {
             return new OperationResult(Success: false, Message: "There are no paused sessions to resume.");
+        }
 
         Session? session = null;
         if (!string.IsNullOrWhiteSpace(sessionId) && !pausedSessions.TryGetValue(sessionId, out session))
+        {
             return new OperationResult(Success: false, Message: $"Paused session with ID '{sessionId}' was not found.");
+        }
 
         if (string.IsNullOrWhiteSpace(sessionId) || session is null)
         {
@@ -113,15 +136,20 @@ public sealed class SessionService : ISessionService, IAsyncDisposable
         return new OperationResult(Success: true, Message: "Session resumed.");
     }
 
+    /// <inheritdoc/>
     public async ValueTask<OperationResult> CancelSessionAsync(string sessionId = "")
     {
         if (_activeSessions.Count < 1)
+        {
             return new OperationResult(Success: false, Message: "There are no sessions to cancel.");
-        
+        }
+
         Session? session = null;
         if (!string.IsNullOrWhiteSpace(sessionId) && !_activeSessions.Remove(sessionId, out session))
+        {
             return new OperationResult(Success: false, Message: $"Started session with ID '{sessionId}' was not found.");
-        
+        }
+
         if (string.IsNullOrWhiteSpace(sessionId) || session is null)
         {
             session = _activeSessions.First().Value;

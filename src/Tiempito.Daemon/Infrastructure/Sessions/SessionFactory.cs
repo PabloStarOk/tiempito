@@ -43,7 +43,7 @@ internal sealed class SessionFactory : ISessionFactory
             throw new ArgumentException($"Session configuration with ID '{configId}' not found");
         }
 
-        SessionConfig sessionConfig;
+        SessionConfig? sessionConfig;
         if (string.IsNullOrWhiteSpace(configId))
         {
             sessionConfig = _sessionConfigService.DefaultConfig;
@@ -57,7 +57,7 @@ internal sealed class SessionFactory : ISessionFactory
         return Session.Create(
             logger,
             id,
-            sessionConfig,
+            sessionConfig!,
             _timeProvider,
             onSecondElapsedAsync,
             onIntervalCompletedAsync,

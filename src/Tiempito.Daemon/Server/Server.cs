@@ -24,6 +24,16 @@ public sealed class Server : BackgroundService, IAsyncDisposable
     private string _currentConnectedUser = string.Empty;
     private Task? _stdOutMessagesSendTask;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Server"/> class.
+    /// </summary>
+    /// <param name="logger">The logger instance for server logging.</param>
+    /// <param name="daemonConfigOptions">The pipe configuration options.</param>
+    /// <param name="pipeServer">The named pipe server stream for IPC.</param>
+    /// <param name="stdOutQueueReader">The standard output queue reader.</param>
+    /// <param name="commandDispatcher">The command dispatcher for handling commands.</param>
+    /// <param name="messageWriter">The message writer for sending messages.</param>
+    /// <param name="messageReader">The message reader for receiving messages.</param>
     public Server(
         ILogger<Server> logger,
         IOptions<PipeConfig> daemonConfigOptions,
@@ -94,11 +104,14 @@ public sealed class Server : BackgroundService, IAsyncDisposable
         while (!cancellationToken.IsCancellationRequested)
         {
             if (!_pipeServer.IsConnected)
+            {
                 await ConnectAsync(cancellationToken);
+            }
 
             Command? command = await _messageReader.ReadAsync<Command>(_pipeServer, cancellationToken);
 
-            if (command is null) // TODO: Replace with a termination request.
+            // TODO: Replace with a termination message.
+            if (command is null)
             {
                 Disconnect();
                 continue;
@@ -116,14 +129,15 @@ public sealed class Server : BackgroundService, IAsyncDisposable
     private async Task ConnectAsync(CancellationToken cancellationToken)
     {
         await _pipeServer.WaitForConnectionAsync(cancellationToken);
-        
         if (cancellationToken.IsCancellationRequested)
+        {
             return;
-        
+        }
+
         _currentConnectedUser = GetConnectedUser();
         _logger.LogInformation("Client {User} connected", _currentConnectedUser);
     }
-    
+
     /// <summary>
     /// Disconnects from the current connected client.
     /// </summary>
@@ -138,7 +152,7 @@ public sealed class Server : BackgroundService, IAsyncDisposable
         _logger.LogInformation("Client {User} disconnected", _currentConnectedUser);
         _currentConnectedUser = string.Empty;
     }
-    
+
     /// <summary>
     /// Sends a response to the connected client.
     /// </summary>
@@ -154,7 +168,7 @@ public sealed class Server : BackgroundService, IAsyncDisposable
 
         await _messageWriter.WriteAsync(_pipeServer, response, cancellationToken);
     }
-    
+
     /// <summary>
     /// Gets the username of the current connected client.
     /// </summary>
@@ -165,12 +179,15 @@ public sealed class Server : BackgroundService, IAsyncDisposable
         try
         {
             if (_pipeConfig.DisplayImpersonationUser)
+            {
                 user = _pipeServer.GetImpersonationUserName();
+            }
         }
         catch (IOException)
         {
             return user;
         }
+
         return user;
     }
 

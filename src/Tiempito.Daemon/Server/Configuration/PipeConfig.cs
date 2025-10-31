@@ -8,12 +8,34 @@ namespace Tiempito.Daemon.Server.Configuration;
 /// </summary>
 public class PipeConfig
 {
+    /// <summary>
+    /// The configuration section name for pipe settings.
+    /// </summary>
     public const string Pipe = "Pipe";
 
+    /// <summary>
+    /// Gets the name of the named pipe.
+    /// </summary>
     public string PipeName { get; init; } = "tiempito-pipe";
+
+    /// <summary>
+    /// Gets the direction of the pipe communication.
+    /// </summary>
     public PipeDirection PipeDirection { get; init; } = PipeDirection.InOut;
+
+    /// <summary>
+    /// Gets the maximum number of pipe instances allowed.
+    /// </summary>
     public int PipeMaxInstances { get; init; } = 1;
+
+    /// <summary>
+    /// Gets the encoding used for pipe communication.
+    /// </summary>
     public string PipeEncoding { get; init; } = "utf8";
+
+    /// <summary>
+    /// Gets a value indicating whether indicates whether to display the impersonation user.
+    /// </summary>
     public bool DisplayImpersonationUser { get; init; } = true;
 
     /// <summary>
@@ -22,8 +44,7 @@ public class PipeConfig
     /// <returns>An Encoding type.</returns>
     public Encoding GetEncoding()
     {
-        string formattedEncoding = PipeEncoding.ToLower().Replace("-", "");
-
+        string formattedEncoding = PipeEncoding.ToLower().Replace("-", string.Empty);
         return formattedEncoding switch
         {
             "utf8" => new UTF8Encoding(),

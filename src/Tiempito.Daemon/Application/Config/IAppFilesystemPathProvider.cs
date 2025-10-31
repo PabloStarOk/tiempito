@@ -6,22 +6,22 @@ namespace Tiempito.Daemon.Application.Config;
 public interface IAppFilesystemPathProvider
 {
     /// <summary>
-    /// Root path of the application's configuration directory shared by all users.
+    /// Gets the root path of the application's configuration directory shared by all users.
     /// </summary>
     public string AppConfigDirectoryPath { get; }
-    
+
     /// <summary>
-    /// Root path of the current user's configuration.
+    /// Gets the root path of the current user's configuration.
     /// </summary>
     public string UserConfigDirectoryPath { get; }
-    
+
     /// <summary>
-    /// Path of daemon's configuration file.
+    /// Gets the path of daemon's configuration file.
     /// </summary>
     public string DaemonConfigFilePath { get; }
 
     /// <summary>
-    /// Path of the application's icon.
+    /// Gets the path of the application's icon.
     /// </summary>
     public string ApplicationIconPath { get; }
 }

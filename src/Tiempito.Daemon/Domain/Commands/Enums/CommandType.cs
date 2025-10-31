@@ -9,7 +9,7 @@ public enum CommandType
     /// Command to manage sessions.
     /// </summary>
     Session,
-    
+
     /// <summary>
     /// Command to manage user and session configurations.
     /// </summary>
