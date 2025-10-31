@@ -23,8 +23,15 @@ public class NotificationService : INotificationService, IHostedService
     private readonly string _appIconFilePath;
     private Notification _baseNotification;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="NotificationService"/> class.
+    /// </summary>
+    /// <param name="notificationConfigOptions">Options monitor for notification configuration.</param>
+    /// <param name="appFilesystemPathProvider">Provides application filesystem paths.</param>
+    /// <param name="userConfigService">Service for accessing user configuration.</param>
+    /// <param name="systemNotifier">System notifier for displaying notifications.</param>
+    /// <param name="systemAsyncIconLoader">Async icon loader for Linux systems.</param>
     public NotificationService(
-        ILogger<NotificationService> logger,
         IOptionsMonitor<NotificationConfig> notificationConfigOptions,
         IAppFilesystemPathProvider appFilesystemPathProvider,
         IUserConfigService userConfigService,
@@ -48,6 +55,7 @@ public class NotificationService : INotificationService, IHostedService
         _appIconFilePath = appFilesystemPathProvider.ApplicationIconPath;
     }
 
+    /// <inheritdoc/>
     public async Task StartAsync(CancellationToken cancellationToken = default)
     {
 #if LINUX
@@ -61,17 +69,21 @@ public class NotificationService : INotificationService, IHostedService
 #endif
     }
 
+    /// <inheritdoc/>
     public Task StopAsync(CancellationToken cancellationToken = default)
     {
         _systemNotifier.CleanUp();
         return Task.CompletedTask;
     }
-    
+
+    /// <inheritdoc/>
     public async Task NotifyAsync(string summary, string body, NotificationSoundType notificationSoundType)
     {
         if (!_userConfigService.UserConfig.NotificationsEnabled)
+        {
             return;
-        
+        }
+
         _baseNotification.Summary = summary;
         _baseNotification.Body = body;
         string soundFileName = notificationSoundType switch
@@ -86,6 +98,7 @@ public class NotificationService : INotificationService, IHostedService
         await _systemNotifier.NotifyAsync(_baseNotification);
     }
 
+    /// <inheritdoc/>
     public async Task CloseLastNotificationAsync()
     {
         await _systemNotifier.CloseNotificationAsync();

@@ -14,7 +14,7 @@ public enum SessionConfigKeyword
     /// Delay to start the next time after the last one has been completed.
     /// </summary>
     DelayBetweenTimes,
-    
+
     /// <summary>
     /// The duration of focus periods.
     /// </summary>
@@ -23,5 +23,5 @@ public enum SessionConfigKeyword
     /// <summary>
     /// The duration of break periods.
     /// </summary>
-    BreakDuration
+    BreakDuration,
 }

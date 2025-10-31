@@ -6,20 +6,27 @@ using Tiempito.Daemon.Domain.Shared;
 namespace Tiempito.Daemon.Application.Config.User;
 
 /// <summary>
-/// Service for manage user's configuration.
+/// Service for managing the user's configuration.
 /// </summary>
 public class UserConfigService : IUserConfigService, IHostedService
 {
+    /// <summary>
+    /// Gets the current user's configuration.
+    /// </summary>
+    public UserConfig UserConfig { get; private set; }
+
+    /// <summary>
+    /// Event triggered when the user's configuration changes.
+    /// </summary>
+    public event EventHandler? OnConfigChanged;
+
     private readonly ILogger<UserConfigService> _logger;
     private readonly IUserConfigReader _userConfigReader;
     private readonly IUserConfigWriter _userConfigWriter;
     private readonly IFileProvider _userDirectoryFileProvider;
 
-    public UserConfig UserConfig { get; private set; }
-    public event EventHandler? OnConfigChanged;
-
     /// <summary>
-    /// Instantiates a new <see cref="UserConfigService"/>
+    /// Initializes a new instance of the <see cref="UserConfigService"/> class.
     /// </summary>
     /// <param name="logger">Logger to register events.</param>
     /// <param name="userConfigReader">Reader for user's configuration.</param>
@@ -41,11 +48,11 @@ public class UserConfigService : IUserConfigService, IHostedService
     public Task<OperationResult> ChangeDefaultSessionConfigAsync(string id)
     {
         UserConfig.SetDefaultSessionConfigId(id);
-        
+
         OperationResult operationResult = SaveAndReturnResult(
             successMessage: "Default session config ID was changed.",
             errorMessage: "Default session config ID couldn't be changed in the configuration file.");
-        
+
         return Task.FromResult(operationResult);
     }
 
@@ -53,44 +60,48 @@ public class UserConfigService : IUserConfigService, IHostedService
     public Task<OperationResult> EnableFeatureAsync(string feature)
     {
         if (!FeatureExists(feature, out OperationResult result))
+        {
             return Task.FromResult(result);
-        
+        }
+
         UserConfigFeature configFeature = UserConfig.AllowedFeatures.First(
             f => f.Name == feature || f.Aliases.Contains(feature));
-        
+
         // 1. Verify if the is already enabled.
         if (UserConfig.EnabledFeatures.Contains(configFeature.Name))
         {
             return Task.FromResult(new OperationResult(
                 Success: false,
-                Message: $"Feature {configFeature.Name} is already enabled."));   
+                Message: $"Feature {configFeature.Name} is already enabled."));
         }
-        
+
         // 2. Enable feature.
         UserConfig.AddFeature(configFeature);
-        
+
         OperationResult operationResult = SaveAndReturnResult(
             successMessage: "Feature enabled",
             errorMessage: "Feature couldn't be enabled in the configuration file.");
-        
+
         return Task.FromResult(operationResult);
     }
-    
+
     /// <inheritdoc/>
     public Task<OperationResult> DisableFeatureAsync(string feature)
     {
         if (!FeatureExists(feature, out OperationResult result))
+        {
             return Task.FromResult(result);
-        
+        }
+
         UserConfigFeature configFeature = UserConfig.AllowedFeatures.First(
             f => f.Name == feature || f.Aliases.Contains(feature));
-        
+
         // 1. Verify if the is already disabled.
         if (!UserConfig.EnabledFeatures.Contains(configFeature.Name))
         {
             return Task.FromResult(new OperationResult(
                 Success: false,
-                Message: $"Feature {configFeature.Name} is already disabled."));   
+                Message: $"Feature {configFeature.Name} is already disabled."));
         }
 
         // 2. Disable feature.
@@ -99,10 +110,10 @@ public class UserConfigService : IUserConfigService, IHostedService
         OperationResult operationResult = SaveAndReturnResult(
             successMessage: "Feature disabled",
             errorMessage: "Feature couldn't be disabled in the configuration file.");
-        
+
         return Task.FromResult(operationResult);
     }
-    
+
     /// <inheritdoc/>
     public async Task StartAsync(CancellationToken cancellationToken = default)
     {
@@ -117,20 +128,6 @@ public class UserConfigService : IUserConfigService, IHostedService
     }
 
     /// <summary>
-    /// Creates the user configuration if not exists.
-    /// </summary>
-    private async Task CreateUserConfigAsync()
-    {
-        IFileInfo fileInfo = _userDirectoryFileProvider.GetFileInfo(AppConfigConstants.UserConfigFileName);
-        
-        if (fileInfo.Exists || string.IsNullOrWhiteSpace(fileInfo.PhysicalPath))
-            return;
-        
-        await File.Create(fileInfo.PhysicalPath).DisposeAsync();
-        _logger.LogInformation("User config filed was created at {Path}", fileInfo.PhysicalPath);
-    }
-
-    /// <summary>
     /// Checks if a string matches a feature name
     /// or alias.
     /// </summary>
@@ -140,12 +137,7 @@ public class UserConfigService : IUserConfigService, IHostedService
     private static bool FeatureExists(string feature, out OperationResult operationResult)
     {
         operationResult = new OperationResult(true, string.Empty);
-
-        if (UserConfig.AllowedFeatures.Any
-            (
-                f => f.Name == feature
-                    || f.Aliases.Contains(feature)
-            ))
+        if (UserConfig.AllowedFeatures.Any(f => f.Name == feature || f.Aliases.Contains(feature)))
         {
             return true;
         }
@@ -154,9 +146,24 @@ public class UserConfigService : IUserConfigService, IHostedService
             Success: false,
             Message: $"Feature {feature} not recognized.");
         return false;
-
     }
-    
+
+    /// <summary>
+    /// Creates the user configuration if not exists.
+    /// </summary>
+    private async Task CreateUserConfigAsync()
+    {
+        IFileInfo fileInfo = _userDirectoryFileProvider.GetFileInfo(AppConfigConstants.UserConfigFileName);
+
+        if (fileInfo.Exists || string.IsNullOrWhiteSpace(fileInfo.PhysicalPath))
+        {
+            return;
+        }
+
+        await File.Create(fileInfo.PhysicalPath).DisposeAsync();
+        _logger.LogInformation("User config filed was created at {Path}", fileInfo.PhysicalPath);
+    }
+
     /// <summary>
     /// Saves the user configuration in the file.
     /// </summary>
@@ -166,10 +173,11 @@ public class UserConfigService : IUserConfigService, IHostedService
     private OperationResult SaveAndReturnResult(string successMessage, string errorMessage)
     {
         bool wasSaved = _userConfigWriter.Write(UserConfig);
-        
         if (wasSaved)
+        {
             OnConfigChanged?.Invoke(this, EventArgs.Empty);
-        
+        }
+
         return new OperationResult(wasSaved, wasSaved ? successMessage : errorMessage);
     }
 }

@@ -10,16 +10,17 @@ namespace Tiempito.Daemon.Infrastructure.Notifications.Linux;
 /// </summary>
 public class LinuxSystemIconLoader : ISystemAsyncIconLoader
 {
+    /// <inheritdoc/>
     public async Task<NotificationImageData> LoadAsync(string iconPath)
     {
         using Image<Rgba32> image = await Image.LoadAsync<Rgba32>(iconPath);
-        
+
         bool hasAlpha = image.PixelType.AlphaRepresentation is null or PixelAlphaRepresentation.None;
         int channels = hasAlpha ? 4 : 3;
         int rowStride = channels * image.Width;
 
         byte[] data = GetDataArray(image, rowStride, hasAlpha, channels);
-        
+
         return new NotificationImageData
         {
             Width = image.Width,
@@ -28,7 +29,7 @@ public class LinuxSystemIconLoader : ISystemAsyncIconLoader
             BitsPerSample = 8,
             Channels = hasAlpha ? 4 : 3,
             HasAlpha = hasAlpha,
-            Data = data
+            Data = data,
         };
     }
 
@@ -43,7 +44,7 @@ public class LinuxSystemIconLoader : ISystemAsyncIconLoader
     private static byte[] GetDataArray(Image<Rgba32> img, int rowStride, bool hasAlpha, int channels)
     {
         var data = new byte[rowStride * img.Height];
-        
+
         img.ProcessPixelRows(accessor =>
         {
             for (var y = 0; y < accessor.Height; y++)
@@ -51,18 +52,20 @@ public class LinuxSystemIconLoader : ISystemAsyncIconLoader
                 Span<Rgba32> row = accessor.GetRowSpan(y);
                 for (var x = 0; x < row.Length; x++)
                 {
-                    int offset = y * rowStride + x * channels;
-                    
+                    int offset = (y * rowStride) + (x * channels);
+
                     data[offset] = row[x].R;
                     data[offset + 1] = row[x].G;
                     data[offset + 2] = row[x].B;
 
                     if (hasAlpha)
+                    {
                         data[offset + 3] = row[x].A;
+                    }
                 }
             }
         });
-        
+
         return data;
     }
 }

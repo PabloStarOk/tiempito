@@ -14,9 +14,9 @@ public static class LinuxServicesExtensions
     /// <summary>
     /// Add the linux notification dbus service for org.freedesktop.Notifications implementation.
     /// </summary>
-    /// <param name="serviceCollection">Collection of services.</param>
+    /// <param name="services">Collection of services.</param>
     /// <returns>A reference to this instance after the operation has completed.</returns>
-    public static IServiceCollection AddLinuxNotificationsDbus(this IServiceCollection serviceCollection)
+    public static void AddLinuxNotificationsDbus(this IServiceCollection services)
     {
         string? sessionAddress = Address.Session;
         
@@ -27,8 +27,8 @@ public static class LinuxServicesExtensions
     
         var service = new NotificationsService(connection, NotificationsServiceName);
         LinuxNotificationsDbus dbusNotificationsDbus = service.CreateNotifications(NotificationsObjectPath);
-        
-        return serviceCollection.AddSingleton(dbusNotificationsDbus);
+
+        services.AddSingleton(dbusNotificationsDbus);
     }
 }
 #endif

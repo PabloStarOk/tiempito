@@ -10,5 +10,5 @@ public interface IStandardOutQueueReader
     /// <summary>
     /// Gets the channel reader for reading standard output messages.
     /// </summary>
-    ChannelReader<string> Reader { get; }
+    public ChannelReader<string> Reader { get; }
 }

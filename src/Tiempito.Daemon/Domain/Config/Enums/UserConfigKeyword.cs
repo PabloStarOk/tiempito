@@ -9,6 +9,7 @@ public enum UserConfigKeyword
     /// Default session of the user.
     /// </summary>
     DefaultSession,
+
     /// <summary>
     /// Enabled features of the user the daemon can use.
     /// </summary>

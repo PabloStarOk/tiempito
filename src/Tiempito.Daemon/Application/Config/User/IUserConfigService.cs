@@ -9,10 +9,10 @@ namespace Tiempito.Daemon.Application.Config.User;
 public interface IUserConfigService
 {
     /// <summary>
-    /// User's configuration.
+    /// Gets user's configuration.
     /// </summary>
     public UserConfig UserConfig { get; }
-    
+
     /// <summary>
     /// Executed when user's configuration is changed.
     /// </summary>

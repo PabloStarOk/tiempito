@@ -11,7 +11,7 @@ public interface ISystemSoundPlayer : IDisposable
     /// <param name="filepath">Audio file path to play.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
     public Task PlayAsync(string filepath);
-    
+
     /// <summary>
     /// Stop the last played sound.
     /// </summary>

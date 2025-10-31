@@ -15,9 +15,9 @@ namespace Tiempito.Daemon.Infrastructure.Config.User;
 public class UserConfigWriter : IUserConfigWriter
 {
     private readonly ConfigParser _configParser;
-    
+
     /// <summary>
-    /// Instantiates a new <see cref="UserConfigWriter"/>
+    /// Initializes a new instance of the <see cref="UserConfigWriter"/> class.
     /// </summary>
     /// <param name="configParser">Parser of the user's configuration file.</param>
     public UserConfigWriter(
@@ -25,28 +25,26 @@ public class UserConfigWriter : IUserConfigWriter
     {
         _configParser = configParser;
     }
-    
+
     // TODO: Make method asynchronous.
+
+    /// <inheritdoc/>
     public bool Write(UserConfig userConfig)
     {
-        bool wasSessionIdSet = _configParser.SetValue
-        (
+        bool wasSessionIdSet = _configParser.SetValue(
             AppConfigConstants.UserSectionName,
-            UserConfigKeyword.DefaultSession.ToString(),
-            userConfig.DefaultSessionId
-        );
-        
+            nameof(UserConfigKeyword.DefaultSession),
+            userConfig.DefaultSessionId);
+
         var enabledFeatures = new StringBuilder()
             .AppendJoin(',', userConfig.EnabledFeatures)
             .ToString();
-        
-        bool wasEnabledFeaturesSet = _configParser.SetValue
-        (
+
+        bool wasEnabledFeaturesSet = _configParser.SetValue(
             AppConfigConstants.UserSectionName,
-            UserConfigKeyword.EnabledFeatures.ToString(),
-            enabledFeatures
-        );
-        
+            nameof(UserConfigKeyword.EnabledFeatures),
+            enabledFeatures);
+
         return wasSessionIdSet && wasEnabledFeaturesSet && _configParser.Save();
     }
 }

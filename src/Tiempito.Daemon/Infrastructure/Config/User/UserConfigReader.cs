@@ -13,9 +13,9 @@ namespace Tiempito.Daemon.Infrastructure.Config.User;
 public class UserConfigReader : IUserConfigReader
 {
     private readonly ConfigParser _configParser;
-    
+
     /// <summary>
-    /// Instantiates a new <see cref="UserConfigReader"/> 
+    /// Initializes a new instance of the <see cref="UserConfigReader"/> class.
     /// </summary>
     /// <param name="configParser">Parser of the user's configuration file.</param>
     public UserConfigReader(
@@ -23,45 +23,53 @@ public class UserConfigReader : IUserConfigReader
     {
         _configParser = configParser;
     }
-    
+
     // TODO: Make method asynchronous.
+
+    /// <inheritdoc/>
     public UserConfig Read()
     {
-        var userConfig = new UserConfig();
+        var userConfig = default(UserConfig);
 
         if (_configParser[AppConfigConstants.UserSectionName] == null)
+        {
             return userConfig;
-            
+        }
+
         ConfigSection configSection = _configParser[AppConfigConstants.UserSectionName];
 
         foreach (IConfigKeyValue keyValue in configSection.Keys)
         {
             string keywordString = keyValue.Name;
-
             if (!Enum.TryParse(keywordString, ignoreCase: true, out UserConfigKeyword keyword))
+            {
                 continue;
+            }
 
             switch (keyword)
             {
                 case UserConfigKeyword.DefaultSession:
                     userConfig = new UserConfig(keyValue.Content);
                     break;
-                    
+
                 case UserConfigKeyword.EnabledFeatures:
                     foreach (string enabledFeat in keyValue.Content.Split(','))
                     {
                         if (string.IsNullOrWhiteSpace(enabledFeat))
+                        {
                             continue;
-                        
+                        }
+
                         userConfig.AddFeature(enabledFeat.Trim());
                     }
+
                     break;
-                
+
                 default:
                     continue;
             }
         }
-        
+
         return userConfig;
     }
 }
