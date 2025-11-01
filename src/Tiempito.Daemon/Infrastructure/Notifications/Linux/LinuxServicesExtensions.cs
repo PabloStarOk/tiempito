@@ -18,17 +18,26 @@ public static class LinuxServicesExtensions
     /// <returns>A reference to this instance after the operation has completed.</returns>
     public static void AddLinuxNotificationsDbus(this IServiceCollection services)
     {
-        string? sessionAddress = Address.Session;
+        ArgumentException.ThrowIfNullOrWhiteSpace(Address.Session, "Session address is null.");
         
-        ArgumentException.ThrowIfNullOrWhiteSpace(sessionAddress, "Session address is null.");
+        services.AddSingleton(_ =>
+            {
+                var connection = new Connection(Address.Session);
+                connection.ConnectAsync().AsTask().GetAwaiter().GetResult();
+                return connection;
+            });
     
-        var connection = new Connection(sessionAddress);
-        connection.ConnectAsync();
-    
-        var service = new NotificationsService(connection, NotificationsServiceName);
-        LinuxNotificationsDbus dbusNotificationsDbus = service.CreateNotifications(NotificationsObjectPath);
+        services.AddSingleton(sp =>
+            {
+                var connection = sp.GetRequiredService<Connection>();
+                return new NotificationsService(connection, NotificationsServiceName);
+            });
 
-        services.AddSingleton(dbusNotificationsDbus);
+        services.AddSingleton(sp =>
+        {
+            var notificationsService = sp.GetRequiredService<NotificationsService>();
+            return notificationsService.CreateNotifications(NotificationsObjectPath);
+        });
     }
 }
 #endif

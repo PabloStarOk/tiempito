@@ -1,19 +1,17 @@
 #if LINUX
 using System.Diagnostics;
 
-using Tiempito.Daemon.Application.Notifications;
-
 namespace Tiempito.Daemon.Infrastructure.Notifications.Linux;
 
 /// <summary>
 /// A sound player for linux operating systems.
 /// </summary>
-public class LinuxSystemSoundPlayer : ISystemSoundPlayer
+internal sealed class LinuxSoundPlayer : ILinuxSoundPlayer, IDisposable
 {
     private const string RequiredEnvVariable = "XDG_RUNTIME_DIR";
     private const string PreferredAudioSystem = "pw-play";
     
-    private readonly ILogger<LinuxSystemSoundPlayer> _logger;
+    private readonly ILogger<LinuxSoundPlayer> _logger;
     private readonly bool _isRequiredEnvVariableDefined;
     private string _audioSystem = string.Empty;
     private bool _audioSystemLoaded;
@@ -21,10 +19,10 @@ public class LinuxSystemSoundPlayer : ISystemSoundPlayer
     private Process? _currentProcess;
     
     /// <summary>
-    /// Instantiates a <see cref="LinuxSystemSoundPlayer"/>.
+    /// Instantiates a <see cref="LinuxSoundPlayer"/>.
     /// </summary>
     /// <param name="logger">Logger to register errors related to linux audio.</param>
-    public LinuxSystemSoundPlayer(ILogger<LinuxSystemSoundPlayer> logger)
+    public LinuxSoundPlayer(ILogger<LinuxSoundPlayer> logger)
     {
         _logger = logger;
         
@@ -33,7 +31,7 @@ public class LinuxSystemSoundPlayer : ISystemSoundPlayer
             _logger.LogError("Required \"{RequiredEnvVariable}\" environment variable for Linux is not defined, notifications won't have sound.", RequiredEnvVariable);
     }
     
-    public async Task PlayAsync(string filepath)
+    public async ValueTask PlayAsync(string filepath)
     {
         if (!_isRequiredEnvVariableDefined)
             return;
@@ -66,6 +64,7 @@ public class LinuxSystemSoundPlayer : ISystemSoundPlayer
             _currentProcess.ErrorDataReceived += OnErrorReceived;
             _currentProcess.Exited += async (_, _) => await StopAsync();
             _currentProcess.Start();
+            _logger.LogDebug("Notification sound played.");
         }
         catch (Exception ex)
         {
@@ -74,10 +73,10 @@ public class LinuxSystemSoundPlayer : ISystemSoundPlayer
         }
     }
 
-    public Task StopAsync()
+    public ValueTask StopAsync()
     {
         if (_currentProcess == null)
-            return Task.CompletedTask;
+            return ValueTask.CompletedTask;
         
         try
         {
@@ -90,7 +89,14 @@ public class LinuxSystemSoundPlayer : ISystemSoundPlayer
             _logger.LogError(ex, "Couldn't stop notification sound.");
         }
         
-        return Task.CompletedTask;
+        return ValueTask.CompletedTask;
+    }
+    
+    public void Dispose()
+    {
+        _currentProcess?.Close();
+        _currentProcess?.Dispose();
+        _currentProcess = null;
     }
     
     /// <summary>
@@ -142,29 +148,6 @@ public class LinuxSystemSoundPlayer : ISystemSoundPlayer
     {
         if (!string.IsNullOrWhiteSpace(eventArgs.Data))
             _logger.LogError("Error while trying to play a notification sound. Sender: {Sender} | ExitCode: {ExitCode} | Error: {Err}", sender, _currentProcess?.ExitCode, eventArgs.Data);
-    }
-    
-    public void Dispose()
-    {
-        Dispose(isDisposing: true);
-        GC.SuppressFinalize(this);
-    }
-
-    private void Dispose(bool isDisposing)
-    {
-        if (!isDisposing)
-            return;
-
-        if (_currentProcess == null)
-            return;
-        
-        _currentProcess.Close();
-        _currentProcess.Dispose();
-    }
-
-    ~LinuxSystemSoundPlayer()
-    {
-        Dispose(isDisposing: false);
     }
 }
 #endif

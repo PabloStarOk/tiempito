@@ -1,11 +1,12 @@
+#if LINUX
 using Tmds.DBus.Protocol;
 
-namespace Tiempito.Daemon.Application.Notifications;
+namespace Tiempito.Daemon.Infrastructure.Notifications.Linux;
 
 /// <summary>
 /// D-Bus structured specified by freedesktop linux specification.
 /// </summary>
-public readonly struct NotificationImageData
+internal readonly struct LinuxNotificationImageData
 {
     /// <summary>
     /// Gets width of image in pixels.
@@ -59,3 +60,4 @@ public readonly struct NotificationImageData
         return VariantValue.Struct(width, height, rowStride, hasAlpha, bitsPerSample, channels, data);
     }
 }
+#endif

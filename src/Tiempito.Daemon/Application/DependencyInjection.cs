@@ -53,9 +53,6 @@ internal static class DependencyInjection
     private static void AddNotificationServices(IServiceCollection services, IConfiguration configuration)
     {
         services.Configure<NotificationConfig>(configuration.GetSection(NotificationConfig.Notification));
-        services.AddSingleton<NotificationService>();
-        services.AddSingleton<INotificationService>(sp => sp.GetRequiredService<NotificationService>());
-        services.AddHostedService(sp => sp.GetRequiredService<NotificationService>());
     }
 
     private static void AddSessionServices(IServiceCollection services)

@@ -1,3 +1,4 @@
+#if LINUX
 using Tmds.DBus.Protocol;
 
 namespace Tiempito.Daemon.Infrastructure.Notifications.Linux;
@@ -1037,3 +1038,4 @@ public class PropertyChanges<TProperties>
     public bool HasChanged(string property) => Array.IndexOf(Changed, property) != -1;
     public bool IsInvalidated(string property) => Array.IndexOf(Invalidated, property) != -1;
 }
+#endif
