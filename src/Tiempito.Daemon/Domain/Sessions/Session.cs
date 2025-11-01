@@ -224,8 +224,8 @@ public sealed class Session : IAsyncDisposable
     private async ValueTask CompleteAsync()
     {
         State = State.WithStatus(SessionStatus.Finished);
-        await DisposeAsync();
         await _onSessionCompletedAsync(this);
+        await DisposeAsync();
     }
 
     private (SessionIntervalType, TimeSpan) DetermineNextInterval()
