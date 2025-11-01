@@ -4,6 +4,7 @@ using Tiempito.CLI.Services.Abstractions;
 using Tiempito.IPC.Models;
 
 using Command = System.CommandLine.Command;
+using IpcModifySessionConfigCommand = Tiempito.IPC.Models.Commands.Config.ModifySessionConfigCommand;
 
 namespace Tiempito.CLI.Commands.Config;
 
@@ -17,7 +18,6 @@ public class ModifySessionConfigCommand : Command
 
     private readonly ICommandSender _commandSender;
     private readonly IMessageWriter _messageWriter;
-    private readonly string _commandParent;
     private readonly Option<string> _sessionIdOption;
     private readonly Option<string> _targetCyclesOption;
     private readonly Option<string> _delayOption;
@@ -29,18 +29,15 @@ public class ModifySessionConfigCommand : Command
     /// </summary>
     /// <param name="commandSender">The sender used to execute session commands.</param>
     /// <param name="messageWriter">The writer used to output messages to the terminal.</param>
-    /// <param name="commandParent">Command parent of this command.</param>
     /// <param name="sessionIdOption">Session id option.</param>
     public ModifySessionConfigCommand(
         ICommandSender commandSender,
         IMessageWriter messageWriter,
-        string commandParent,
         Option<string> sessionIdOption)
         : base(CommandName, CommandDescription)
     {
         _commandSender = commandSender;
         _messageWriter = messageWriter;
-        _commandParent = commandParent;
         _sessionIdOption = sessionIdOption;
         _sessionIdOption.Required = true;
 
@@ -82,23 +79,30 @@ public class ModifySessionConfigCommand : Command
 
     private async Task ExecuteAsync(ParseResult parseResult, CancellationToken cancellationToken)
     {
-        var delayBetweenTimes = parseResult.GetValue(_delayOption);
-        delayBetweenTimes = !string.IsNullOrWhiteSpace(delayBetweenTimes) ? delayBetweenTimes : "0s";
-
-        var arguments = new Dictionary<string, string>
+        string sessionConfigId = parseResult.GetRequiredValue(_sessionIdOption);
+        string? targetCyclesString = parseResult.GetValue(_targetCyclesOption);
+        uint targetCycles = 0;
+        if (targetCyclesString is not null && !uint.TryParse(targetCyclesString, out targetCycles))
         {
-            { "session-config-id", parseResult.GetRequiredValue(_sessionIdOption) },
-            { "target-cycles", parseResult.GetValue(_targetCyclesOption) ?? string.Empty },
-            { "delay-times", delayBetweenTimes },
-            { "focus-duration", parseResult.GetValue(_focusDurationOption) ?? string.Empty },
-            { "break-duration", parseResult.GetValue(_breakDurationOption) ?? string.Empty },
-        };
+            await _messageWriter.WriteAsync(
+                error: true,
+                message: "Target cycles must be a valid positive number.",
+                cancellationToken);
+            return;
+        }
 
-        Response? response = await _commandSender.SendAsync(
-            _commandParent,
-            Name,
-            arguments,
-            cancellationToken: cancellationToken);
+        string? focusDuration = parseResult.GetValue(_focusDurationOption);
+        string? breakDuration = parseResult.GetValue(_breakDurationOption);
+        string? delayBetweenTimes = parseResult.GetValue(_delayOption);
+
+        var command = IpcModifySessionConfigCommand.CreateNew(
+            sessionConfigId,
+            targetCycles,
+            focusDuration,
+            breakDuration,
+            delayBetweenTimes);
+
+        Response? response = await _commandSender.SendAsync(command, cancellationToken);
 
         if (response is not null)
         {

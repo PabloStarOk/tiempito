@@ -2,6 +2,7 @@ using Microsoft.Extensions.FileProviders;
 
 using Tiempito.Daemon.Domain.Config;
 using Tiempito.Daemon.Domain.Shared;
+using Tiempito.IPC.Models.Enums;
 
 namespace Tiempito.Daemon.Application.Config.User;
 
@@ -57,26 +58,18 @@ public class UserConfigService : IUserConfigService, IHostedService
     }
 
     /// <inheritdoc/>
-    public Task<OperationResult> EnableFeatureAsync(string feature)
+    public Task<OperationResult> EnableFeatureAsync(UserFeature feature)
     {
-        if (!FeatureExists(feature, out OperationResult result))
-        {
-            return Task.FromResult(result);
-        }
-
-        UserConfigFeature configFeature = UserConfig.AllowedFeatures.First(
-            f => f.Name == feature || f.Aliases.Contains(feature));
-
         // 1. Verify if the is already enabled.
-        if (UserConfig.EnabledFeatures.Contains(configFeature.Name))
+        if (UserConfig.EnabledFeatures.Contains(feature))
         {
             return Task.FromResult(new OperationResult(
                 Success: false,
-                Message: $"Feature {configFeature.Name} is already enabled."));
+                Message: $"Feature {feature.ToString().ToLower()} is already enabled."));
         }
 
         // 2. Enable feature.
-        UserConfig.AddFeature(configFeature);
+        UserConfig.AddFeature(feature);
 
         OperationResult operationResult = SaveAndReturnResult(
             successMessage: "Feature enabled",
@@ -86,26 +79,18 @@ public class UserConfigService : IUserConfigService, IHostedService
     }
 
     /// <inheritdoc/>
-    public Task<OperationResult> DisableFeatureAsync(string feature)
+    public Task<OperationResult> DisableFeatureAsync(UserFeature feature)
     {
-        if (!FeatureExists(feature, out OperationResult result))
-        {
-            return Task.FromResult(result);
-        }
-
-        UserConfigFeature configFeature = UserConfig.AllowedFeatures.First(
-            f => f.Name == feature || f.Aliases.Contains(feature));
-
         // 1. Verify if the is already disabled.
-        if (!UserConfig.EnabledFeatures.Contains(configFeature.Name))
+        if (!UserConfig.EnabledFeatures.Contains(feature))
         {
             return Task.FromResult(new OperationResult(
                 Success: false,
-                Message: $"Feature {configFeature.Name} is already disabled."));
+                Message: $"Feature {feature.ToString().ToLower()} is already disabled."));
         }
 
         // 2. Disable feature.
-        UserConfig.RemoveFeature(configFeature);
+        UserConfig.RemoveFeature(feature);
 
         OperationResult operationResult = SaveAndReturnResult(
             successMessage: "Feature disabled",
@@ -125,27 +110,6 @@ public class UserConfigService : IUserConfigService, IHostedService
     public Task StopAsync(CancellationToken cancellationToken = default)
     {
         return Task.CompletedTask;
-    }
-
-    /// <summary>
-    /// Checks if a string matches a feature name
-    /// or alias.
-    /// </summary>
-    /// <param name="feature">Feature to compare.</param>
-    /// <param name="operationResult">A <see cref="OperationResult"/>.</param>
-    /// <returns>True if the feature exists, false otherwise.</returns>
-    private static bool FeatureExists(string feature, out OperationResult operationResult)
-    {
-        operationResult = new OperationResult(true, string.Empty);
-        if (UserConfig.AllowedFeatures.Any(f => f.Name == feature || f.Aliases.Contains(feature)))
-        {
-            return true;
-        }
-
-        operationResult = new OperationResult(
-            Success: false,
-            Message: $"Feature {feature} not recognized.");
-        return false;
     }
 
     /// <summary>

@@ -4,6 +4,7 @@ using Tiempito.CLI.Services.Abstractions;
 using Tiempito.IPC.Models;
 
 using Command = System.CommandLine.Command;
+using IpcStartSessionCommand = Tiempito.IPC.Models.Commands.Session.StartSessionCommand;
 
 namespace Tiempito.CLI.Commands.Session;
 
@@ -18,7 +19,6 @@ public class StartSessionCommand : Command
     private readonly ICommandSender _commandSender;
     private readonly IMessageWriter _messageWriter;
     private readonly ISessionFollower _sessionFollower;
-    private readonly string _commandParent;
     private readonly Option<string> _sessionIdOption;
     private readonly Option<string> _sessionConfigIdOption;
     private readonly Option<bool>? _followOption;
@@ -29,14 +29,12 @@ public class StartSessionCommand : Command
     /// <param name="commandSender">The sender used to execute session commands.</param>
     /// <param name="messageWriter">The writer used to output messages to the terminal.</param>
     /// <param name="sessionFollower">The follower used to track session progress.</param>
-    /// <param name="commandParent">Command parent of this command.</param>
     /// <param name="sessionIdOption">Session id option.</param>
     /// <param name="followOption">Indicates whether to follow session progress.</param>
     public StartSessionCommand(
         ICommandSender commandSender,
         IMessageWriter messageWriter,
         ISessionFollower sessionFollower,
-        string commandParent,
         Option<string> sessionIdOption,
         Option<bool> followOption)
         : base(CommandName, CommandDescription)
@@ -44,7 +42,6 @@ public class StartSessionCommand : Command
         _commandSender = commandSender;
         _messageWriter = messageWriter;
         _sessionFollower = sessionFollower;
-        _commandParent = commandParent;
         _sessionIdOption = sessionIdOption;
         _followOption = followOption;
 
@@ -63,20 +60,18 @@ public class StartSessionCommand : Command
 
     private async Task ExecuteAsync(ParseResult parseResult, CancellationToken cancellationToken)
     {
-        var follow = _followOption is not null && parseResult.GetValue(_followOption);
-        var arguments = new Dictionary<string, string>
-        {
-            { "session-id", parseResult.GetValue(_sessionIdOption) ?? string.Empty },
-            { "session-config-id", parseResult.GetValue(_sessionConfigIdOption) ?? string.Empty },
-        };
+        var sessionId = parseResult.GetValue(_sessionIdOption) ?? string.Empty;
+        var sessionConfigId = parseResult.GetValue(_sessionConfigIdOption) ?? string.Empty;
+        var command = IpcStartSessionCommand.CreateNew(sessionId, sessionConfigId);
 
-        Response? response = await _commandSender.SendAsync(_commandParent, Name, arguments, follow, cancellationToken);
+        Response? response = await _commandSender.SendAsync(command, cancellationToken);
 
         if (response is not null)
         {
             await _messageWriter.WriteAsync(error: !response.Success, response.Message, cancellationToken);
         }
 
+        var follow = _followOption is not null && parseResult.GetValue(_followOption);
         if (follow && response?.Success == true)
         {
             _sessionFollower.MustFollow = true;

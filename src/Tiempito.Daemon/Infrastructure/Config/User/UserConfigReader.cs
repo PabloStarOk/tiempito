@@ -4,6 +4,7 @@ using Tiempito.Daemon.Application.Config;
 using Tiempito.Daemon.Application.Config.User;
 using Tiempito.Daemon.Domain.Config;
 using Tiempito.Daemon.Domain.Config.Enums;
+using Tiempito.IPC.Models.Enums;
 
 namespace Tiempito.Daemon.Infrastructure.Config.User;
 
@@ -53,14 +54,15 @@ public class UserConfigReader : IUserConfigReader
                     break;
 
                 case UserConfigKeyword.EnabledFeatures:
-                    foreach (string enabledFeat in keyValue.Content.Split(','))
+                    foreach (string enabledFeatString in keyValue.Content.Split(','))
                     {
-                        if (string.IsNullOrWhiteSpace(enabledFeat))
+                        if (string.IsNullOrWhiteSpace(enabledFeatString) ||
+                            !Enum.TryParse(enabledFeatString.Trim(), ignoreCase: true, out UserFeature feature))
                         {
                             continue;
                         }
 
-                        userConfig.AddFeature(enabledFeat.Trim());
+                        userConfig.AddFeature(feature);
                     }
 
                     break;

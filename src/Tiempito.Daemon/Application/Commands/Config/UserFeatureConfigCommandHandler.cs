@@ -1,7 +1,7 @@
 using Tiempito.Daemon.Application.Config.User;
-using Tiempito.Daemon.Domain.Commands.Enums;
 using Tiempito.Daemon.Domain.Shared;
-using Tiempito.IPC.Models;
+using Tiempito.IPC.Models.Commands;
+using Tiempito.IPC.Models.Commands.Config;
 
 namespace Tiempito.Daemon.Application.Commands.Config;
 
@@ -9,26 +9,22 @@ namespace Tiempito.Daemon.Application.Commands.Config;
 /// Handles the enabling/disabling of a configuration feature via the <see cref="IUserConfigService"/>.
 /// </summary>
 /// <param name="userConfigService">Service for user configuration operations.</param>
-/// <param name="enable">Indicates whether to enable (`true`) or disable (`false`) the feature.</param>
-internal sealed class UserFeatureConfigCommandHandler(IUserConfigService userConfigService, bool enable)
+internal sealed class UserFeatureConfigCommandHandler(IUserConfigService userConfigService)
     : ICommandHandler
 {
     /// <inheritdoc/>
-    public bool CanHandle(Command command) =>
-        command.CommandType.Equals(nameof(CommandType.Config), StringComparison.OrdinalIgnoreCase)
-        && command.SubcommandType is "enable" or "disable";
+    public bool CanHandle(Command command) => command is UserFeatureConfigCommand;
 
     /// <inheritdoc/>
     public async ValueTask<OperationResult> HandleAsync(Command command, CancellationToken cancellationToken = default)
     {
-        if (!command.Arguments.TryGetValue("feature", out string? feature)
-            || string.IsNullOrWhiteSpace(feature))
+        if (command is not UserFeatureConfigCommand featCmd)
         {
-            return new OperationResult(Success: false, "Feature was not provided.");
+            throw new ArgumentException($"Command must be a {nameof(UserFeatureConfigCommand)}.", nameof(command));
         }
 
-        return enable
-            ? await userConfigService.EnableFeatureAsync(feature)
-            : await userConfigService.DisableFeatureAsync(feature);
+        return featCmd.Enable
+            ? await userConfigService.EnableFeatureAsync(featCmd.Feature)
+            : await userConfigService.DisableFeatureAsync(featCmd.Feature);
     }
 }

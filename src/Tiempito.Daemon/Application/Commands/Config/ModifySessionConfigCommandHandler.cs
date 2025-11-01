@@ -1,8 +1,8 @@
 using Tiempito.Daemon.Application.Config;
 using Tiempito.Daemon.Application.Config.Sessions;
-using Tiempito.Daemon.Domain.Commands.Enums;
 using Tiempito.Daemon.Domain.Shared;
-using Tiempito.IPC.Models;
+using Tiempito.IPC.Models.Commands;
+using Tiempito.IPC.Models.Commands.Config;
 
 namespace Tiempito.Daemon.Application.Commands.Config;
 
@@ -17,50 +17,41 @@ internal sealed class ModifySessionConfigCommandHandler(
     : ICommandHandler
 {
     /// <inheritdoc/>
-    public bool CanHandle(Command command) =>
-        command.CommandType.Equals(nameof(CommandType.Config), StringComparison.OrdinalIgnoreCase)
-        && command.SubcommandType == "modify-session";
+    public bool CanHandle(Command command) => command is ModifySessionConfigCommand;
 
     /// <inheritdoc/>
     public async ValueTask<OperationResult> HandleAsync(Command command, CancellationToken cancellationToken = default)
     {
-        if (!command.Arguments.TryGetValue("session-config-id", out string? sessionId))
+        if (command is not ModifySessionConfigCommand modifyCmd)
         {
-            return new OperationResult(Success: false, Message: "Session id was not provided.");
+            throw new ArgumentException($"Command must be a {nameof(ModifySessionConfigCommand)}.", nameof(command));
         }
 
-        int? targetCycles = null;
         TimeSpan? delayBetweenTimes = null;
         TimeSpan? focusDuration = null;
         TimeSpan? breakDuration = null;
 
-        if (command.Arguments.TryGetValue("target-cycles", out string? targetCyclesString)
-            && int.TryParse(targetCyclesString, out int parsedTargetCycles))
-        {
-            targetCycles = parsedTargetCycles;
-        }
-
-        if (command.Arguments.TryGetValue("delay-times", out string? delayTimesString)
-            && timeSpanConverter.TryConvert(delayTimesString, out TimeSpan parsedDelayBetweenTimes))
+        if (modifyCmd.DelayBetweenTimes is not null
+            && timeSpanConverter.TryConvert(modifyCmd.DelayBetweenTimes, out TimeSpan parsedDelayBetweenTimes))
         {
             delayBetweenTimes = parsedDelayBetweenTimes;
         }
 
-        if (command.Arguments.TryGetValue("focus-duration", out string? focusDurationString)
-            && timeSpanConverter.TryConvert(focusDurationString, out TimeSpan parsedFocusDuration))
+        if (modifyCmd.FocusDuration is not null
+            && timeSpanConverter.TryConvert(modifyCmd.FocusDuration, out TimeSpan parsedFocusDuration))
         {
             focusDuration = parsedFocusDuration;
         }
 
-        if (command.Arguments.TryGetValue("break-duration", out string? breakDurationString)
-            && timeSpanConverter.TryConvert(breakDurationString, out TimeSpan parsedBreakDuration))
+        if (modifyCmd.BreakDuration is not null
+            && timeSpanConverter.TryConvert(modifyCmd.BreakDuration, out TimeSpan parsedBreakDuration))
         {
             breakDuration = parsedBreakDuration;
         }
 
         return await sessionConfigService.ModifyConfigAsync(
-            sessionId,
-            targetCycles,
+            modifyCmd.SessionConfigId,
+            (int?)modifyCmd.TargetCycles,
             delayBetweenTimes,
             focusDuration,
             breakDuration);

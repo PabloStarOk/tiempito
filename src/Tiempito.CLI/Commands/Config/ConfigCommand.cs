@@ -39,41 +39,36 @@ internal sealed class ConfigCommand : Command
             Required = true,
         };
 
-        var configCommand = new Command(CommandName, CommandDescription);
-
         var createSessionConfigCommand = new CreateSessionConfigCommand(
             commandSender,
             messageWriter,
-            configCommand.Name,
             sessionConfigIdOption);
 
         var modifySessionConfigCommand = new ModifySessionConfigCommand(
             commandSender,
             messageWriter,
-            configCommand.Name,
             sessionConfigIdOption);
 
         var setCommand = new SetConfigCommand(
             commandSender,
             messageWriter,
-            configCommand.Name,
             defaultSessionConfigIdOption);
 
-        var enableFeatCommand = new GenericFeatureConfigCommand(
+        var enableFeatCommand = new UserFeatureConfigCommand(
             commandSender,
             messageWriter,
-            configCommand.Name,
             featureArgument,
             "enable",
-            "Enables a specified feature in the user's configuration.");
+            "Enables a specified feature in the user's configuration.",
+            enable: true);
 
-        var disableFeatCommand = new GenericFeatureConfigCommand(
+        var disableFeatCommand = new UserFeatureConfigCommand(
             commandSender,
             messageWriter,
-            configCommand.Name,
             featureArgument,
             "disable",
-            "Disables a specified feature in the user's configuration.");
+            "Disables a specified feature in the user's configuration.",
+            enable: false);
 
         Add(setCommand);
         Add(enableFeatCommand);

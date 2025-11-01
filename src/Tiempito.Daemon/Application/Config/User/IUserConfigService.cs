@@ -1,5 +1,6 @@
 using Tiempito.Daemon.Domain.Config;
 using Tiempito.Daemon.Domain.Shared;
+using Tiempito.IPC.Models.Enums;
 
 namespace Tiempito.Daemon.Application.Config.User;
 
@@ -31,12 +32,12 @@ public interface IUserConfigService
     /// </summary>
     /// <param name="feature">Feature to enable.</param>
     /// <returns>An <see cref="OperationResult"/>.</returns>
-    public Task<OperationResult> EnableFeatureAsync(string feature);
+    public Task<OperationResult> EnableFeatureAsync(UserFeature feature);
 
     /// <summary>
     /// Disables a feature for the user.
     /// </summary>
     /// <param name="feature">Feature to disable.</param>
     /// <returns>An <see cref="OperationResult"/>.</returns>
-    public Task<OperationResult> DisableFeatureAsync(string feature);
+    public Task<OperationResult> DisableFeatureAsync(UserFeature feature);
 }

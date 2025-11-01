@@ -6,6 +6,7 @@ using Tiempito.Daemon.Application.Notifications;
 using Tiempito.Daemon.Server.Configuration;
 using Tiempito.IPC.Abstractions;
 using Tiempito.IPC.Models;
+using Tiempito.IPC.Models.Commands;
 
 namespace Tiempito.Daemon.Server;
 

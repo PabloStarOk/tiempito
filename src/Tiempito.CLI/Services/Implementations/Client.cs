@@ -3,6 +3,7 @@ using System.IO.Pipes;
 using Tiempito.CLI.Services.Abstractions;
 using Tiempito.IPC.Abstractions;
 using Tiempito.IPC.Models;
+using Tiempito.IPC.Models.Commands;
 
 using IMessageWriter = Tiempito.IPC.Abstractions.IMessageWriter;
 
