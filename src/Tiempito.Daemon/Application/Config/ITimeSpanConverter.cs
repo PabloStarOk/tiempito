@@ -15,10 +15,9 @@ public interface ITimeSpanConverter
     public bool TryConvert(string value, out TimeSpan result);
 
     /// <summary>
-    /// Converts a <see cref="TimeSpan"/> to a string representation
-    /// using the highest possible time unit (hour, minute, second).
+    /// Converts a <see cref="TimeSpan"/> value to its string representation.
     /// </summary>
-    /// <param name="value">A <see cref="TimeSpan"/> to convert to string.</param>
-    /// <returns>A <see cref="string"/>.</returns>
-    public string ConvertToString(TimeSpan value);
+    /// <param name="value">The <see cref="TimeSpan"/> to format.</param>
+    /// <returns>A string representation of the <see cref="TimeSpan"/>.</returns>
+    public string Format(TimeSpan value);
 }

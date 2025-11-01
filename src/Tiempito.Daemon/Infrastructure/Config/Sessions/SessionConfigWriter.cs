@@ -35,9 +35,9 @@ public class SessionConfigWriter : ISessionConfigWriter
     {
         string sectionName = prefixSectionName + sessionConfig.Id;
         var targetCycles = sessionConfig.TargetCycles.ToString();
-        var delayBetweenTimes = _timeSpanConverter.ConvertToString(sessionConfig.DelayBetweenTimes);
-        string focusDuration = _timeSpanConverter.ConvertToString(sessionConfig.FocusDuration);
-        string breakDuration = _timeSpanConverter.ConvertToString(sessionConfig.BreakDuration);
+        var delayBetweenTimes = _timeSpanConverter.Format(sessionConfig.DelayBetweenTimes);
+        string focusDuration = _timeSpanConverter.Format(sessionConfig.FocusDuration);
+        string breakDuration = _timeSpanConverter.Format(sessionConfig.BreakDuration);
 
         bool wasWritten =
             _configParser.SetValue(sectionName, nameof(SessionConfigKeyword.TargetCycles), targetCycles)
