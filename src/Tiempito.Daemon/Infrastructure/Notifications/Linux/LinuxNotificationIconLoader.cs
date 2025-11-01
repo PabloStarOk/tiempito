@@ -1,17 +1,16 @@
+#if LINUX
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
-
-using Tiempito.Daemon.Application.Notifications;
 
 namespace Tiempito.Daemon.Infrastructure.Notifications.Linux;
 
 /// <summary>
 /// Represents the icon loader for linux operating systems.
 /// </summary>
-public class LinuxSystemIconLoader : ISystemAsyncIconLoader
+internal sealed class LinuxNotificationIconLoader : ILinuxNotificationIconLoader
 {
     /// <inheritdoc/>
-    public async Task<NotificationImageData> LoadAsync(string iconPath)
+    public async Task<LinuxNotificationImageData> LoadAsync(string iconPath)
     {
         using Image<Rgba32> image = await Image.LoadAsync<Rgba32>(iconPath);
 
@@ -21,7 +20,7 @@ public class LinuxSystemIconLoader : ISystemAsyncIconLoader
 
         byte[] data = GetDataArray(image, rowStride, hasAlpha, channels);
 
-        return new NotificationImageData
+        return new LinuxNotificationImageData
         {
             Width = image.Width,
             Height = image.Height,
@@ -69,3 +68,4 @@ public class LinuxSystemIconLoader : ISystemAsyncIconLoader
         return data;
     }
 }
+#endif

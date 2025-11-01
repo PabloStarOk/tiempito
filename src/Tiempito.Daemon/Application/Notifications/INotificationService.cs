@@ -1,24 +1,18 @@
 using Tiempito.Daemon.Domain.Notifications.Enums;
+using Tiempito.Daemon.Domain.Sessions.ValueObjects;
 
 namespace Tiempito.Daemon.Application.Notifications;
 
 /// <summary>
-/// Defines a manager of notifications.
+/// Defines a service for sending notifications related to session state changes.
 /// </summary>
 public interface INotificationService
 {
     /// <summary>
-    /// Displays a notification in the current operating system.
+    /// Sends a notification asynchronously based on the provided session state and notification type.
     /// </summary>
-    /// <param name="summary">Summary of the notification.</param>
-    /// <param name="body">Body of the notification.</param>
-    /// <param name="notificationSoundType">Type of sound to play along with the notification.</param>
-    /// <returns>A task representing the operation.</returns>
-    public Task NotifyAsync(string summary, string body, NotificationSoundType notificationSoundType);
-
-    /// <summary>
-    /// Closes the last notification displayed.
-    /// </summary>
-    /// <returns>A task representing the operation.</returns>
-    public Task CloseLastNotificationAsync();
+    /// <param name="sessionState">The current state of the session.</param>
+    /// <param name="type">The type of notification to send.</param>
+    /// <returns>A <see cref="ValueTask"/> representing the asynchronous operation.</returns>
+    public ValueTask NotifyAsync(SessionState sessionState, NotificationType type);
 }

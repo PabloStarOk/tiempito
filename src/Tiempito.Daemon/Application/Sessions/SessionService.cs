@@ -1,5 +1,3 @@
-using Microsoft.Extensions.Options;
-
 using Tiempito.Daemon.Application.Notifications;
 using Tiempito.Daemon.Domain.Notifications.Enums;
 using Tiempito.Daemon.Domain.Sessions;
@@ -13,7 +11,6 @@ namespace Tiempito.Daemon.Application.Sessions;
 /// </summary>
 public sealed class SessionService : ISessionService, IAsyncDisposable
 {
-    private readonly NotificationConfig _notificationConfig;
     private readonly INotificationService _notificationService;
     private readonly IStandardOutQueueWriter _standardOutQueueWriter;
     private readonly IHostApplicationLifetime _hostApplicationLifetime;
@@ -24,21 +21,18 @@ public sealed class SessionService : ISessionService, IAsyncDisposable
     /// <summary>
     /// Initializes a new instance of the <see cref="SessionService"/> class.
     /// </summary>
-    /// <param name="notificationOptions">Options for notification configuration.</param>
     /// <param name="notificationService">Service for sending notifications.</param>
     /// <param name="standardOutQueueWriter">Writer for standard output queue.</param>
     /// <param name="hostApplicationLifetime">Application lifetime manager.</param>
     /// <param name="sessionFactory">Factory for creating sessions.</param>
     /// <param name="activeSessions">Optional dictionary of active sessions.</param>
     public SessionService(
-        IOptions<NotificationConfig> notificationOptions,
         INotificationService notificationService,
         IStandardOutQueueWriter standardOutQueueWriter,
         IHostApplicationLifetime hostApplicationLifetime,
         ISessionFactory sessionFactory,
         Dictionary<string, Session>? activeSessions = null)
     {
-        _notificationConfig = notificationOptions.Value;
         _notificationService = notificationService;
         _standardOutQueueWriter = standardOutQueueWriter;
         _hostApplicationLifetime = hostApplicationLifetime;
@@ -177,13 +171,9 @@ public sealed class SessionService : ISessionService, IAsyncDisposable
         _activeSessions.Clear();
     }
 
-    private async Task OnSessionStartedAsync(Session _)
+    private async Task OnSessionStartedAsync(Session session)
     {
-        await _notificationService.CloseLastNotificationAsync();
-        await _notificationService.NotifyAsync(
-            summary: _notificationConfig.SessionStartedSummary,
-            body: _notificationConfig.SessionStartedBody,
-            NotificationSoundType.SessionStarted);
+        await _notificationService.NotifyAsync(session.State, NotificationType.SessionStarted);
     }
 
     private async ValueTask OnSessionSecondElapsedAsync(Session session)
@@ -201,37 +191,14 @@ public sealed class SessionService : ISessionService, IAsyncDisposable
 
         var message = $"{session.State.IntervalType.ToString()} time completed.";
         await _standardOutQueueWriter.WriteAsync(message);
-
-        await _notificationService.CloseLastNotificationAsync();
-
-        string summary;
-        string body;
-
-        if (session.State.IntervalType is SessionIntervalType.Focus)
-        {
-            summary = _notificationConfig.FocusCompletedSummary;
-            body = _notificationConfig.FocusCompletedBody;
-        }
-        else
-        {
-            summary = _notificationConfig.BreakCompletedSummary;
-            body = _notificationConfig.BreakCompletedBody;
-        }
-
-        await _notificationService.NotifyAsync(summary, body, NotificationSoundType.TimeCompleted);
+        await _notificationService.NotifyAsync(session.State, NotificationType.SessionIntervalCompleted);
     }
 
     private async ValueTask OnSessionCompletedAsync(Session session)
     {
         _activeSessions.Remove(session.Id);
-
         var message = $"Session with id {session.Id} was completed";
         await _standardOutQueueWriter.WriteAsync(message);
-
-        await _notificationService.CloseLastNotificationAsync();
-        await _notificationService.NotifyAsync(
-            summary: _notificationConfig.SessionFinishedSummary,
-            body: _notificationConfig.SessionFinishedBody,
-            NotificationSoundType.SessionFinished);
+        await _notificationService.NotifyAsync(session.State, NotificationType.SessionCompleted);
     }
 }

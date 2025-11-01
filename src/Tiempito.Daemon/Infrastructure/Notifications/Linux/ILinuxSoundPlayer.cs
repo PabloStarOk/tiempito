@@ -1,20 +1,22 @@
-namespace Tiempito.Daemon.Application.Notifications;
+#if LINUX
+namespace Tiempito.Daemon.Infrastructure.Notifications.Linux;
 
 /// <summary>
 /// Defines a player of sounds.
 /// </summary>
-public interface ISystemSoundPlayer : IDisposable
+public interface ILinuxSoundPlayer
 {
     /// <summary>
     /// Plays an audio file.
     /// </summary>
     /// <param name="filepath">Audio file path to play.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    public Task PlayAsync(string filepath);
+    public ValueTask PlayAsync(string filepath);
 
     /// <summary>
     /// Stop the last played sound.
     /// </summary>
     /// <returns>A task representing the asynchronous operation.</returns>
-    public Task StopAsync();
+    public ValueTask StopAsync();
 }
+#endif

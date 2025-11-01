@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Options;
 using Moq;
 
 using Tiempito.Daemon.Application.Notifications;
@@ -24,24 +23,18 @@ public class SessionServiceTests : IDisposable
     private readonly Mock<IHostApplicationLifetime> _hostApplicationLifetimeMock;
     private readonly Mock<ISessionFactory> _sessionFactoryMock;
     private readonly Dictionary<string, Session> _activeSessions = [];
-    private readonly NotificationConfig _notificationConfig;
 
     public SessionServiceTests(ITestOutputHelper testOutputHelper)
     {
         _testOutputHelper = testOutputHelper;
         _mockRepository = new MockRepository(MockBehavior.Strict);
 
-        Mock<IOptions<NotificationConfig>> notificationOptionsMock = _mockRepository.Create<IOptions<NotificationConfig>>();
         _notificationManagerMock = _mockRepository.Create<INotificationService>(MockBehavior.Loose);
         _stdOutQueueWriterMock = _mockRepository.Create<IStandardOutQueueWriter>();
         _hostApplicationLifetimeMock = _mockRepository.Create<IHostApplicationLifetime>();
         _sessionFactoryMock = _mockRepository.Create<ISessionFactory>();
 
-        _notificationConfig = new NotificationConfig();
-        notificationOptionsMock.Setup(n => n.Value).Returns(_notificationConfig);
-
         _sessionService = new SessionService(
-            notificationOptionsMock.Object,
             _notificationManagerMock.Object,
             _stdOutQueueWriterMock.Object,
             _hostApplicationLifetimeMock.Object,
