@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Tiempito.CLI.Commands;
 using Tiempito.CLI.Services;
 using Tiempito.CLI.Services.Abstractions;
+using Tiempito.CLI.Services.Implementations;
 using Tiempito.IPC;
 
 namespace Tiempito.CLI;
@@ -37,24 +38,25 @@ internal sealed class CliApp
         await using var serviceScope = sp.CreateAsyncScope();
         var rootCommand = serviceScope.ServiceProvider.GetRequiredService<RootCommand>();
         var sessionFollower = serviceScope.ServiceProvider.GetRequiredService<ISessionFollower>();
-        var appLifetime = serviceScope.ServiceProvider.GetRequiredService<ApplicationLifetime>();
+        var appLifetime = serviceScope.ServiceProvider.GetRequiredService<IApplicationLifetime>();
 
         var parseResult = rootCommand.Parse(args);
 
-        int exitCode = await parseResult.InvokeAsync(cancellationToken: appLifetime.Token);
+        int exitCode = await parseResult.InvokeAsync(cancellationToken: appLifetime.StoppingToken);
         if (exitCode != 0)
         {
             return exitCode;
         }
 
-        await sessionFollower.FollowAsync(appLifetime.Token);
+        await sessionFollower.FollowAsync(appLifetime.StoppingToken);
+        appLifetime.StopApplication();
         return 0;
     }
 
     private void AddDiServices()
     {
         _services.AddSingleton<CancellationTokenSource>();
-        _services.AddSingleton<ApplicationLifetime>();
+        _services.AddSingleton<IApplicationLifetime, ConsoleApplicationLifetime>();
         _services.AddIpc();
         _services.AddServices();
         _services.AddRootCommand();
