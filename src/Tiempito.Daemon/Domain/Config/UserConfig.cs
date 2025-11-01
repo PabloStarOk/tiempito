@@ -1,4 +1,4 @@
-using System.Collections.Immutable;
+using Tiempito.IPC.Models.Enums;
 
 namespace Tiempito.Daemon.Domain.Config;
 
@@ -8,14 +8,6 @@ namespace Tiempito.Daemon.Domain.Config;
 public struct UserConfig
 {
     /// <summary>
-    /// Gets allowed features that can be understood by the daemon.
-    /// </summary>
-    public static ImmutableArray<UserConfigFeature> AllowedFeatures { get; } =
-    [
-        new (Name: "notification", Aliases: ["nc"])
-    ];
-
-    /// <summary>
     /// Gets the id of the default session to start by the daemon.
     /// </summary>
     public string DefaultSessionId { get; private set; }
@@ -23,14 +15,14 @@ public struct UserConfig
     /// <summary>
     /// Gets a value indicating whether if the notifications feature is enabled.
     /// </summary>
-    public bool NotificationsEnabled => _enabledFeatures.Contains("notification");
+    public bool NotificationsEnabled => _enabledFeatures.Contains(UserFeature.Notification);
 
     /// <summary>
     /// Gets all enabled features.
     /// </summary>
-    public IReadOnlyList<string> EnabledFeatures => _enabledFeatures;
+    public IReadOnlyList<UserFeature> EnabledFeatures => _enabledFeatures;
 
-    private readonly List<string> _enabledFeatures = [];
+    private readonly List<UserFeature> _enabledFeatures = [];
 
     /// <summary>
     /// Initializes a new instance of the <see cref="UserConfig"/> struct.
@@ -61,17 +53,8 @@ public struct UserConfig
     /// <summary>
     /// Add the given feature to the enabled ones.
     /// </summary>
-    /// <param name="configFeature">Feature to add.</param>
-    public void AddFeature(UserConfigFeature configFeature)
-    {
-        _enabledFeatures.Add(configFeature.Name);
-    }
-
-    /// <summary>
-    /// Add the given feature to the enabled ones.
-    /// </summary>
     /// <param name="feature">Feature to add.</param>
-    public void AddFeature(string feature)
+    public void AddFeature(UserFeature feature)
     {
         _enabledFeatures.Add(feature);
     }
@@ -79,9 +62,9 @@ public struct UserConfig
     /// <summary>
     /// Remove a feature from the enabled ones.
     /// </summary>
-    /// <param name="configFeature">Feature to remove.</param>
-    public void RemoveFeature(UserConfigFeature configFeature)
+    /// <param name="feature">Feature to remove.</param>
+    public void RemoveFeature(UserFeature feature)
     {
-        _enabledFeatures.Remove(configFeature.Name);
+        _enabledFeatures.Remove(feature);
     }
 }

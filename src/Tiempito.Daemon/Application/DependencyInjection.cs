@@ -34,19 +34,9 @@ internal static class DependencyInjection
         services.AddTransient<ICommandHandler, ResumeSessionCommandHandler>();
         services.AddTransient<ICommandHandler, CreateSessionConfigCommandHandler>();
         services.AddTransient<ICommandHandler, ModifySessionConfigCommandHandler>();
-        AddUserFeatureConfigCommandHandler(services, enable: true);
-        AddUserFeatureConfigCommandHandler(services, enable: false);
+        services.AddTransient<ICommandHandler, UserFeatureConfigCommandHandler>();
         services.AddTransient<ICommandHandler, SetConfigCommandHandler>();
         services.AddSingleton<ICommandDispatcher, CommandDispatcher>();
-    }
-
-    private static void AddUserFeatureConfigCommandHandler(IServiceCollection services, bool enable)
-    {
-        services.AddTransient<ICommandHandler>(sp =>
-        {
-            var userConfigService = sp.GetRequiredService<IUserConfigService>();
-            return new UserFeatureConfigCommandHandler(userConfigService, enable);
-        });
     }
 
     private static void AddConfigServices(IServiceCollection services)

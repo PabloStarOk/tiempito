@@ -1,7 +1,7 @@
 using Tiempito.Daemon.Application.Config.User;
-using Tiempito.Daemon.Domain.Commands.Enums;
 using Tiempito.Daemon.Domain.Shared;
-using Tiempito.IPC.Models;
+using Tiempito.IPC.Models.Commands;
+using Tiempito.IPC.Models.Commands.Config;
 
 namespace Tiempito.Daemon.Application.Commands.Config;
 
@@ -13,19 +13,16 @@ internal sealed class SetConfigCommandHandler(IUserConfigService userConfigServi
     : ICommandHandler
 {
     /// <inheritdoc/>
-    public bool CanHandle(Command command) =>
-        command.CommandType.Equals(nameof(CommandType.Config), StringComparison.OrdinalIgnoreCase)
-        && command.SubcommandType == "set";
+    public bool CanHandle(Command command) => command is SetConfigCommand;
 
     /// <inheritdoc/>
     public async ValueTask<OperationResult> HandleAsync(Command command, CancellationToken cancellationToken = default)
     {
-        if (!command.Arguments.TryGetValue("default-session-id", out string? defaultSessionId)
-            || string.IsNullOrWhiteSpace(defaultSessionId))
+        if (command is not SetConfigCommand setCmd)
         {
-            return new OperationResult(Success: false, Message: "Nothing to update.");
+            throw new ArgumentException($"Command must be a {nameof(SetConfigCommand)}.", nameof(command));
         }
 
-        return await userConfigService.ChangeDefaultSessionConfigAsync(defaultSessionId);
+        return await userConfigService.ChangeDefaultSessionConfigAsync(setCmd.DefaultSessionConfigId);
     }
 }

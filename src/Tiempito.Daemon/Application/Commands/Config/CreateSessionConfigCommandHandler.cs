@@ -1,9 +1,9 @@
 using Tiempito.Daemon.Application.Config;
 using Tiempito.Daemon.Application.Config.Sessions;
-using Tiempito.Daemon.Domain.Commands.Enums;
 using Tiempito.Daemon.Domain.Config;
 using Tiempito.Daemon.Domain.Shared;
-using Tiempito.IPC.Models;
+using Tiempito.IPC.Models.Commands;
+using Tiempito.IPC.Models.Commands.Config;
 
 namespace Tiempito.Daemon.Application.Commands.Config;
 
@@ -18,58 +18,31 @@ internal sealed class CreateSessionConfigCommandHandler(
     : ICommandHandler
 {
     /// <inheritdoc/>
-    public bool CanHandle(Command command) =>
-        command.CommandType.Equals(nameof(CommandType.Config), StringComparison.OrdinalIgnoreCase)
-        && command.SubcommandType == "create-session";
+    public bool CanHandle(Command command) => command is CreateSessionConfigCommand;
 
     /// <inheritdoc/>
     public async ValueTask<OperationResult> HandleAsync(Command command, CancellationToken cancellationToken = default)
     {
-        if (!command.Arguments.TryGetValue("session-config-id", out string? sessionId))
+        if (command is not CreateSessionConfigCommand createCmd)
         {
-            return new OperationResult(Success: false, Message: "Session id was not provided.");
+            throw new ArgumentException($"Command must be a {nameof(CreateSessionConfigCommand)}.", nameof(command));
         }
 
-        if (!command.Arguments.TryGetValue("target-cycles", out string? targetCyclesString))
-        {
-            return new OperationResult(Success: false, Message: "Target cycles was not provided.");
-        }
-
-        if (!int.TryParse(targetCyclesString, out int targetCycles))
-        {
-            return new OperationResult(Success: false, Message: "Target cycles number provided is not recognized.");
-        }
-
-        TimeSpan delayBetweenTimes = TimeSpan.Zero;
-        if (command.Arguments.TryGetValue("delay-times", out string? delayTimesString))
-        {
-            timeSpanConverter.TryConvert(delayTimesString, out delayBetweenTimes);
-        }
-
-        if (!command.Arguments.TryGetValue("focus-duration", out string? focusDurationString))
-        {
-            return new OperationResult(Success: false, Message: "Focus duration was not provided.");
-        }
-
-        if (!timeSpanConverter.TryConvert(focusDurationString, out TimeSpan focusDuration))
+        _ = timeSpanConverter.TryConvert(createCmd.DelayBetweenTimes, out TimeSpan delayBetweenTimes);
+        if (!timeSpanConverter.TryConvert(createCmd.FocusDuration, out TimeSpan focusDuration))
         {
             return new OperationResult(Success: false, Message: "Focus duration time is not recognized.");
         }
 
-        if (!command.Arguments.TryGetValue("break-duration", out string? breakDurationString))
+        if (!timeSpanConverter.TryConvert(createCmd.BreakDuration, out TimeSpan breakDuration))
         {
-            return new OperationResult(Success: false, Message: "Focus duration was not provided.");
-        }
-
-        if (!timeSpanConverter.TryConvert(breakDurationString, out TimeSpan breakDuration))
-        {
-            return new OperationResult(Success: false, Message: "Focus duration time is not recognized.");
+            return new OperationResult(Success: false, Message: "Break duration time is not recognized.");
         }
 
         OperationResult operationResult = await sessionConfigService.AddConfigAsync(
             new SessionConfig(
-                sessionId,
-                targetCycles,
+                createCmd.SessionConfigId,
+                (int)createCmd.TargetCycles,
                 delayBetweenTimes,
                 focusDuration,
                 breakDuration));

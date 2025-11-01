@@ -1,4 +1,5 @@
 using Tiempito.IPC.Models;
+using Tiempito.IPC.Models.Commands;
 
 namespace Tiempito.Daemon.Application.Commands;
 

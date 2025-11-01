@@ -1,5 +1,6 @@
 using Tiempito.CLI.Services.Abstractions;
 using Tiempito.IPC.Models;
+using Tiempito.IPC.Models.Commands;
 
 namespace Tiempito.CLI.Services.Implementations;
 
@@ -20,15 +21,8 @@ internal sealed class CommandSender : ICommandSender
     }
 
     /// <inheritdoc/>
-    public async Task<Response?> SendAsync(
-        string commandType,
-        string subcommandType,
-        IReadOnlyDictionary<string, string> args,
-        bool follow = false,
-        CancellationToken cancellationToken = default)
+    public async Task<Response?> SendAsync(Command command, CancellationToken cancellationToken = default)
     {
-        var command = Command.CreateNew(commandType, subcommandType, args, follow);
-
         try
         {
             await _client.SendCommandAsync(command, cancellationToken);

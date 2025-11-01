@@ -1,7 +1,7 @@
 using Tiempito.Daemon.Application.Sessions;
-using Tiempito.Daemon.Domain.Commands.Enums;
 using Tiempito.Daemon.Domain.Shared;
-using Tiempito.IPC.Models;
+using Tiempito.IPC.Models.Commands;
+using Tiempito.IPC.Models.Commands.Session;
 
 namespace Tiempito.Daemon.Application.Commands.Sessions;
 
@@ -13,16 +13,16 @@ internal sealed class StartSessionCommandHandler(ISessionService sessionService)
     : ICommandHandler
 {
     /// <inheritdoc/>
-    public bool CanHandle(Command command) =>
-        command.CommandType.Equals(nameof(CommandType.Session), StringComparison.OrdinalIgnoreCase)
-        && command.SubcommandType == "start";
+    public bool CanHandle(Command command) => command is StartSessionCommand;
 
     /// <inheritdoc/>
     public async ValueTask<OperationResult> HandleAsync(Command command, CancellationToken cancellationToken = default)
     {
-        command.Arguments.TryGetValue("session-id", out string? sessionId);
-        command.Arguments.TryGetValue("session-config-id", out string? sessionConfigId);
-        var result = await sessionService.StartSessionAsync(sessionId ?? string.Empty, sessionConfigId ?? string.Empty);
-        return result;
+        if (command is not StartSessionCommand startCmd)
+        {
+            throw new ArgumentException($"Command must be a {nameof(StartSessionCommand)}.", nameof(command));
+        }
+
+        return await sessionService.StartSessionAsync(startCmd.SessionId, startCmd.SessionConfigId);
     }
 }

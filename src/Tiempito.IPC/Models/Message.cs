@@ -1,5 +1,7 @@
 using MessagePack;
 
+using Tiempito.IPC.Models.Commands;
+
 namespace Tiempito.IPC.Models;
 
 /// <summary>

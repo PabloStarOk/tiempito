@@ -1,6 +1,7 @@
 using System.CommandLine;
 
 using Tiempito.CLI.Services.Abstractions;
+using Tiempito.IPC.Models.Commands.Session;
 
 namespace Tiempito.CLI.Commands.Session;
 
@@ -41,33 +42,29 @@ internal sealed class SessionCommand : Command
             commandSender,
             messageWriter,
             sessionFollower,
-            Name,
             sessionIdOption,
             followOption);
 
-        var cancelCommand = new GenericSessionCommand(
+        var cancelCommand = new GenericSessionCommand<CancelSessionCommand>(
             commandSender,
             messageWriter,
             sessionFollower,
-            Name,
             sessionIdOption,
             "cancel",
             "Cancels a session that is being executed.");
 
-        var pauseCommand = new GenericSessionCommand(
+        var pauseCommand = new GenericSessionCommand<PauseSessionCommand>(
             commandSender,
             messageWriter,
             sessionFollower,
-            Name,
             sessionIdOption,
             "pause",
             "Pauses a session that is being executed.");
 
-        var resumeCommand = new GenericSessionCommand(
+        var resumeCommand = new GenericSessionCommand<ResumeSessionCommand>(
             commandSender,
             messageWriter,
             sessionFollower,
-            Name,
             sessionIdOption,
             "resume",
             "Resumes a paused session.",

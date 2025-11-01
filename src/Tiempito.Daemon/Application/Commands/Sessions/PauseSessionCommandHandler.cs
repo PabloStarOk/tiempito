@@ -1,7 +1,7 @@
 using Tiempito.Daemon.Application.Sessions;
-using Tiempito.Daemon.Domain.Commands.Enums;
 using Tiempito.Daemon.Domain.Shared;
-using Tiempito.IPC.Models;
+using Tiempito.IPC.Models.Commands;
+using Tiempito.IPC.Models.Commands.Session;
 
 namespace Tiempito.Daemon.Application.Commands.Sessions;
 
@@ -13,15 +13,17 @@ internal sealed class PauseSessionCommandHandler(ISessionService sessionService)
     : ICommandHandler
 {
     /// <inheritdoc/>
-    public bool CanHandle(Command command) =>
-        command.CommandType.Equals(nameof(CommandType.Session), StringComparison.OrdinalIgnoreCase)
-        && command.SubcommandType == "pause";
+    public bool CanHandle(Command command) => command is PauseSessionCommand;
 
     /// <inheritdoc/>
     public ValueTask<OperationResult> HandleAsync(Command command, CancellationToken cancellationToken = default)
     {
-        command.Arguments.TryGetValue("session-id", out string? sessionId);
-        var result = sessionService.PauseSession(sessionId ?? string.Empty);
+        if (command is not PauseSessionCommand pauseCmd)
+        {
+            throw new ArgumentException($"Command must be a {nameof(PauseSessionCommand)}.", nameof(command));
+        }
+
+        var result = sessionService.PauseSession(pauseCmd.SessionId);
         return ValueTask.FromResult(result);
     }
 }
