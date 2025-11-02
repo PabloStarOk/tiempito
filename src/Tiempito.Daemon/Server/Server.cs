@@ -1,4 +1,6 @@
 using System.IO.Pipes;
+using System.Net.Sockets;
+
 using Microsoft.Extensions.Options;
 
 using Tiempito.Daemon.Application.Commands;
@@ -99,7 +101,16 @@ public sealed class Server : BackgroundService, IAsyncDisposable
     {
         _logger.LogInformation("Server started at {Time}", DateTimeOffset.UtcNow);
         _stdOutMessagesSendTask = SendStandardOutMessagesAsync(stoppingToken);
-        await RunAsync(stoppingToken);
+
+        try
+        {
+            await RunAsync(stoppingToken);
+        }
+        catch (IOException ex)
+            when (ex.InnerException is SocketException { SocketErrorCode: SocketError.OperationAborted })
+        {
+            // Ignore
+        }
     }
 
     /// <summary>
