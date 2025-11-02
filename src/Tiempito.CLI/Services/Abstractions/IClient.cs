@@ -17,20 +17,15 @@ public interface IClient
     public Task SendCommandAsync(Command command, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Receives a response from the daemon asynchronously.
+    /// Receives a message from the daemon asynchronously.
     /// </summary>
     /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <typeparam name="TMessage">
+    /// The type of message to receive, which must inherit from <see cref="Message"/>.
+    /// </typeparam>
     /// <returns>
-    /// A task representing the asynchronous operation, with a nullable <see cref="Response"/> result.
+    /// A task representing the asynchronous operation, with a nullable <see cref="Message"/> result.
     /// </returns>
-    public Task<Response?> ReceiveResponseAsync(CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Reads a line of text asynchronously from the standard input pipe.
-    /// </summary>
-    /// <param name="cancellationToken">Token to cancel the operation.</param>
-    /// <returns>
-    /// A task representing the asynchronous operation, with the read string result.
-    /// </returns>
-    public Task<string> ReadPipeStdInAsync(CancellationToken cancellationToken = default);
+    public Task<TMessage> ReceiveMessageAsync<TMessage>(CancellationToken cancellationToken = default)
+        where TMessage : Message;
 }

@@ -1,6 +1,7 @@
 using System.Threading.Channels;
 
 using Tiempito.Daemon.Application.Notifications;
+using Tiempito.IPC.Models;
 
 namespace Tiempito.Daemon.Infrastructure.Notifications;
 
@@ -10,21 +11,21 @@ namespace Tiempito.Daemon.Infrastructure.Notifications;
 internal sealed class StandardOutQueue : IStandardOutQueueWriter, IStandardOutQueueReader
 {
     /// <inheritdoc/>
-    public ChannelReader<string> Reader => _channel.Reader;
+    public ChannelReader<Message> Reader => _channel.Reader;
 
-    private readonly Channel<string> _channel;
+    private readonly Channel<Message> _channel;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="StandardOutQueue"/> class with the specified channel.
     /// </summary>
     /// <param name="channel">The channel used for thread-safe message queuing.</param>
-    public StandardOutQueue(Channel<string> channel)
+    public StandardOutQueue(Channel<Message> channel)
     {
         _channel = channel;
     }
 
     /// <inheritdoc/>
-    public async ValueTask WriteAsync(string message)
+    public async ValueTask WriteAsync(Message message)
     {
         await _channel.Writer.WriteAsync(message);
     }

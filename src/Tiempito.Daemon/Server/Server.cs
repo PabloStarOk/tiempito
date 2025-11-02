@@ -119,7 +119,7 @@ public sealed class Server : BackgroundService, IAsyncDisposable
             }
 
             Response response = await _commandDispatcher.DispatchAsync(command, cancellationToken);
-            await SendResponseAsync(response, cancellationToken);
+            await SendMessageAsync(response, cancellationToken);
         }
     }
 
@@ -155,19 +155,20 @@ public sealed class Server : BackgroundService, IAsyncDisposable
     }
 
     /// <summary>
-    /// Sends a response to the connected client.
+    /// Sends a message to the connected client.
     /// </summary>
-    /// <param name="response">The response to be sent to the client.</param>
+    /// <param name="message">The message to be sent to the client.</param>
     /// <param name="cancellationToken">Token to cancel the operation.</param>
-    private async Task SendResponseAsync(Response response, CancellationToken cancellationToken)
+    private async Task SendMessageAsync(Message message, CancellationToken cancellationToken)
     {
         if (!_pipeServer.IsConnected)
         {
-            _logger.LogError("Could not send a response to the client, it is disconnected.");
+            _logger.LogDebug("Cannot sends message, client is disconnected: {Message}", message);
             return;
         }
 
-        await _messageWriter.WriteAsync(_pipeServer, response, cancellationToken);
+        await _messageWriter.WriteAsync(_pipeServer, message, cancellationToken);
+        _logger.LogDebug("Sent message to client {User}: {Message}", _currentConnectedUser, message);
     }
 
     /// <summary>
@@ -198,15 +199,8 @@ public sealed class Server : BackgroundService, IAsyncDisposable
         {
             while (await _stdOutQueueReader.Reader.WaitToReadAsync(cancellationToken))
             {
-                string message = await _stdOutQueueReader.Reader.ReadAsync(cancellationToken);
-                if (!_pipeServer.IsConnected)
-                {
-                    _logger.LogDebug("Cannot send standard output message, client is disconnected: {Message}", message);
-                    continue;
-                }
-
-                await _messageWriter.WriteAsync(_pipeServer, message, cancellationToken);
-                _logger.LogDebug("Sent standard output message to client {User}: {Message}", _currentConnectedUser, message);
+                Message message = await _stdOutQueueReader.Reader.ReadAsync(cancellationToken);
+                await SendMessageAsync(message, cancellationToken);
             }
         }
         catch (OperationCanceledException)

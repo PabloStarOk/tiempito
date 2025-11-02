@@ -21,7 +21,7 @@ internal sealed class CommandSender : ICommandSender
     }
 
     /// <inheritdoc/>
-    public async Task<Response?> SendAsync(Command command, CancellationToken cancellationToken = default)
+    public async Task<Response> SendAsync(Command command, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -32,6 +32,6 @@ internal sealed class CommandSender : ICommandSender
             return Response.DaemonNotRunning(command.CorrelationId);
         }
 
-        return await _client.ReceiveResponseAsync(cancellationToken);
+        return await _client.ReceiveMessageAsync<Response>(cancellationToken);
     }
 }

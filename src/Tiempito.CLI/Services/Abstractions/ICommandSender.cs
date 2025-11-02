@@ -17,5 +17,5 @@ public interface ICommandSender
     /// A <see cref="Task{TResult}"/> that resolves to a <see cref="Response"/> instance, or <c>null</c>
     /// if no response is available.
     /// </returns>
-    public Task<Response?> SendAsync(Command command, CancellationToken cancellationToken = default);
+    public Task<Response> SendAsync(Command command, CancellationToken cancellationToken = default);
 }

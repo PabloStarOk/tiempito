@@ -1,4 +1,5 @@
 using Tiempito.CLI.Services.Abstractions;
+using Tiempito.IPC.Models;
 
 namespace Tiempito.CLI.Services.Implementations;
 
@@ -36,8 +37,9 @@ internal sealed class SessionFollower : ISessionFollower
         {
             while (!cancellationToken.IsCancellationRequested)
             {
-                string message = await _client.ReadPipeStdInAsync(cancellationToken);
-                await _messageWriter.WriteAsync(error: false, message, cancellationToken);
+                var message = await _client.ReceiveMessageAsync<SessionProgressMessage>(cancellationToken);
+                string outputMsg = $"{message.IntervalType.ToString()} interval: {message.ElapsedTime}/{message.IntervalDuration}";
+                await _messageWriter.WriteAsync(error: false, outputMsg, cancellationToken);
             }
         }
         catch (OperationCanceledException)

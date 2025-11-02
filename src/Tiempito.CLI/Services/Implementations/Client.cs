@@ -47,21 +47,20 @@ public class Client : IClient
     }
 
     /// <inheritdoc/>
-    public async Task<Response?> ReceiveResponseAsync(CancellationToken cancellationToken = default)
+    public async Task<TMessage> ReceiveMessageAsync<TMessage>(CancellationToken cancellationToken = default)
+        where TMessage : Message
     {
         if (!_pipeClient.IsConnected)
         {
             throw new InvalidOperationException("Named pipe is not connected.");
         }
 
-        var response = await _messageReader.ReadAsync<Response>(_pipeClient, cancellationToken);
-        return response ?? throw new InvalidOperationException("Response not recognized.");
-    }
+        var message = await _messageReader.ReadAsync<Message>(_pipeClient, cancellationToken);
+        if (message is not TMessage typedMessage)
+        {
+            throw new InvalidOperationException($"Received message is not of expected type {typeof(TMessage).FullName}.");
+        }
 
-    /// <inheritdoc/>
-    public async Task<string> ReadPipeStdInAsync(CancellationToken cancellationToken = default)
-    {
-        string? message = await _messageReader.ReadAsync<string>(_pipeClient, cancellationToken);
-        return message ?? throw new InvalidOperationException("Message not recognized.");
+        return typedMessage;
     }
 }

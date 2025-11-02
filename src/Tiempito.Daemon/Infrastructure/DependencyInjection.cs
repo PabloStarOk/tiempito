@@ -14,6 +14,7 @@ using Tiempito.Daemon.Infrastructure.Config.Sessions;
 using Tiempito.Daemon.Infrastructure.Config.User;
 using Tiempito.Daemon.Infrastructure.Notifications;
 using Tiempito.Daemon.Infrastructure.Sessions;
+using Tiempito.IPC.Models;
 #if LINUX
 using Tiempito.Daemon.Infrastructure.Notifications.Linux;
 #elif WINDOWS10_0_17763_0_OR_GREATER
@@ -100,7 +101,7 @@ internal static class DependencyInjection
                 SingleReader = true,
                 SingleWriter = false,
             };
-            var channel = Channel.CreateUnbounded<string>(channelOptions);
+            var channel = Channel.CreateUnbounded<Message>(channelOptions);
             return new StandardOutQueue(channel);
         });
         services.AddSingleton<IStandardOutQueueWriter>(sp => sp.GetRequiredService<StandardOutQueue>());

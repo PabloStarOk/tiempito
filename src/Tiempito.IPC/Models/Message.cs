@@ -13,6 +13,7 @@ namespace Tiempito.IPC.Models;
 [MessagePackObject]
 [Union(0, typeof(Command))]
 [Union(1, typeof(Response))]
+[Union(2, typeof(SessionProgressMessage))]
 public abstract record Message(
     [property: Key(0)] Guid Id,
     [property: Key(1)] Guid CorrelationId,
