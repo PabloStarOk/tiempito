@@ -25,7 +25,7 @@ internal sealed class CommandSender : ICommandSender
     {
         try
         {
-            await _client.SendCommandAsync(command, cancellationToken);
+            await _client.SendMessageAsync(command, cancellationToken);
         }
         catch (TimeoutException)
         {

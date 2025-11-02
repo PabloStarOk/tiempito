@@ -56,6 +56,11 @@ public sealed class Server : BackgroundService, IAsyncDisposable
     /// <inheritdoc/>
     public override async Task StopAsync(CancellationToken cancellationToken)
     {
+        if (_pipeServer.IsConnected)
+        {
+            await SendMessageAsync(ConnectionTerminationMessage.CreateNew(), CancellationToken.None);
+        }
+
         Disconnect();
         await base.StopAsync(cancellationToken);
         _logger.LogInformation("Server stopped at {Time}", DateTimeOffset.UtcNow);
@@ -109,17 +114,8 @@ public sealed class Server : BackgroundService, IAsyncDisposable
                 await ConnectAsync(cancellationToken);
             }
 
-            Command? command = await _messageReader.ReadAsync<Command>(_pipeServer, cancellationToken);
-
-            // TODO: Replace with a termination message.
-            if (command is null)
-            {
-                Disconnect();
-                continue;
-            }
-
-            Response response = await _commandDispatcher.DispatchAsync(command, cancellationToken);
-            await SendMessageAsync(response, cancellationToken);
+            Message? message = await _messageReader.ReadAsync<Message>(_pipeServer, cancellationToken);
+            await HandleMessageAsync(message, cancellationToken);
         }
     }
 
@@ -152,6 +148,23 @@ public sealed class Server : BackgroundService, IAsyncDisposable
         _pipeServer.Disconnect();
         _logger.LogInformation("Client {User} disconnected", _currentConnectedUser);
         _currentConnectedUser = string.Empty;
+    }
+
+    private async Task HandleMessageAsync(Message? message, CancellationToken cancellationToken)
+    {
+        switch (message)
+        {
+            case Command cmd:
+                _logger.LogDebug("Received command {CommandType}", cmd.GetType().Name);
+                Response response = await _commandDispatcher.DispatchAsync(cmd, cancellationToken);
+                await SendMessageAsync(response, cancellationToken);
+                break;
+
+            case ConnectionTerminationMessage:
+                _logger.LogDebug("Received connection termination message");
+                Disconnect();
+                break;
+        }
     }
 
     /// <summary>

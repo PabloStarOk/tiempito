@@ -3,7 +3,6 @@ using System.IO.Pipes;
 using Tiempito.CLI.Services.Abstractions;
 using Tiempito.IPC.Abstractions;
 using Tiempito.IPC.Models;
-using Tiempito.IPC.Models.Commands;
 
 using IMessageWriter = Tiempito.IPC.Abstractions.IMessageWriter;
 
@@ -12,12 +11,13 @@ namespace Tiempito.CLI.Services.Implementations;
 /// <summary>
 /// Client that sends requests to the daemon and receive responses from the daemon.
 /// </summary>
-public class Client : IClient
+public sealed class Client : IClient, IAsyncDisposable
 {
     private const int ConnectionTimeout = 3000;
     private readonly NamedPipeClientStream _pipeClient;
     private readonly IMessageWriter _messageWriter;
     private readonly IMessageReader _messageReader;
+    private bool _disposed;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Client"/> class.
@@ -36,7 +36,7 @@ public class Client : IClient
     }
 
     /// <inheritdoc/>
-    public async Task SendCommandAsync(Command command, CancellationToken cancellationToken = default)
+    public async Task SendMessageAsync(Message command, CancellationToken cancellationToken = default)
     {
         if (!_pipeClient.IsConnected)
         {
@@ -62,5 +62,30 @@ public class Client : IClient
         }
 
         return typedMessage;
+    }
+
+    /// <inheritdoc/>
+    public async ValueTask DisposeAsync()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+
+        if (!_pipeClient.IsConnected)
+        {
+            return;
+        }
+
+        try
+        {
+            await SendMessageAsync(ConnectionTerminationMessage.CreateNew(), CancellationToken.None);
+        }
+        catch (IOException)
+        {
+            // Ignore, termination message already sent by the daemon.
+        }
     }
 }

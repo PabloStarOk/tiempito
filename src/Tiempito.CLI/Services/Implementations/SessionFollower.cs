@@ -37,14 +37,40 @@ internal sealed class SessionFollower : ISessionFollower
         {
             while (!cancellationToken.IsCancellationRequested)
             {
-                var message = await _client.ReceiveMessageAsync<SessionProgressMessage>(cancellationToken);
-                string outputMsg = $"{message.IntervalType.ToString()} interval: {message.ElapsedTime}/{message.IntervalDuration}";
-                await _messageWriter.WriteAsync(error: false, outputMsg, cancellationToken);
+                var message = await _client.ReceiveMessageAsync<Message>(cancellationToken);
+                await HandleMessageAsync(message, cancellationToken);
+                if (message is ConnectionTerminationMessage)
+                {
+                    break;
+                }
             }
         }
         catch (OperationCanceledException)
         {
             // Ignore
         }
+    }
+
+    private async Task HandleMessageAsync(Message message, CancellationToken cancellationToken)
+    {
+        bool error = false;
+        string outputMsg;
+        switch (message)
+        {
+            case SessionProgressMessage progressMsg:
+                outputMsg = $"{progressMsg.IntervalType.ToString()} interval: {progressMsg.ElapsedTime}/{progressMsg.IntervalDuration}";
+                break;
+
+            case ConnectionTerminationMessage:
+                outputMsg = "Daemon has terminated the connection.";
+                break;
+
+            default:
+                error = true;
+                outputMsg = "Received an unknown message from daemon.";
+                break;
+        }
+
+        await _messageWriter.WriteAsync(error, outputMsg, cancellationToken);
     }
 }

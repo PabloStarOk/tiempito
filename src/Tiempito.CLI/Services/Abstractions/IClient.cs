@@ -1,5 +1,4 @@
 using Tiempito.IPC.Models;
-using Tiempito.IPC.Models.Commands;
 
 namespace Tiempito.CLI.Services.Abstractions;
 
@@ -9,12 +8,12 @@ namespace Tiempito.CLI.Services.Abstractions;
 public interface IClient
 {
     /// <summary>
-    /// Sends a command to the daemon asynchronously.
+    /// Sends a message to the daemon asynchronously.
     /// </summary>
-    /// <param name="command">The command to send.</param>
+    /// <param name="message">The message to send.</param>
     /// <param name="cancellationToken">Token to cancel the operation.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    public Task SendCommandAsync(Command command, CancellationToken cancellationToken = default);
+    public Task SendMessageAsync(Message message, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Receives a message from the daemon asynchronously.
