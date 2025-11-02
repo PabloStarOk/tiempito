@@ -3,6 +3,7 @@ using Tiempito.Daemon.Domain.Notifications.Enums;
 using Tiempito.Daemon.Domain.Sessions;
 using Tiempito.Daemon.Domain.Sessions.Enums;
 using Tiempito.Daemon.Domain.Shared;
+using Tiempito.IPC.Models;
 
 namespace Tiempito.Daemon.Application.Sessions;
 
@@ -171,6 +172,24 @@ public sealed class SessionService : ISessionService, IAsyncDisposable
         _activeSessions.Clear();
     }
 
+    private static SessionProgressMessage CreateSessionProgressMessage(Session session)
+    {
+        IPC.Models.Enums.SessionIntervalType intervalType = session.State.IntervalType switch
+        {
+            SessionIntervalType.Focus => IPC.Models.Enums.SessionIntervalType.Focus,
+            SessionIntervalType.Break => IPC.Models.Enums.SessionIntervalType.Break,
+            SessionIntervalType.Delay => IPC.Models.Enums.SessionIntervalType.Delay,
+            _ => throw new InvalidOperationException("Unknown session interval type.")
+        };
+
+        return SessionProgressMessage.CreateNew(
+            sessionId: session.Id,
+            intervalDuration: session.State.TargetDuration,
+            intervalType: intervalType,
+            cycle: session.State.Cycle,
+            elapsedTime: session.State.ElapsedTime);
+    }
+
     private async Task OnSessionStartedAsync(Session session)
     {
         await _notificationService.NotifyAsync(session.State, NotificationType.SessionStarted);
@@ -178,7 +197,7 @@ public sealed class SessionService : ISessionService, IAsyncDisposable
 
     private async ValueTask OnSessionSecondElapsedAsync(Session session)
     {
-        var message = $"{session.State.IntervalType.ToString()} time: {session.State.ElapsedTime}";
+        var message = CreateSessionProgressMessage(session);
         await _standardOutQueueWriter.WriteAsync(message);
     }
 
@@ -189,7 +208,7 @@ public sealed class SessionService : ISessionService, IAsyncDisposable
             return;
         }
 
-        var message = $"{session.State.IntervalType.ToString()} time completed.";
+        var message = CreateSessionProgressMessage(session);
         await _standardOutQueueWriter.WriteAsync(message);
         await _notificationService.NotifyAsync(session.State, NotificationType.SessionIntervalCompleted);
     }
@@ -197,7 +216,7 @@ public sealed class SessionService : ISessionService, IAsyncDisposable
     private async ValueTask OnSessionCompletedAsync(Session session)
     {
         _activeSessions.Remove(session.Id);
-        var message = $"Session with id {session.Id} was completed";
+        var message = CreateSessionProgressMessage(session);
         await _standardOutQueueWriter.WriteAsync(message);
         await _notificationService.NotifyAsync(session.State, NotificationType.SessionCompleted);
     }

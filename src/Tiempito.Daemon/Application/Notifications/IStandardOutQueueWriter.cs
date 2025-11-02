@@ -1,3 +1,5 @@
+using Tiempito.IPC.Models;
+
 namespace Tiempito.Daemon.Application.Notifications;
 
 /// <summary>
@@ -10,5 +12,5 @@ public interface IStandardOutQueueWriter
     /// </summary>
     /// <param name="message">The message to write.</param>
     /// <returns>A <see cref="ValueTask"/> representing the asynchronous operation.</returns>
-    public ValueTask WriteAsync(string message);
+    public ValueTask WriteAsync(Message message);
 }
