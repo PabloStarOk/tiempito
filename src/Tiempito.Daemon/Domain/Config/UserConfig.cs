@@ -38,7 +38,7 @@ public struct UserConfig
     /// <param name="defaultSessionId">ID of the default session of the user.</param>
     public UserConfig(string defaultSessionId)
     {
-        DefaultSessionId = defaultSessionId.ToLower();
+        DefaultSessionId = SessionConfig.NormalizeId(defaultSessionId);
     }
 
     /// <summary>
@@ -47,7 +47,7 @@ public struct UserConfig
     /// <param name="id">ID of the session configuration.</param>
     public void SetDefaultSessionConfigId(string id)
     {
-        DefaultSessionId = id;
+        DefaultSessionId = SessionConfig.NormalizeId(id);
     }
 
     /// <summary>

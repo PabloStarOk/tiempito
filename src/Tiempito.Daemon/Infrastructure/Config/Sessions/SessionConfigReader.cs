@@ -48,7 +48,7 @@ public class SessionConfigReader : ISessionConfigReader
                 continue;
             }
 
-            dictionary.TryAdd(sessionConfig.Id, sessionConfig);
+            dictionary.TryAdd(sessionConfig.NormalizedId, sessionConfig);
         }
 
         return dictionary;

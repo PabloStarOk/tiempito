@@ -47,17 +47,18 @@ public class SessionConfigService : ISessionConfigService, IHostedService
     /// <inheritdoc/>
     public bool TryGetConfigById(string id, [NotNullWhen(true)] out SessionConfig? config)
     {
-        return _configs.TryGetValue(id, out config);
+        var normalizedId = SessionConfig.NormalizeId(id);
+        return _configs.TryGetValue(normalizedId, out config);
     }
 
     /// <inheritdoc/>
     public Task<OperationResult> AddConfigAsync(SessionConfig config)
     {
-        if (!_configs.TryAdd(config.Id, config))
+        if (!_configs.TryAdd(config.NormalizedId, config))
         {
             return Task.FromResult(new OperationResult(
                 Success: false,
-                Message: $"There's already a session configuration with the same ID \"{config.Id}\""));
+                Message: $"There's already a session configuration with the same ID \"{config.NormalizedId}\""));
         }
 
         bool wasSaved = _configWriter.Write(AppConfigConstants.SessionSectionPrefix, config);
@@ -75,11 +76,12 @@ public class SessionConfigService : ISessionConfigService, IHostedService
         TimeSpan? focusDuration = null,
         TimeSpan? breakDuration = null)
     {
-        if (!TryGetConfigById(configId, out SessionConfig? config))
+        var normalizedId = SessionConfig.NormalizeId(configId);
+        if (!TryGetConfigById(normalizedId, out SessionConfig? config))
         {
             return Task.FromResult(new OperationResult(
                 Success: false,
-                Message: $"Session configuration with \"{configId}\" wasn't found."));
+                Message: $"Session configuration with \"{normalizedId}\" wasn't found."));
         }
 
         SessionConfig modifiedConfig = config with
@@ -90,9 +92,9 @@ public class SessionConfigService : ISessionConfigService, IHostedService
             BreakDuration = breakDuration ?? config.BreakDuration
         };
 
-        _configs[configId] = modifiedConfig;
+        _configs[normalizedId] = modifiedConfig;
 
-        if (_userConfigService.UserConfig.DefaultSessionId == modifiedConfig.Id)
+        if (_userConfigService.UserConfig.DefaultSessionId == modifiedConfig.NormalizedId)
         {
             DefaultConfig = modifiedConfig;
         }
@@ -127,7 +129,7 @@ public class SessionConfigService : ISessionConfigService, IHostedService
     /// <param name="e">Empty arguments.</param>
     private void OnUserConfigChangedHandler(object? sender, EventArgs e)
     {
-        if (DefaultConfig.Id == _userConfigService.UserConfig.DefaultSessionId)
+        if (DefaultConfig.NormalizedId == _userConfigService.UserConfig.DefaultSessionId)
         {
             return;
         }
