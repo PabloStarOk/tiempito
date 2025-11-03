@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Hosting;
+
 using Moq;
 
 using Tiempito.Daemon.Application.Notifications;
@@ -10,7 +11,7 @@ using Tiempito.Daemon.Tests.Sessions.Helpers;
 
 using Xunit.Abstractions;
 
-namespace Tiempito.Daemon.Tests.Sessions;
+namespace Tiempito.Daemon.Tests.Application.Sessions;
 
 [Trait("Sessions", "Unit")]
 public class SessionServiceTests : IDisposable
