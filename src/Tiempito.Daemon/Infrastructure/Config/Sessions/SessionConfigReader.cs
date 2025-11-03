@@ -12,18 +12,22 @@ namespace Tiempito.Daemon.Infrastructure.Config.Sessions;
 /// </summary>
 public class SessionConfigReader : ISessionConfigReader
 {
+    private readonly ILogger<SessionConfigReader> _logger;
     private readonly ConfigParser _configParser;
     private readonly ITimeSpanConverter _timeSpanConverter;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SessionConfigReader"/> class.
     /// </summary>
+    /// <param name="logger">Logger to register events.</param>
     /// <param name="configParser">Parser of the user's configuration file.</param>
     /// <param name="timeSpanConverter">A <see cref="ITimeSpanConverter"/> to convert <see cref="TimeSpan"/> to string values.</param>
     public SessionConfigReader(
+        ILogger<SessionConfigReader> logger,
         ConfigParser configParser,
         ITimeSpanConverter timeSpanConverter)
     {
+        _logger = logger;
         _configParser = configParser;
         _timeSpanConverter = timeSpanConverter;
     }
@@ -49,6 +53,8 @@ public class SessionConfigReader : ISessionConfigReader
             }
 
             dictionary.TryAdd(sessionConfig.NormalizedId, sessionConfig);
+            _logger.LogInformation("Found session config with ID '{Id}'", sessionConfig.Id);
+            _logger.LogTrace("Session config {Id}: {Config}", sessionConfig.Id, sessionConfig);
         }
 
         return dictionary;

@@ -9,10 +9,22 @@ namespace Tiempito.Daemon.Infrastructure.Notifications.Linux;
 /// </summary>
 internal sealed class LinuxNotificationIconLoader : ILinuxNotificationIconLoader
 {
+    private readonly ILogger<LinuxNotificationIconLoader> _logger;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="LinuxNotificationIconLoader"/> class.
+    /// </summary>
+    /// <param name="logger">Logger to register events.</param>
+    public LinuxNotificationIconLoader(ILogger<LinuxNotificationIconLoader> logger)
+    {
+        _logger = logger;
+    }
+
     /// <inheritdoc/>
     public async Task<LinuxNotificationImageData> LoadAsync(string iconPath)
     {
         using Image<Rgba32> image = await Image.LoadAsync<Rgba32>(iconPath);
+        _logger.LogDebug("Linux notification icon loaded from {IconPath}", iconPath);
 
         bool hasAlpha = image.PixelType.AlphaRepresentation is null or PixelAlphaRepresentation.None;
         int channels = hasAlpha ? 4 : 3;

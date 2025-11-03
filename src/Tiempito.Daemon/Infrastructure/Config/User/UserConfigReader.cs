@@ -13,15 +13,17 @@ namespace Tiempito.Daemon.Infrastructure.Config.User;
 /// </summary>
 public class UserConfigReader : IUserConfigReader
 {
+    private readonly ILogger<UserConfigReader> _logger;
     private readonly ConfigParser _configParser;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="UserConfigReader"/> class.
     /// </summary>
+    /// <param name="logger">Logger to register events.</param>
     /// <param name="configParser">Parser of the user's configuration file.</param>
-    public UserConfigReader(
-        ConfigParser configParser)
+    public UserConfigReader(ILogger<UserConfigReader> logger, ConfigParser configParser)
     {
+        _logger = logger;
         _configParser = configParser;
     }
 
@@ -72,6 +74,11 @@ public class UserConfigReader : IUserConfigReader
             }
         }
 
+        _logger.LogInformation("User's configuration read");
+        _logger.LogTrace(
+            "User's configuration read: Default config ID: {DefaultId}, Enabled features: {EnabledFeatures}",
+            userConfig.DefaultSessionId,
+            userConfig.EnabledFeatures);
         return userConfig;
     }
 }

@@ -11,6 +11,7 @@ namespace Tiempito.Daemon.Application.Config.Sessions;
 /// </summary>
 public class SessionConfigService : ISessionConfigService, IHostedService
 {
+    private readonly ILogger<SessionConfigService> _logger;
     private readonly IUserConfigService _userConfigService;
     private readonly ISessionConfigWriter _configWriter;
     private readonly ISessionConfigReader _configReader;
@@ -30,14 +31,17 @@ public class SessionConfigService : ISessionConfigService, IHostedService
     /// <summary>
     /// Initializes a new instance of the <see cref="SessionConfigService"/> class.
     /// </summary>
+    /// <param name="logger">Logger to register events.</param>
     /// <param name="userConfigService">Service of user's configuration.</param>
     /// <param name="configWriter">Writer of the user's configuration file.</param>
     /// <param name="configReader">Reader of the user's configuration file.</param>
     public SessionConfigService(
+        ILogger<SessionConfigService> logger,
         IUserConfigService userConfigService,
         ISessionConfigWriter configWriter,
         ISessionConfigReader configReader)
     {
+        _logger = logger;
         _userConfigService = userConfigService;
         _configWriter = configWriter;
         _configReader = configReader;
@@ -65,6 +69,12 @@ public class SessionConfigService : ISessionConfigService, IHostedService
         string message = wasSaved
             ? "Session configuration added."
             : "An error occurred while saving the configuration in the file.";
+
+        if (wasSaved)
+        {
+            _logger.LogTrace("Session configuration has been added: {Config}", config);
+        }
+
         return Task.FromResult(new OperationResult(wasSaved, message));
     }
 
@@ -103,6 +113,12 @@ public class SessionConfigService : ISessionConfigService, IHostedService
         string message = wasSaved
             ? "Session configuration modified."
             : "An error occurred while modifying the configuration of the file.";
+
+        if (wasSaved)
+        {
+            _logger.LogTrace("Session configuration has been modified: {Config}", config);
+        }
+
         return Task.FromResult(new OperationResult(wasSaved, message));
     }
 

@@ -54,6 +54,11 @@ public class UserConfigService : IUserConfigService, IHostedService
             successMessage: "Default session config ID was changed.",
             errorMessage: "Default session config ID couldn't be changed in the configuration file.");
 
+        if (operationResult.Success)
+        {
+            _logger.LogDebug("Session configuration with ID '{Id}' has been set as default.", id);
+        }
+
         return Task.FromResult(operationResult);
     }
 
@@ -75,6 +80,11 @@ public class UserConfigService : IUserConfigService, IHostedService
             successMessage: "Feature enabled",
             errorMessage: "Feature couldn't be enabled in the configuration file.");
 
+        if (operationResult.Success)
+        {
+            _logger.LogDebug("Feature '{Feature}' has been enabled.", feature);
+        }
+
         return Task.FromResult(operationResult);
     }
 
@@ -95,6 +105,11 @@ public class UserConfigService : IUserConfigService, IHostedService
         OperationResult operationResult = SaveAndReturnResult(
             successMessage: "Feature disabled",
             errorMessage: "Feature couldn't be disabled in the configuration file.");
+
+        if (operationResult.Success)
+        {
+            _logger.LogDebug("Feature '{Feature}' has been disabled.", feature);
+        }
 
         return Task.FromResult(operationResult);
     }
@@ -125,7 +140,7 @@ public class UserConfigService : IUserConfigService, IHostedService
         }
 
         await File.Create(fileInfo.PhysicalPath).DisposeAsync();
-        _logger.LogInformation("User config filed was created at {Path}", fileInfo.PhysicalPath);
+        _logger.LogInformation("User's configuration file was created at {Path}", fileInfo.PhysicalPath);
     }
 
     /// <summary>

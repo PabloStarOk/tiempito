@@ -84,6 +84,7 @@ public class WindowsNotificationService : INotificationService
                         toast.ExpirationTime = DateTimeOffset.Now.AddMilliseconds(notification.ExpirationTime);
                     }
                 });
+            _logger.LogDebug("Notification with tag '{NotificationTag}' displayed.", _lastNotificationTag);
         }
         catch (Exception ex)
         {

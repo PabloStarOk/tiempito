@@ -10,6 +10,7 @@ namespace Tiempito.Daemon.Infrastructure.Sessions;
 /// </summary>
 internal sealed class SessionFactory : ISessionFactory
 {
+    private readonly ILogger<SessionFactory> _logger;
     private readonly ILoggerFactory _loggerFactory;
     private readonly TimeProvider _timeProvider;
     private readonly ISessionConfigService _sessionConfigService;
@@ -17,14 +18,17 @@ internal sealed class SessionFactory : ISessionFactory
     /// <summary>
     /// Initializes a new instance of the <see cref="SessionFactory"/> class.
     /// </summary>
+    /// <param name="logger">Logger to register events.</param>
     /// <param name="loggerFactory">Factory for creating loggers.</param>
     /// <param name="timeProvider">Provider for time-related operations.</param>
     /// <param name="sessionConfigService">Service for session configuration management.</param>
     public SessionFactory(
+        ILogger<SessionFactory> logger,
         ILoggerFactory loggerFactory,
         TimeProvider timeProvider,
         ISessionConfigService sessionConfigService)
     {
+        _logger = logger;
         _loggerFactory = loggerFactory;
         _timeProvider = timeProvider;
         _sessionConfigService = sessionConfigService;
@@ -54,7 +58,7 @@ internal sealed class SessionFactory : ISessionFactory
         }
 
         var logger = _loggerFactory.CreateLogger<Session>();
-        return Session.Create(
+        var session = Session.Create(
             logger,
             id,
             sessionConfig!,
@@ -62,6 +66,9 @@ internal sealed class SessionFactory : ISessionFactory
             onSecondElapsedAsync,
             onIntervalCompletedAsync,
             onCompletedAsync);
+
+        _logger.LogInformation("Session with ID '{Id}' created using config '{ConfigId}'", id, session.Configuration.Id);
+        return session;
     }
 
     /// <inheritdoc/>

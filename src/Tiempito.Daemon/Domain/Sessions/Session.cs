@@ -115,6 +115,7 @@ public sealed class Session : IAsyncDisposable
         State = State.WithStatus(SessionStatus.Executing);
         _timer = new PeriodicTimer(SecondInterval, _timeProvider);
         _runTask = RunAsync(cancellationToken);
+        _logger.LogDebug("Session {Id}: Started", Id);
     }
 
     /// <summary>
@@ -125,6 +126,7 @@ public sealed class Session : IAsyncDisposable
     {
         State = State.WithStatus(SessionStatus.Cancelled);
         await DisposeAsync();
+        _logger.LogDebug("Session {Id}: Canceled", Id);
     }
 
     /// <summary>
@@ -137,6 +139,8 @@ public sealed class Session : IAsyncDisposable
         {
             _timer.Period = Timeout.InfiniteTimeSpan;
         }
+
+        _logger.LogDebug("Session {Id}: Paused", Id);
     }
 
     /// <summary>
@@ -149,6 +153,8 @@ public sealed class Session : IAsyncDisposable
         {
             _timer.Period = SecondInterval;
         }
+
+        _logger.LogDebug("Session {Id}: Resumed", Id);
     }
 
     /// <inheritdoc/>
@@ -180,6 +186,7 @@ public sealed class Session : IAsyncDisposable
 
         _runTask.Dispose();
         _runTask = null;
+        _logger.LogDebug("Session {Id}: Disposed.", Id);
     }
 
     private async Task RunAsync(CancellationToken cancellationToken)
@@ -226,6 +233,7 @@ public sealed class Session : IAsyncDisposable
         State = State.WithStatus(SessionStatus.Finished);
         await _onSessionCompletedAsync(this);
         await DisposeAsync();
+        _logger.LogDebug("Session {Id}: Completed", Id);
     }
 
     private (SessionIntervalType, TimeSpan) DetermineNextInterval()

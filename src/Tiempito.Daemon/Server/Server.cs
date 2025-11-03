@@ -187,7 +187,7 @@ public sealed class Server : BackgroundService, IAsyncDisposable
     {
         if (!_pipeServer.IsConnected)
         {
-            _logger.LogDebug("Cannot sends message, client is disconnected: {Message}", message);
+            _logger.LogDebug("Cannot send message, client is disconnected: {Message}", message);
             return;
         }
 
