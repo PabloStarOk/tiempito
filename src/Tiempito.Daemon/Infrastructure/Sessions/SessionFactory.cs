@@ -35,12 +35,7 @@ internal sealed class SessionFactory : ISessionFactory
     }
 
     /// <inheritdoc/>
-    public Session Create(
-        string id,
-        string configId,
-        Func<Session, ValueTask> onSecondElapsedAsync,
-        Func<Session, ValueTask> onIntervalCompletedAsync,
-        Func<Session, ValueTask> onCompletedAsync)
+    public ISession Create(string id, string configId)
     {
         if (!string.IsNullOrWhiteSpace(configId) && !ExistsConfig(configId))
         {
@@ -58,14 +53,7 @@ internal sealed class SessionFactory : ISessionFactory
         }
 
         var logger = _loggerFactory.CreateLogger<Session>();
-        var session = Session.Create(
-            logger,
-            id,
-            sessionConfig!,
-            _timeProvider,
-            onSecondElapsedAsync,
-            onIntervalCompletedAsync,
-            onCompletedAsync);
+        var session = Session.Create(logger, id, sessionConfig!, _timeProvider);
 
         _logger.LogInformation("Session with ID '{Id}' created using config '{ConfigId}'", id, session.Configuration.Id);
         return session;

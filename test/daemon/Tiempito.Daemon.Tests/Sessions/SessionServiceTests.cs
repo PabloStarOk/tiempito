@@ -22,7 +22,7 @@ public class SessionServiceTests : IDisposable
     private readonly Mock<IStandardOutQueueWriter> _stdOutQueueWriterMock;
     private readonly Mock<IHostApplicationLifetime> _hostApplicationLifetimeMock;
     private readonly Mock<ISessionFactory> _sessionFactoryMock;
-    private readonly Dictionary<string, Session> _activeSessions = [];
+    private readonly Dictionary<string, ISession> _activeSessions = [];
 
     public SessionServiceTests(ITestOutputHelper testOutputHelper)
     {
@@ -80,12 +80,7 @@ public class SessionServiceTests : IDisposable
             _sessionFactoryMock.Setup(m => m.ExistsConfig(config.Id)).Returns(true);
         }
 
-        _sessionFactoryMock.Setup(m => m.Create(
-            It.IsAny<string>(),
-            It.IsAny<string>(),
-            It.IsAny<Func<Session, ValueTask>>(),
-            It.IsAny<Func<Session, ValueTask>>(),
-            It.IsAny<Func<Session, ValueTask>>())).Returns(session);
+        _sessionFactoryMock.Setup(m => m.Create(It.IsAny<string>(), It.IsAny<string>())).Returns(session);
 
         // Act
         OperationResult operationResult = specifySessionId switch

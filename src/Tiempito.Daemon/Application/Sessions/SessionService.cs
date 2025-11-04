@@ -16,7 +16,7 @@ public sealed class SessionService : ISessionService, IAsyncDisposable
     private readonly IStandardOutQueueWriter _standardOutQueueWriter;
     private readonly IHostApplicationLifetime _hostApplicationLifetime;
     private readonly ISessionFactory _sessionFactory;
-    private readonly Dictionary<string, Session> _activeSessions;
+    private readonly Dictionary<string, ISession> _activeSessions;
     private bool _disposed;
 
     /// <summary>
@@ -32,13 +32,13 @@ public sealed class SessionService : ISessionService, IAsyncDisposable
         IStandardOutQueueWriter standardOutQueueWriter,
         IHostApplicationLifetime hostApplicationLifetime,
         ISessionFactory sessionFactory,
-        Dictionary<string, Session>? activeSessions = null)
+        Dictionary<string, ISession>? activeSessions = null)
     {
         _notificationService = notificationService;
         _standardOutQueueWriter = standardOutQueueWriter;
         _hostApplicationLifetime = hostApplicationLifetime;
         _sessionFactory = sessionFactory;
-        _activeSessions = activeSessions ?? new Dictionary<string, Session>();
+        _activeSessions = activeSessions ?? new Dictionary<string, ISession>();
     }
 
     /// <inheritdoc/>
@@ -62,13 +62,10 @@ public sealed class SessionService : ISessionService, IAsyncDisposable
             return new OperationResult(Success: false, Message: "There's already a started session with the same ID.");
         }
 
-        var session = _sessionFactory.Create(
-            sessionId,
-            sessionConfigId,
-            OnSessionSecondElapsedAsync,
-            OnSessionIntervalCompletedAsync,
-            OnSessionCompletedAsync);
-
+        var session = _sessionFactory.Create(sessionId, sessionConfigId);
+        session.SecondElapsedAsync += OnSessionSecondElapsedAsync;
+        session.IntervalCompletedAsync += OnSessionIntervalCompletedAsync;
+        session.CompletedAsync += OnSessionCompletedAsync;
         _activeSessions.Add(session.Id, session);
         session.Start(_hostApplicationLifetime.ApplicationStopping);
         await OnSessionStartedAsync(session);
@@ -88,7 +85,7 @@ public sealed class SessionService : ISessionService, IAsyncDisposable
             return new OperationResult(Success: false, Message: "There are no running sessions to pause.");
         }
 
-        Session? session = null;
+        ISession? session = null;
         if (!string.IsNullOrWhiteSpace(sessionId) && !executingSessions.TryGetValue(sessionId, out session))
         {
             return new OperationResult(Success: false, Message: $"Running session with ID '{sessionId}' was not found.");
@@ -116,7 +113,7 @@ public sealed class SessionService : ISessionService, IAsyncDisposable
             return new OperationResult(Success: false, Message: "There are no paused sessions to resume.");
         }
 
-        Session? session = null;
+        ISession? session = null;
         if (!string.IsNullOrWhiteSpace(sessionId) && !pausedSessions.TryGetValue(sessionId, out session))
         {
             return new OperationResult(Success: false, Message: $"Paused session with ID '{sessionId}' was not found.");
@@ -139,7 +136,7 @@ public sealed class SessionService : ISessionService, IAsyncDisposable
             return new OperationResult(Success: false, Message: "There are no sessions to cancel.");
         }
 
-        Session? session = null;
+        ISession? session = null;
         if (!string.IsNullOrWhiteSpace(sessionId) && !_activeSessions.Remove(sessionId, out session))
         {
             return new OperationResult(Success: false, Message: $"Started session with ID '{sessionId}' was not found.");
@@ -167,12 +164,15 @@ public sealed class SessionService : ISessionService, IAsyncDisposable
         foreach (var session in _activeSessions.Values)
         {
             await session.DisposeAsync();
+            session.SecondElapsedAsync -= OnSessionSecondElapsedAsync;
+            session.IntervalCompletedAsync -= OnSessionIntervalCompletedAsync;
+            session.CompletedAsync -= OnSessionCompletedAsync;
         }
 
         _activeSessions.Clear();
     }
 
-    private static SessionProgressMessage CreateSessionProgressMessage(Session session)
+    private static SessionProgressMessage CreateSessionProgressMessage(ISession session)
     {
         IPC.Models.Enums.SessionIntervalType intervalType = session.State.IntervalType switch
         {
@@ -190,18 +190,18 @@ public sealed class SessionService : ISessionService, IAsyncDisposable
             elapsedTime: session.State.ElapsedTime);
     }
 
-    private async Task OnSessionStartedAsync(Session session)
+    private async Task OnSessionStartedAsync(ISession session)
     {
         await _notificationService.NotifyAsync(session.State, NotificationType.SessionStarted);
     }
 
-    private async ValueTask OnSessionSecondElapsedAsync(Session session)
+    private async ValueTask OnSessionSecondElapsedAsync(ISession session)
     {
         var message = CreateSessionProgressMessage(session);
         await _standardOutQueueWriter.WriteAsync(message);
     }
 
-    private async ValueTask OnSessionIntervalCompletedAsync(Session session)
+    private async ValueTask OnSessionIntervalCompletedAsync(ISession session)
     {
         if (session.State.IntervalType is SessionIntervalType.Delay)
         {
@@ -213,7 +213,7 @@ public sealed class SessionService : ISessionService, IAsyncDisposable
         await _notificationService.NotifyAsync(session.State, NotificationType.SessionIntervalCompleted);
     }
 
-    private async ValueTask OnSessionCompletedAsync(Session session)
+    private async ValueTask OnSessionCompletedAsync(ISession session)
     {
         _activeSessions.Remove(session.Id);
         var message = CreateSessionProgressMessage(session);

@@ -7,30 +7,30 @@ namespace Tiempito.Daemon.Domain.Sessions;
 /// <summary>
 /// Represents a session with timed intervals and state management.
 /// </summary>
-public sealed class Session : IAsyncDisposable
+public sealed class Session : ISession
 {
-    /// <summary>
-    /// Gets the unique identifier for the session.
-    /// </summary>
+    /// <inheritdoc/>
     public string Id { get; }
 
-    /// <summary>
-    /// Gets the configuration settings for the session.
-    /// </summary>
+    /// <inheritdoc/>
     public SessionConfig Configuration { get; }
 
-    /// <summary>
-    /// Gets the current state of the session.
-    /// </summary>
+    /// <inheritdoc/>
     public SessionState State { get; private set; }
+
+    /// <inheritdoc/>
+    public Func<ISession, ValueTask>? SecondElapsedAsync { get; set; }
+
+    /// <inheritdoc/>
+    public Func<ISession, ValueTask>? IntervalCompletedAsync { get; set; }
+
+    /// <inheritdoc/>
+    public Func<ISession, ValueTask>? CompletedAsync { get; set; }
 
     private static readonly TimeSpan SecondInterval = TimeSpan.FromSeconds(1);
     private readonly ILogger<Session> _logger;
     private readonly TimeProvider _timeProvider;
     private readonly SessionIntervalType[] _intervalsSequence;
-    private readonly Func<Session, ValueTask> _onSecondElapsedAsync;
-    private readonly Func<Session, ValueTask> _onIntervalCompletedAsync;
-    private readonly Func<Session, ValueTask> _onSessionCompletedAsync;
     private Task? _runTask;
     private PeriodicTimer? _timer;
     private int _currentIntervalIndex;
@@ -45,29 +45,20 @@ public sealed class Session : IAsyncDisposable
     /// <param name="state">The initial state of the session.</param>
     /// <param name="timeProvider">The time provider used for interval timing.</param>
     /// <param name="intervalsSequence">The sequence of intervals for the session.</param>
-    /// <param name="onSecondElapsedAsync">Callback invoked when a second elapses.</param>
-    /// <param name="onIntervalCompletedAsync">Callback invoked when an interval is completed.</param>
-    /// <param name="onSessionCompletedAsync">Callback invoked when the session is completed.</param>
     private Session(
         ILogger<Session> logger,
         string id,
         SessionConfig configuration,
         SessionState state,
         TimeProvider timeProvider,
-        SessionIntervalType[] intervalsSequence,
-        Func<Session, ValueTask> onSecondElapsedAsync,
-        Func<Session, ValueTask> onIntervalCompletedAsync,
-        Func<Session, ValueTask> onSessionCompletedAsync)
+        SessionIntervalType[] intervalsSequence)
     {
         Id = id;
-        Configuration = configuration;
         State = state;
+        Configuration = configuration;
         _logger = logger;
         _timeProvider = timeProvider;
         _intervalsSequence = intervalsSequence;
-        _onSecondElapsedAsync = onSecondElapsedAsync;
-        _onIntervalCompletedAsync = onIntervalCompletedAsync;
-        _onSessionCompletedAsync = onSessionCompletedAsync;
     }
 
     /// <summary>
@@ -77,18 +68,12 @@ public sealed class Session : IAsyncDisposable
     /// <param name="id">The unique identifier for the session.</param>
     /// <param name="configuration">The configuration settings for the session.</param>
     /// <param name="timeProvider">The time provider used for interval timing.</param>
-    /// <param name="onSecondElapsed">Callback invoked when a second elapses.</param>
-    /// <param name="onIntervalCompleted">Callback invoked when an interval is completed.</param>
-    /// <param name="onSessionCompleted">Callback invoked when the session is completed.</param>
     /// <returns>A new <see cref="Session"/> instance.</returns>
     public static Session Create(
         ILogger<Session> logger,
         string id,
         SessionConfig configuration,
-        TimeProvider timeProvider,
-        Func<Session, ValueTask> onSecondElapsed,
-        Func<Session, ValueTask> onIntervalCompleted,
-        Func<Session, ValueTask> onSessionCompleted)
+        TimeProvider timeProvider)
     {
         SessionIntervalType[] intervalsSequence = configuration.DelayBetweenTimes > TimeSpan.Zero
             ? [SessionIntervalType.Focus, SessionIntervalType.Delay, SessionIntervalType.Break, SessionIntervalType.Delay]
@@ -100,16 +85,10 @@ public sealed class Session : IAsyncDisposable
             configuration,
             state: SessionState.CreateInitial(configuration.FocusDuration),
             timeProvider,
-            intervalsSequence,
-            onSecondElapsed,
-            onIntervalCompleted,
-            onSessionCompleted);
+            intervalsSequence);
     }
 
-    /// <summary>
-    /// Starts the session.
-    /// </summary>
-    /// <param name="cancellationToken">A cancellation token used to stop the session.</param>
+    /// <inheritdoc/>
     public void Start(CancellationToken cancellationToken = default)
     {
         State = State.WithStatus(SessionStatus.Executing);
@@ -118,10 +97,7 @@ public sealed class Session : IAsyncDisposable
         _logger.LogDebug("Session {Id}: Started", Id);
     }
 
-    /// <summary>
-    /// Cancels the session and releases resources.
-    /// </summary>
-    /// <returns>A <see cref="ValueTask"/> that completes when cancellation and cleanup are finished.</returns>
+    /// <inheritdoc/>
     public async ValueTask CancelAsync()
     {
         State = State.WithStatus(SessionStatus.Cancelled);
@@ -129,9 +105,7 @@ public sealed class Session : IAsyncDisposable
         _logger.LogDebug("Session {Id}: Canceled", Id);
     }
 
-    /// <summary>
-    /// Pauses the session.
-    /// </summary>
+    /// <inheritdoc/>
     public void Pause()
     {
         State = State.WithStatus(SessionStatus.Paused);
@@ -143,9 +117,7 @@ public sealed class Session : IAsyncDisposable
         _logger.LogDebug("Session {Id}: Paused", Id);
     }
 
-    /// <summary>
-    /// Resumes the session.
-    /// </summary>
+    /// <inheritdoc/>
     public void Resume()
     {
         State = State.WithStatus(SessionStatus.Executing);
@@ -169,6 +141,9 @@ public sealed class Session : IAsyncDisposable
 
         _timer?.Dispose();
         _timer = null;
+        SecondElapsedAsync = null;
+        IntervalCompletedAsync = null;
+        CompletedAsync = null;
 
         if (_runTask is null)
         {
@@ -211,14 +186,21 @@ public sealed class Session : IAsyncDisposable
     private async ValueTask OnSecondElapsedAsync()
     {
         State = State.WithElapsedSecond();
-        await _onSecondElapsedAsync(this);
+        if (SecondElapsedAsync is not null)
+        {
+            await SecondElapsedAsync(this);
+        }
 
         if (State.ElapsedTime < State.TargetDuration)
         {
             return;
         }
 
-        await _onIntervalCompletedAsync(this);
+        if (IntervalCompletedAsync is not null)
+        {
+            await IntervalCompletedAsync(this);
+        }
+
         (SessionIntervalType nextInterval, TimeSpan nextTargetDuration) = DetermineNextInterval();
         State = State.WithNewInterval(nextInterval, nextTargetDuration);
 
@@ -231,7 +213,11 @@ public sealed class Session : IAsyncDisposable
     private async ValueTask CompleteAsync()
     {
         State = State.WithStatus(SessionStatus.Finished);
-        await _onSessionCompletedAsync(this);
+        if (CompletedAsync is not null)
+        {
+            await CompletedAsync(this);
+        }
+
         await DisposeAsync();
         _logger.LogDebug("Session {Id}: Completed", Id);
     }

@@ -50,15 +50,7 @@ public static class SessionProvider
     public static Session Create(string id = "TestSession", SessionConfig? config = null)
     {
         config ??= CreateConfig();
-
-        return Session.Create(
-            LoggerFactory.CreateLogger<Session>(),
-            id.ToLower(),
-            config,
-            TimeProvider.System,
-            _ => ValueTask.CompletedTask,
-            _ => ValueTask.CompletedTask,
-            _ => ValueTask.CompletedTask);
+        return Session.Create(LoggerFactory.CreateLogger<Session>(), id.ToLower(), config, TimeProvider.System);
     }
 
     /// <summary>
@@ -76,13 +68,6 @@ public static class SessionProvider
             DelayBetweenTimes: TimeSpan.FromSeconds(random.Next(0, int.MaxValue)),
             FocusDuration: TimeSpan.FromSeconds(random.Next(1, int.MaxValue)),
             BreakDuration: TimeSpan.FromSeconds(random.Next(1, int.MaxValue)));
-        return Session.Create(
-            LoggerFactory.CreateLogger<Session>(),
-            id.ToLower(),
-            sessionConfig,
-            TimeProvider.System,
-            _ => ValueTask.CompletedTask,
-            _ => ValueTask.CompletedTask,
-            _ => ValueTask.CompletedTask);
+        return Session.Create(LoggerFactory.CreateLogger<Session>(), id.ToLower(), sessionConfig, TimeProvider.System);
     }
 }
