@@ -7,8 +7,11 @@ using Tiempito.Daemon.Application.Sessions;
 using Tiempito.Daemon.Domain.Config;
 using Tiempito.Daemon.Domain.Notifications.Enums;
 using Tiempito.Daemon.Domain.Sessions;
+using Tiempito.Daemon.Domain.Sessions.Enums;
+using Tiempito.Daemon.Domain.Sessions.ValueObjects;
 using Tiempito.Daemon.Domain.Shared;
 using Tiempito.Daemon.Tests.Sessions.Helpers;
+using Tiempito.IPC.Models;
 
 namespace Tiempito.Daemon.Tests.Application.Sessions;
 
@@ -16,7 +19,7 @@ namespace Tiempito.Daemon.Tests.Application.Sessions;
 /// Unit tests for <see cref="SessionService"/> covering session lifecycle operations.
 /// </summary>
 [Trait("Sessions", "Unit")]
-public class SessionServiceTests : IDisposable
+public sealed class SessionServiceTests : IDisposable
 {
     private readonly SessionService _sessionService;
     private readonly MockRepository _mockRepository;
@@ -24,7 +27,9 @@ public class SessionServiceTests : IDisposable
     private readonly Mock<IStandardOutQueueWriter> _stdOutQueueWriterMock;
     private readonly Mock<IHostApplicationLifetime> _appLifetimeMock;
     private readonly Mock<ISessionFactory> _sessionFactoryMock;
+    private readonly Mock<ISession> _sessionMock;
     private readonly Dictionary<string, ISession> _fakeActiveSessions;
+    private readonly SessionState _sessionStateStub;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SessionServiceTests"/> class,
@@ -37,7 +42,9 @@ public class SessionServiceTests : IDisposable
         _stdOutQueueWriterMock = _mockRepository.Create<IStandardOutQueueWriter>();
         _appLifetimeMock = _mockRepository.Create<IHostApplicationLifetime>();
         _sessionFactoryMock = _mockRepository.Create<ISessionFactory>();
+        _sessionMock = _mockRepository.Create<ISession>(MockBehavior.Loose);
         _fakeActiveSessions = new Dictionary<string, ISession>();
+        _sessionStateStub = SessionState.CreateInitial(TimeSpan.Zero);
 
         _sessionService = new SessionService(
             _notificationServiceMock.Object,
@@ -47,28 +54,6 @@ public class SessionServiceTests : IDisposable
             _fakeActiveSessions);
     }
 
-    /// <summary>
-    /// Generates test data for parameterized unit tests involving sessions and configurations.
-    /// </summary>
-    /// <param name="specifySessionId">Determines whether the session ID is explicitly provided or derived from the configuration ID.</param>
-    /// <param name="specifyConfigId">Indicates whether the configuration ID is used to fetch the session configuration (passed through to test cases).</param>
-    /// <returns>A <see cref="TheoryData{SessionConfig, Session, boolean, boolean}"/> containing test data for xUnit theories.</returns>
-    public static TheoryData<SessionConfig, Session, bool, bool> GetSessionWithRandomConfig(
-        bool specifySessionId,
-        bool specifyConfigId)
-    {
-        var data = new TheoryData<SessionConfig, Session, bool, bool>();
-
-        for (var i = 0; i < 5; i++)
-        {
-            SessionConfig config = SessionProvider.CreateRandomConfig($"Config_{i}");
-            Session session = SessionProvider.Create(specifySessionId ? $"Session_{i}" : config.Id, config);
-            data.Add(config, session, specifySessionId, specifyConfigId);
-        }
-
-        return data;
-    }
-
     /// <inheritdoc/>
     public void Dispose()
     {
@@ -76,43 +61,61 @@ public class SessionServiceTests : IDisposable
     }
 
     /// <summary>
-    /// Tests that <see cref="SessionService.StartSessionAsync"/> successfully starts a session
-    /// using various combinations of session and configuration IDs.
+    /// Verifies that <see cref="SessionService.StartSessionAsync"/> successfully starts a session
+    /// when provided with various combinations of session and configuration IDs.
     /// </summary>
-    /// <param name="config">The session configuration to use.</param>
-    /// <param name="session">The session instance to start.</param>
-    /// <param name="specifySessionId">Whether the session ID is explicitly provided.</param>
-    /// <param name="specifyConfigId">Whether the configuration ID is explicitly provided.</param>
+    /// <param name="sessionId">The session ID to use for starting the session.</param>
+    /// <param name="configId">The configuration ID to use for the session.</param>
+    /// <param name="specifyConfigId">Indicates whether the configuration ID should be explicitly checked for existence.</param>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Theory]
-    [MemberData(nameof(GetSessionWithRandomConfig), true, true)]
-    [MemberData(nameof(GetSessionWithRandomConfig), true, false)]
-    [MemberData(nameof(GetSessionWithRandomConfig), false, true)]
-    [MemberData(nameof(GetSessionWithRandomConfig), false, false)]
-    public async Task StartSessionAsync_should_StartSession(
-        SessionConfig config,
-        Session session,
-        bool specifySessionId,
-        bool specifyConfigId)
+    [InlineData("sessionId", "configId", true)]
+    [InlineData("sessionId", "", false)]
+    [InlineData("", "configId", true)]
+    [InlineData("", "", false)]
+    public async Task StartSessionAsync_should_StartSession(string sessionId, string configId, bool specifyConfigId)
     {
         // Arrange
         _appLifetimeMock.Setup(m => m.ApplicationStopping).Returns(It.IsAny<CancellationToken>());
-        _notificationServiceMock.Setup(m => m.NotifyAsync(session.State, NotificationType.SessionStarted))
+        _sessionMock.Setup(x => x.Id).Returns(sessionId);
+        _sessionMock.Setup(m => m.Start(_appLifetimeMock.Object.ApplicationStopping));
+        _sessionFactoryMock.Setup(m => m.Create(It.IsAny<string>(), It.IsAny<string>())).Returns(_sessionMock.Object);
+        _notificationServiceMock.Setup(m => m.NotifyAsync(_sessionMock.Object.State, NotificationType.SessionStarted))
             .Returns(ValueTask.CompletedTask);
         if (specifyConfigId)
         {
-            _sessionFactoryMock.Setup(m => m.ExistsConfig(config.Id)).Returns(true);
+            _sessionFactoryMock.Setup(m => m.ExistsConfig(configId)).Returns(true);
         }
-
-        _sessionFactoryMock.Setup(m => m.Create(It.IsAny<string>(), It.IsAny<string>())).Returns(session);
-        string sessionId = specifySessionId ? session.Id : string.Empty;
-        string configId = specifyConfigId ? config.Id : string.Empty;
 
         // Act
         OperationResult actual = await _sessionService.StartSessionAsync(sessionId, configId);
 
         // Assert
         Assert.True(actual.Success);
+    }
+
+    /// <summary>
+    /// Verifies that <see cref="SessionService.StartSessionAsync"/> triggers a notification
+    /// when a session is successfully started.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task StartSessionAsync_should_NotifySessionStarted()
+    {
+        // Arrange
+        const string sessionId = "AnotherId";
+        _sessionMock.SetupGet(m => m.Id).Returns(sessionId);
+        _appLifetimeMock.Setup(m => m.ApplicationStopping).Returns(It.IsAny<CancellationToken>());
+        _sessionFactoryMock.Setup(m => m.Create(It.IsAny<string>(), It.IsAny<string>())).Returns(_sessionMock.Object);
+        _notificationServiceMock
+            .Setup(m => m.NotifyAsync(_sessionMock.Object.State, NotificationType.SessionStarted))
+            .Returns(ValueTask.CompletedTask);
+
+        // Act
+        _ = await _sessionService.StartSessionAsync(sessionId);
+
+        // Assert
+        _notificationServiceMock.Verify();
     }
 
     /// <summary>
@@ -137,10 +140,10 @@ public class SessionServiceTests : IDisposable
     [Fact]
     public async Task StartSessionAsync_return_Error_when_SessionIdAlreadyExists()
     {
-        Session session = SessionProvider.CreateRandom();
-        _fakeActiveSessions.Add(session.Id, session);
+        const string sessionId = "AnotherId";
+        _fakeActiveSessions.Add(sessionId, _sessionMock.Object);
 
-        OperationResult actual = await _sessionService.StartSessionAsync(session.Id);
+        OperationResult actual = await _sessionService.StartSessionAsync(sessionId);
 
         Assert.False(actual.Success);
     }
@@ -155,10 +158,12 @@ public class SessionServiceTests : IDisposable
     [InlineData(false)]
     public void PauseSession_should_PauseSession(bool specifySessionId)
     {
-        Session session = SessionProvider.CreateRandom();
-        string sessionId = specifySessionId ? session.Id : string.Empty;
-        session.Start();
-        _fakeActiveSessions.Add(sessionId, session);
+        const string idStub = "AnotherId";
+        var state = _sessionStateStub.WithStatus(SessionStatus.Executing);
+        _sessionMock.Setup(m => m.State).Returns(state);
+        _sessionMock.Setup(m => m.Pause());
+        _fakeActiveSessions.Add(idStub, _sessionMock.Object);
+        string sessionId = specifySessionId ? idStub : string.Empty;
 
         OperationResult actual = _sessionService.PauseSession(sessionId);
 
@@ -199,10 +204,12 @@ public class SessionServiceTests : IDisposable
     [InlineData(false)]
     public void ResumeSession_should_ResumePausedSession(bool specifySessionId)
     {
-        Session session = SessionProvider.CreateRandom();
-        string sessionId = specifySessionId ? session.Id : string.Empty;
-        session.Pause();
-        _fakeActiveSessions.Add(sessionId, session);
+        const string idStub = "AnotherId";
+        var state = _sessionStateStub.WithStatus(SessionStatus.Paused);
+        _sessionMock.Setup(m => m.State).Returns(state);
+        _sessionMock.Setup(m => m.Resume());
+        _fakeActiveSessions.Add(idStub, _sessionMock.Object);
+        string sessionId = specifySessionId ? idStub : string.Empty;
 
         OperationResult actual = _sessionService.ResumeSession(sessionId);
 
@@ -242,37 +249,18 @@ public class SessionServiceTests : IDisposable
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public async Task CancelSessionAsync_should_CancelSession_when_SessionIsRunning(bool specifySessionId)
+    public async Task CancelSessionAsync_should_CancelActiveSession(bool specifySessionId)
     {
-        Session session = SessionProvider.CreateRandom();
-        string sessionId = specifySessionId ? session.Id : string.Empty;
-        session.Start();
-        _fakeActiveSessions.Add(sessionId, session);
+        const string idStub = "AnotherId";
+        _sessionMock.Setup(m => m.Id).Returns(idStub).Verifiable(Times.AtMostOnce);
+        _sessionMock.Setup(m => m.CancelAsync()).Returns(ValueTask.CompletedTask);
+        _fakeActiveSessions.Add(idStub, _sessionMock.Object);
+        string sessionId = specifySessionId ? idStub : string.Empty;
 
         OperationResult actual = await _sessionService.CancelSessionAsync(sessionId);
 
-        Assert.True(actual.Success);
-    }
-
-    /// <summary>
-    /// Tests that <see cref="SessionService.CancelSessionAsync"/> successfully cancels a paused session
-    /// when the session ID is specified or not.
-    /// </summary>
-    /// <param name="specifySessionId">Indicates whether the session ID is explicitly provided.</param>
-    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public async Task CancelSessionAsync_should_CancelSession_when_SessionIsPaused(bool specifySessionId)
-    {
-        Session session = SessionProvider.CreateRandom();
-        string sessionId = specifySessionId ? session.Id : string.Empty;
-        session.Pause();
-        _fakeActiveSessions.Add(sessionId, session);
-
-        OperationResult actual = await _sessionService.CancelSessionAsync(sessionId);
-
-        Assert.True(actual.Success);
+        Assert.True(actual.Success, actual.Message);
+        Assert.DoesNotContain(_fakeActiveSessions, s => s.Key == idStub);
     }
 
     /// <summary>
@@ -317,5 +305,109 @@ public class SessionServiceTests : IDisposable
         await _sessionService.DisposeAsync();
 
         Assert.Empty(_fakeActiveSessions);
+    }
+
+    /// <summary>
+    /// Verifies that <see cref="SessionService"/> sends a session progress message
+    /// when a second elapses during a session.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task SessionService_should_SendSessionProgress_when_SecondElapsed()
+    {
+        // Arrange
+        const string idStub = "AnotherId";
+        Func<ISession, ValueTask>? eventHandler = null;
+        _sessionMock.Setup(m => m.Id).Returns(idStub);
+        _sessionMock.Setup(m => m.State).Returns(SessionState.CreateInitial(TimeSpan.FromMinutes(1)));
+        _sessionMock.SetupSet(m => m.SecondElapsedAsync = It.IsAny<Func<ISession, ValueTask>>())
+            .Callback<Func<ISession, ValueTask>>(handler => eventHandler = handler);
+        _sessionFactoryMock.Setup(m => m.Create(It.IsAny<string>(), It.IsAny<string>())).Returns(_sessionMock.Object);
+        _appLifetimeMock.Setup(m => m.ApplicationStopping).Returns(It.IsAny<CancellationToken>());
+        _notificationServiceMock
+            .Setup(m => m.NotifyAsync(_sessionMock.Object.State, NotificationType.SessionStarted))
+            .Returns(ValueTask.CompletedTask);
+        _stdOutQueueWriterMock.Setup(m => m.WriteAsync(It.IsAny<SessionProgressMessage>()))
+            .Returns(ValueTask.CompletedTask);
+        await _sessionService.StartSessionAsync(idStub);
+
+        // Act
+        if (eventHandler is not null)
+        {
+            await eventHandler(_sessionMock.Object);
+        }
+
+        // Assert
+        _stdOutQueueWriterMock.Verify(m => m.WriteAsync(It.IsAny<SessionProgressMessage>()), Times.Once);
+    }
+
+    /// <summary>
+    /// Verifies that <see cref="SessionService"/> notifies when a session interval completes.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task SessionService_should_NotifyIntervalCompleted_when_IntervalCompletes()
+    {
+        const string idStub = "AnotherId";
+        Func<ISession, ValueTask>? eventHandler = null;
+        _sessionMock.Setup(m => m.Id).Returns(idStub);
+        _sessionMock.Setup(m => m.State).Returns(_sessionStateStub);
+        _sessionMock.SetupSet(m => m.IntervalCompletedAsync = It.IsAny<Func<ISession, ValueTask>>())
+            .Callback<Func<ISession, ValueTask>>(handler => eventHandler = handler);
+        _sessionFactoryMock.Setup(m => m.Create(It.IsAny<string>(), It.IsAny<string>())).Returns(_sessionMock.Object);
+        _appLifetimeMock.Setup(m => m.ApplicationStopping).Returns(It.IsAny<CancellationToken>());
+        _notificationServiceMock
+            .Setup(m => m.NotifyAsync(_sessionMock.Object.State, NotificationType.SessionStarted))
+            .Returns(ValueTask.CompletedTask);
+        _notificationServiceMock
+            .Setup(m => m.NotifyAsync(_sessionMock.Object.State, NotificationType.SessionIntervalCompleted))
+            .Returns(ValueTask.CompletedTask);
+        _stdOutQueueWriterMock.Setup(m => m.WriteAsync(It.IsAny<SessionProgressMessage>()))
+            .Returns(ValueTask.CompletedTask);
+        await _sessionService.StartSessionAsync(idStub);
+
+        if (eventHandler is not null)
+        {
+            await eventHandler(_sessionMock.Object);
+        }
+
+        _notificationServiceMock.Verify(
+            m => m.NotifyAsync(_sessionMock.Object.State, NotificationType.SessionIntervalCompleted),
+            Times.Once);
+    }
+
+    /// <summary>
+    /// Verifies that <see cref="SessionService"/> notifies when a session is completed.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task SessionService_should_NotifySessionCompleted_when_SessionCompletes()
+    {
+        const string idStub = "AnotherId";
+        Func<ISession, ValueTask>? eventHandler = null;
+        _sessionMock.Setup(m => m.Id).Returns(idStub);
+        _sessionMock.Setup(m => m.State).Returns(_sessionStateStub);
+        _sessionMock.SetupSet(m => m.CompletedAsync = It.IsAny<Func<ISession, ValueTask>>())
+            .Callback<Func<ISession, ValueTask>>(handler => eventHandler = handler);
+        _sessionFactoryMock.Setup(m => m.Create(It.IsAny<string>(), It.IsAny<string>())).Returns(_sessionMock.Object);
+        _appLifetimeMock.Setup(m => m.ApplicationStopping).Returns(It.IsAny<CancellationToken>());
+        _notificationServiceMock
+            .Setup(m => m.NotifyAsync(_sessionMock.Object.State, NotificationType.SessionStarted))
+            .Returns(ValueTask.CompletedTask);
+        _notificationServiceMock
+            .Setup(m => m.NotifyAsync(_sessionMock.Object.State, NotificationType.SessionCompleted))
+            .Returns(ValueTask.CompletedTask);
+        _stdOutQueueWriterMock.Setup(m => m.WriteAsync(It.IsAny<SessionProgressMessage>()))
+            .Returns(ValueTask.CompletedTask);
+        await _sessionService.StartSessionAsync(idStub);
+
+        if (eventHandler is not null)
+        {
+            await eventHandler(_sessionMock.Object);
+        }
+
+        _notificationServiceMock.Verify(
+            m => m.NotifyAsync(_sessionMock.Object.State, NotificationType.SessionCompleted),
+            Times.Once);
     }
 }
