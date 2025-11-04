@@ -24,11 +24,7 @@ public class SessionServiceTests : IDisposable
     private readonly Mock<IStandardOutQueueWriter> _stdOutQueueWriterMock;
     private readonly Mock<IHostApplicationLifetime> _appLifetimeMock;
     private readonly Mock<ISessionFactory> _sessionFactoryMock;
-<<<<<<< HEAD
-    private readonly Dictionary<string, ISession> _activeSessions = [];
-=======
-    private readonly Dictionary<string, Session> _fakeActiveSessions;
->>>>>>> aa55073 (test(daemon): update SessionService tests)
+    private readonly Dictionary<string, ISession> _fakeActiveSessions;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SessionServiceTests"/> class,
@@ -41,7 +37,7 @@ public class SessionServiceTests : IDisposable
         _stdOutQueueWriterMock = _mockRepository.Create<IStandardOutQueueWriter>();
         _appLifetimeMock = _mockRepository.Create<IHostApplicationLifetime>();
         _sessionFactoryMock = _mockRepository.Create<ISessionFactory>();
-        _fakeActiveSessions = new Dictionary<string, Session>();
+        _fakeActiveSessions = new Dictionary<string, ISession>();
 
         _sessionService = new SessionService(
             _notificationServiceMock.Object,
@@ -51,227 +47,6 @@ public class SessionServiceTests : IDisposable
             _fakeActiveSessions);
     }
 
-<<<<<<< HEAD
-    /// <inheritdoc/>
-    public void Dispose()
-    {
-        // Global Arrange
-        _mockRepository.VerifyAll();
-
-        foreach (var session in _activeSessions)
-        {
-            try
-            {
-                session.Value.Dispose();
-            }
-            catch (Exception ex)
-            {
-                // Ignore temporarily.
-            }
-        }
-
-        _activeSessions.Clear();
-    }
-    
-    #region StartSession
-    
-    [Theory]
-    [MemberData(nameof(GetSessionWithRandomConfig), true, true)]
-    [MemberData(nameof(GetSessionWithRandomConfig), true, false)]
-    [MemberData(nameof(GetSessionWithRandomConfig), false, true)]
-    [MemberData(nameof(GetSessionWithRandomConfig), false, false)]
-    public async Task StartSession_should_StartSession(
-        SessionConfig config, Session session, bool specifySessionId, bool specifyConfigId)
-    {
-        // Arrange
-        _hostApplicationLifetimeMock.Setup(m => m.ApplicationStopping).Returns(It.IsAny<CancellationToken>());
-        if (specifyConfigId)
-        {
-            _sessionFactoryMock.Setup(m => m.ExistsConfig(config.Id)).Returns(true);
-        }
-
-        _sessionFactoryMock.Setup(m => m.Create(It.IsAny<string>(), It.IsAny<string>())).Returns(session);
-
-        // Act
-        OperationResult operationResult = specifySessionId switch
-        {
-            // Both IDs specified.
-            true when specifyConfigId => await _sessionService.StartSessionAsync(session.Id, config.Id),
-            // Only session ID specified.
-            true when !specifyConfigId => await _sessionService.StartSessionAsync(session.Id),
-            // Only config ID specified.
-            false when specifyConfigId => await _sessionService.StartSessionAsync(sessionConfigId: config.Id),
-            _ => await _sessionService.StartSessionAsync()
-        };
-        
-        // Assert
-        Assert.True(operationResult.Success);
-    }
-
-    [Fact]
-    public async Task StartSession_should_ReturnFailedResult_when_ConfigIdNotExists()
-    {
-        SessionConfig config = SessionProvider.CreateRandomConfig();
-        
-        _sessionFactoryMock.Setup(m => m.ExistsConfig(config.Id)).Returns(false);
-        
-        OperationResult operationResult = await _sessionService.StartSessionAsync(sessionConfigId: config.Id);
-        
-        Assert.False(operationResult.Success);
-    }
-    
-    [Fact]
-    public async Task StartSession_should_ReturnFailedResult_when_SessionIdAlreadyExists()
-    {
-        Session session = SessionProvider.CreateRandom();
-        _activeSessions.Add(session.Id, session);
-        
-        OperationResult operationResult = await _sessionService.StartSessionAsync(session.Id);
-        
-        Assert.False(operationResult.Success);
-    }
-    
-    #endregion
-    
-    #region PauseSession
-
-    [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public void PauseSession_should_PauseSession(
-        bool specifySessionId)
-    {
-        Session session = SessionProvider.CreateRandom();
-        string sessionId = specifySessionId ? session.Id : string.Empty;
-        session.Start();
-        _activeSessions.Add(sessionId, session);
-
-        OperationResult operationResult = _sessionService.PauseSession(sessionId);
-     
-        Assert.True(operationResult.Success);
-    }
-    
-    [Fact]
-    public void PauseSession_should_ReturnErrorResult_when_ThereAreNoSessionsToPause()
-    {
-        OperationResult operationResult = _sessionService.PauseSession();
-     
-        Assert.False(operationResult.Success);
-    }
-    
-    [Fact]
-    public void PauseSession_should_ReturnErrorResult_when_SessionIdNotFound()
-    {
-        string falseSessionId = "AnotherId".ToLower();
-        
-        OperationResult operationResult = _sessionService.PauseSession(falseSessionId);
-     
-        Assert.False(operationResult.Success);
-    }
-    
-    #endregion
-    
-    #region ResumeSession
-
-    [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public void ResumeSession_should_ResumePausedSession(
-        bool sessionIdSpecified)
-    {
-        Session session = SessionProvider.CreateRandom();
-        string sessionId = sessionIdSpecified ? session.Id : string.Empty;
-        session.Pause();
-        _activeSessions.Add(sessionId, session);
-
-        OperationResult operationResult = _sessionService.ResumeSession(sessionId);
-        
-        Assert.True(operationResult.Success);
-    }
-
-    [Fact]
-    public void ResumeSession_should_ReturnFailedOperation_when_ThereAreNoSessionsToResume()
-    {
-        OperationResult operationResult = _sessionService.ResumeSession();
-        
-        Assert.False(operationResult.Success, operationResult.Message);
-    }
-    
-    [Fact]
-    public void ResumeSession_should_ReturnFailedOperation_when_IdNotFound()
-    {
-        string falseSessionId = "AnotherId".ToLower();
-
-        OperationResult operationResult = _sessionService.ResumeSession(falseSessionId);
-        
-        Assert.False(operationResult.Success);
-    }
-    
-    #endregion
-    
-    #region CancelSession
-    
-    [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public void CancelSession_should_CancelSession_when_SessionIsRunning(
-        bool sessionIdSpecified)
-    {
-        // Arrange
-        Session session = SessionProvider.CreateRandom();
-        string sessionId = sessionIdSpecified ? session.Id : string.Empty;
-        session.Start();
-        _activeSessions.Add(sessionId, session);
-
-        // Act
-        OperationResult operationResult = _sessionService.CancelSession(sessionId);
-        
-        // Assert
-        Assert.True(operationResult.Success);
-    }
-    
-    [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public void CancelSession_should_CancelSession_when_SessionIsPaused(
-        bool sessionIdSpecified)
-    {
-        // Arrange
-        Session session = SessionProvider.CreateRandom();
-        string sessionId = sessionIdSpecified ? session.Id : string.Empty;
-        session.Pause();
-        _activeSessions.Add(sessionId, session);
-
-        // Act
-        OperationResult operationResult = _sessionService.CancelSession(sessionId);
-        
-        // Assert
-        Assert.True(operationResult.Success);
-    }
-    
-    [Fact]
-    public void CancelSession_should_ReturnFailedOperation_when_ThereAreNoSessionsToCancel()
-    {
-        OperationResult operationResult = _sessionService.CancelSession();
-        Assert.False(operationResult.Success);
-    }
-    
-    [Fact]
-    public void CancelSession_should_ReturnFailedOperation_when_IdNotFound()
-    {
-        string falseSessionId = "AnotherId".ToLower();
-        
-        OperationResult operationResult = _sessionService.CancelSession(falseSessionId);
-        
-        Assert.False(operationResult.Success);
-    }
-    
-    #endregion
-    
-    #region Helpers
-    
-=======
->>>>>>> aa55073 (test(daemon): update SessionService tests)
     /// <summary>
     /// Generates test data for parameterized unit tests involving sessions and configurations.
     /// </summary>
@@ -329,13 +104,7 @@ public class SessionServiceTests : IDisposable
             _sessionFactoryMock.Setup(m => m.ExistsConfig(config.Id)).Returns(true);
         }
 
-        _sessionFactoryMock.Setup(m => m.Create(
-                It.IsAny<string>(),
-                It.IsAny<string>(),
-                It.IsAny<Func<Session, ValueTask>>(),
-                It.IsAny<Func<Session, ValueTask>>(),
-                It.IsAny<Func<Session, ValueTask>>()))
-            .Returns(session);
+        _sessionFactoryMock.Setup(m => m.Create(It.IsAny<string>(), It.IsAny<string>())).Returns(session);
         string sessionId = specifySessionId ? session.Id : string.Empty;
         string configId = specifyConfigId ? config.Id : string.Empty;
 
