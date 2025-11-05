@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 
 using Tiempito.Daemon.Domain.Config;
 using Tiempito.Daemon.Domain.Sessions;
+using Tiempito.Daemon.Infrastructure.Sessions;
 
 namespace Tiempito.Daemon.Tests.Sessions.Helpers;
 
@@ -50,7 +51,9 @@ public static class SessionProvider
     public static Session Create(string id = "TestSession", SessionConfig? config = null)
     {
         config ??= CreateConfig();
-        return Session.Create(LoggerFactory.CreateLogger<Session>(), id.ToLower(), config, TimeProvider.System);
+        var periodicTimer = new PeriodicTimer(Session.SecondInterval, TimeProvider.System);
+        var timerWrapper = new DefaultPeriodicTimer(periodicTimer);
+        return Session.Create(LoggerFactory.CreateLogger<Session>(), id.ToLower(), config, timerWrapper);
     }
 
     /// <summary>
@@ -68,6 +71,8 @@ public static class SessionProvider
             DelayBetweenTimes: TimeSpan.FromSeconds(random.Next(0, int.MaxValue)),
             FocusDuration: TimeSpan.FromSeconds(random.Next(1, int.MaxValue)),
             BreakDuration: TimeSpan.FromSeconds(random.Next(1, int.MaxValue)));
-        return Session.Create(LoggerFactory.CreateLogger<Session>(), id.ToLower(), sessionConfig, TimeProvider.System);
+        var periodicTimer = new PeriodicTimer(Session.SecondInterval, TimeProvider.System);
+        var timerWrapper = new DefaultPeriodicTimer(periodicTimer);
+        return Session.Create(LoggerFactory.CreateLogger<Session>(), id.ToLower(), sessionConfig, timerWrapper);
     }
 }

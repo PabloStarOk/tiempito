@@ -1,4 +1,5 @@
 using Tiempito.Daemon.Domain.Config;
+using Tiempito.Daemon.Domain.Sessions.Abstractions;
 using Tiempito.Daemon.Domain.Sessions.Enums;
 using Tiempito.Daemon.Domain.Sessions.ValueObjects;
 
@@ -9,6 +10,11 @@ namespace Tiempito.Daemon.Domain.Sessions;
 /// </summary>
 public sealed class Session : ISession
 {
+    /// <summary>
+    /// The interval of one second used for session timing.
+    /// </summary>
+    public static readonly TimeSpan SecondInterval = TimeSpan.FromSeconds(1);
+
     /// <inheritdoc/>
     public string Id { get; }
 
@@ -27,12 +33,10 @@ public sealed class Session : ISession
     /// <inheritdoc/>
     public Func<ISession, ValueTask>? CompletedAsync { get; set; }
 
-    private static readonly TimeSpan SecondInterval = TimeSpan.FromSeconds(1);
     private readonly ILogger<Session> _logger;
-    private readonly TimeProvider _timeProvider;
+    private readonly IPeriodicTimer _timer;
     private readonly SessionIntervalType[] _intervalsSequence;
     private Task? _runTask;
-    private PeriodicTimer? _timer;
     private int _currentIntervalIndex;
     private bool _disposed;
 
@@ -43,21 +47,21 @@ public sealed class Session : ISession
     /// <param name="id">The unique identifier for the session.</param>
     /// <param name="configuration">The configuration settings for the session.</param>
     /// <param name="state">The initial state of the session.</param>
-    /// <param name="timeProvider">The time provider used for interval timing.</param>
+    /// <param name="timer">The periodic timer used for interval timing.</param>
     /// <param name="intervalsSequence">The sequence of intervals for the session.</param>
     private Session(
         ILogger<Session> logger,
         string id,
         SessionConfig configuration,
         SessionState state,
-        TimeProvider timeProvider,
+        IPeriodicTimer timer,
         SessionIntervalType[] intervalsSequence)
     {
         Id = id;
         State = state;
         Configuration = configuration;
         _logger = logger;
-        _timeProvider = timeProvider;
+        _timer = timer;
         _intervalsSequence = intervalsSequence;
     }
 
@@ -67,14 +71,16 @@ public sealed class Session : ISession
     /// <param name="logger">The logger instance.</param>
     /// <param name="id">The unique identifier for the session.</param>
     /// <param name="configuration">The configuration settings for the session.</param>
-    /// <param name="timeProvider">The time provider used for interval timing.</param>
+    /// <param name="timer">The periodic timer used for interval timing.</param>
     /// <returns>A new <see cref="Session"/> instance.</returns>
     public static Session Create(
         ILogger<Session> logger,
         string id,
         SessionConfig configuration,
-        TimeProvider timeProvider)
+        IPeriodicTimer timer)
     {
+        timer.Period = Timeout.InfiniteTimeSpan;
+
         SessionIntervalType[] intervalsSequence = configuration.DelayBetweenTimes > TimeSpan.Zero
             ? [SessionIntervalType.Focus, SessionIntervalType.Delay, SessionIntervalType.Break, SessionIntervalType.Delay]
             : [SessionIntervalType.Focus, SessionIntervalType.Break];
@@ -84,7 +90,7 @@ public sealed class Session : ISession
             id,
             configuration,
             state: SessionState.CreateInitial(configuration.FocusDuration),
-            timeProvider,
+            timer,
             intervalsSequence);
     }
 
@@ -92,7 +98,7 @@ public sealed class Session : ISession
     public void Start(CancellationToken cancellationToken = default)
     {
         State = State.WithStatus(SessionStatus.Executing);
-        _timer = new PeriodicTimer(SecondInterval, _timeProvider);
+        _timer.Period = SecondInterval;
         _runTask = RunAsync(cancellationToken);
         _logger.LogDebug("Session {Id}: Started", Id);
     }
@@ -109,11 +115,7 @@ public sealed class Session : ISession
     public void Pause()
     {
         State = State.WithStatus(SessionStatus.Paused);
-        if (_timer is not null)
-        {
-            _timer.Period = Timeout.InfiniteTimeSpan;
-        }
-
+        _timer.Period = Timeout.InfiniteTimeSpan;
         _logger.LogDebug("Session {Id}: Paused", Id);
     }
 
@@ -121,11 +123,7 @@ public sealed class Session : ISession
     public void Resume()
     {
         State = State.WithStatus(SessionStatus.Executing);
-        if (_timer is not null)
-        {
-            _timer.Period = SecondInterval;
-        }
-
+        _timer.Period = SecondInterval;
         _logger.LogDebug("Session {Id}: Resumed", Id);
     }
 
@@ -139,8 +137,7 @@ public sealed class Session : ISession
 
         _disposed = true;
 
-        _timer?.Dispose();
-        _timer = null;
+        _timer.Dispose();
         SecondElapsedAsync = null;
         IntervalCompletedAsync = null;
         CompletedAsync = null;
@@ -166,11 +163,6 @@ public sealed class Session : ISession
 
     private async Task RunAsync(CancellationToken cancellationToken)
     {
-        if (_timer is null)
-        {
-            return;
-        }
-
         try
         {
             while (await _timer.WaitForNextTickAsync(cancellationToken))

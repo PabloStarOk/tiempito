@@ -53,7 +53,9 @@ internal sealed class SessionFactory : ISessionFactory
         }
 
         var logger = _loggerFactory.CreateLogger<Session>();
-        var session = Session.Create(logger, id, sessionConfig!, _timeProvider);
+        var periodicTimer = new PeriodicTimer(Session.SecondInterval, _timeProvider);
+        var timerWrapper = new DefaultPeriodicTimer(periodicTimer);
+        var session = Session.Create(logger, id, sessionConfig!, timerWrapper);
 
         _logger.LogInformation("Session with ID '{Id}' created using config '{ConfigId}'", id, session.Configuration.Id);
         return session;
