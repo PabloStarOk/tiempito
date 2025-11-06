@@ -241,68 +241,64 @@ public sealed class SessionServiceTests : IDisposable
     }
 
     /// <summary>
-    /// Tests that <see cref="SessionService.CancelSessionAsync"/> successfully cancels a running session
+    /// Tests that <see cref="SessionService.CancelSession"/> successfully cancels a running session
     /// when the session ID is specified or not.
     /// </summary>
     /// <param name="specifySessionId">Indicates whether the session ID is explicitly provided.</param>
-    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public async Task CancelSessionAsync_should_CancelActiveSession(bool specifySessionId)
+    public void CancelSession_should_CancelActiveSession(bool specifySessionId)
     {
         const string idStub = "AnotherId";
         _sessionMock.Setup(m => m.Id).Returns(idStub).Verifiable(Times.AtMostOnce);
-        _sessionMock.Setup(m => m.CancelAsync()).Returns(ValueTask.CompletedTask);
+        _sessionMock.Setup(m => m.Cancel());
         _fakeActiveSessions.Add(idStub, _sessionMock.Object);
         string sessionId = specifySessionId ? idStub : string.Empty;
 
-        OperationResult actual = await _sessionService.CancelSessionAsync(sessionId);
+        OperationResult actual = _sessionService.CancelSession(sessionId);
 
         Assert.True(actual.Success, actual.Message);
         Assert.DoesNotContain(_fakeActiveSessions, s => s.Key == idStub);
     }
 
     /// <summary>
-    /// Tests that <see cref="SessionService.CancelSessionAsync"/> returns an error when there are no sessions to cancel.
+    /// Tests that <see cref="SessionService.CancelSession"/> returns an error when there are no sessions to cancel.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task CancelSessionAsync_return_Error_when_NoSessionsToCancel()
+    public void CancelSession_return_Error_when_NoSessionsToCancel()
     {
-        OperationResult operationResult = await _sessionService.CancelSessionAsync();
+        OperationResult operationResult = _sessionService.CancelSession();
 
         Assert.False(operationResult.Success);
     }
 
     /// <summary>
-    /// Tests that <see cref="SessionService.CancelSessionAsync"/> returns a failed operation
+    /// Tests that <see cref="SessionService.CancelSession"/> returns a failed operation
     /// when the specified session ID is not found.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task CancelSession_should_ReturnFailedOperation_when_IdNotFound()
+    public void CancelSession_should_ReturnFailedOperation_when_IdNotFound()
     {
         const string stubId = "AnotherId";
 
-        OperationResult actual = await _sessionService.CancelSessionAsync(stubId);
+        OperationResult actual = _sessionService.CancelSession(stubId);
 
         Assert.False(actual.Success);
     }
 
     /// <summary>
-    /// Tests that <see cref="SessionService.DisposeAsync"/> removes all active sessions from the internal collection.
+    /// Tests that <see cref="SessionService.Dispose"/> removes all active sessions from the internal collection.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task DisposeAsync_should_RemoveActiveSessions()
+    public void Dispose_should_RemoveActiveSessions()
     {
         var session = SessionProvider.Create("Session1");
         _fakeActiveSessions.Add(session.Id, session);
         session = SessionProvider.Create("Session2");
         _fakeActiveSessions.Add(session.Id, session);
 
-        await _sessionService.DisposeAsync();
+        _sessionService.Dispose();
 
         Assert.Empty(_fakeActiveSessions);
     }
