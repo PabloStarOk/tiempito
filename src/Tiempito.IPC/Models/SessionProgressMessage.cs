@@ -41,6 +41,18 @@ public sealed record SessionProgressMessage : Message
     public TimeSpan ElapsedTime { get; }
 
     /// <summary>
+    /// Gets a value indicating whether the current interval has completed.
+    /// </summary>
+    [Key(8)]
+    public bool IntervalCompleted { get; }
+
+    /// <summary>
+    /// Gets a value indicating whether the session has completed.
+    /// </summary>
+    [Key(9)]
+    public bool SessionCompleted { get; }
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="SessionProgressMessage"/> class.
     /// </summary>
     /// <param name="id">The unique identifier for the message.</param>
@@ -51,6 +63,8 @@ public sealed record SessionProgressMessage : Message
     /// <param name="intervalType">The type of the current session interval.</param>
     /// <param name="cycle">The current cycle number within the session.</param>
     /// <param name="elapsedTime">The elapsed time for the current interval.</param>
+    /// <param name="intervalCompleted">A value indicating whether the current interval has completed.</param>
+    /// <param name="sessionCompleted">A value indicating whether the session has completed.</param>
     internal SessionProgressMessage(
         Guid id,
         Guid correlationId,
@@ -59,7 +73,9 @@ public sealed record SessionProgressMessage : Message
         TimeSpan intervalDuration,
         SessionIntervalType intervalType,
         int cycle,
-        TimeSpan elapsedTime)
+        TimeSpan elapsedTime,
+        bool intervalCompleted,
+        bool sessionCompleted)
         : base(id, correlationId, timestamp)
     {
         SessionId = sessionId;
@@ -67,6 +83,8 @@ public sealed record SessionProgressMessage : Message
         IntervalType = intervalType;
         Cycle = cycle;
         ElapsedTime = elapsedTime;
+        SessionCompleted = sessionCompleted;
+        IntervalCompleted = intervalCompleted;
     }
 
     /// <summary>
@@ -77,13 +95,17 @@ public sealed record SessionProgressMessage : Message
     /// <param name="intervalType">The type of the current session interval.</param>
     /// <param name="cycle">The current cycle number within the session.</param>
     /// <param name="elapsedTime">The elapsed time for the current interval.</param>
+    /// <param name="intervalCompleted">A value indicating whether the current interval has completed.</param>
+    /// <param name="sessionCompleted">A value indicating whether the session has completed.</param>
     /// <returns>A new <see cref="SessionProgressMessage"/> instance.</returns>
     public static SessionProgressMessage CreateNew(
         string sessionId,
         TimeSpan intervalDuration,
         SessionIntervalType intervalType,
         int cycle,
-        TimeSpan elapsedTime)
+        TimeSpan elapsedTime,
+        bool intervalCompleted,
+        bool sessionCompleted)
     {
         return new SessionProgressMessage(
             id: Guid.NewGuid(),
@@ -93,6 +115,8 @@ public sealed record SessionProgressMessage : Message
             intervalDuration,
             intervalType,
             cycle,
-            elapsedTime);
+            elapsedTime,
+            intervalCompleted,
+            sessionCompleted);
     }
 }

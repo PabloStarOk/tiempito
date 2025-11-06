@@ -174,7 +174,10 @@ public sealed class SessionService : ISessionService, IDisposable
         _activeSessions.Clear();
     }
 
-    private static SessionProgressMessage CreateSessionProgressMessage(ISession session)
+    private static SessionProgressMessage CreateSessionProgressMessage(
+        ISession session,
+        bool intervalCompleted = false,
+        bool sessionCompleted = false)
     {
         IPC.Models.Enums.SessionIntervalType intervalType = session.State.IntervalType switch
         {
@@ -189,7 +192,9 @@ public sealed class SessionService : ISessionService, IDisposable
             intervalDuration: session.State.TargetDuration,
             intervalType: intervalType,
             cycle: session.State.Cycle,
-            elapsedTime: session.State.ElapsedTime);
+            elapsedTime: session.State.ElapsedTime,
+            intervalCompleted: intervalCompleted,
+            sessionCompleted: sessionCompleted);
     }
 
     private async Task OnSessionStartedAsync(ISession session)
@@ -210,7 +215,7 @@ public sealed class SessionService : ISessionService, IDisposable
             return;
         }
 
-        var message = CreateSessionProgressMessage(session);
+        var message = CreateSessionProgressMessage(session, intervalCompleted: true);
         await _standardOutQueueWriter.WriteAsync(message);
         await _notificationService.NotifyAsync(session.State, NotificationType.SessionIntervalCompleted);
     }
@@ -219,7 +224,7 @@ public sealed class SessionService : ISessionService, IDisposable
     {
         _activeSessions.Remove(session.Id);
         session.Dispose();
-        var message = CreateSessionProgressMessage(session);
+        var message = CreateSessionProgressMessage(session, sessionCompleted: true);
         await _standardOutQueueWriter.WriteAsync(message);
         await _notificationService.NotifyAsync(session.State, NotificationType.SessionCompleted);
     }

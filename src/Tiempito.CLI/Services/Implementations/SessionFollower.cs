@@ -51,6 +51,18 @@ internal sealed class SessionFollower : ISessionFollower
         }
     }
 
+    private static string GetSessionProgressString(SessionProgressMessage message)
+    {
+        if (message.IntervalCompleted)
+        {
+            return $"{message.IntervalType.ToString()} interval completed";
+        }
+
+        return message.SessionCompleted
+            ? "Session completed"
+            : $"{message.IntervalType.ToString()} interval: {message.ElapsedTime}/{message.IntervalDuration}";
+    }
+
     private async Task HandleMessageAsync(Message message, CancellationToken cancellationToken)
     {
         bool error = false;
@@ -58,7 +70,7 @@ internal sealed class SessionFollower : ISessionFollower
         switch (message)
         {
             case SessionProgressMessage progressMsg:
-                outputMsg = $"{progressMsg.IntervalType.ToString()} interval: {progressMsg.ElapsedTime}/{progressMsg.IntervalDuration}";
+                outputMsg = GetSessionProgressString(progressMsg);
                 break;
 
             case ConnectionTerminationMessage:
