@@ -104,10 +104,10 @@ public sealed class Session : ISession
     }
 
     /// <inheritdoc/>
-    public async ValueTask CancelAsync()
+    public void Cancel()
     {
         State = State.WithStatus(SessionStatus.Cancelled);
-        await DisposeAsync();
+        _timer.Dispose();
         _logger.LogDebug("Session {Id}: Canceled", Id);
     }
 
@@ -128,7 +128,7 @@ public sealed class Session : ISession
     }
 
     /// <inheritdoc/>
-    public async ValueTask DisposeAsync()
+    public void Dispose()
     {
         if (_disposed)
         {
@@ -142,36 +142,35 @@ public sealed class Session : ISession
         IntervalCompletedAsync = null;
         CompletedAsync = null;
 
-        if (_runTask is null)
+        if (_runTask is not null && _runTask.IsCompleted)
         {
-            return;
+            _runTask.Dispose();
+            _logger.LogDebug("Session {Id}: RunAsync task disposed", Id);
         }
 
-        try
-        {
-            await _runTask;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Session {Id}: An error occurred while disposing the session.", Id);
-        }
-
-        _runTask.Dispose();
         _runTask = null;
         _logger.LogDebug("Session {Id}: Disposed.", Id);
     }
 
     private async Task RunAsync(CancellationToken cancellationToken)
     {
+        _logger.LogDebug("Session {Id}: RunAsync task started", Id);
         try
         {
             while (await _timer.WaitForNextTickAsync(cancellationToken))
             {
                 await OnSecondElapsedAsync();
             }
+
+            _logger.LogDebug("Session {Id}: RunAsync task completed", Id);
         }
         catch (OperationCanceledException)
         {
+            _logger.LogDebug("Session {Id}: RunAsync task canceled", Id);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Session {Id}: An exception occurred while running.", Id);
         }
     }
 
@@ -205,12 +204,12 @@ public sealed class Session : ISession
     private async ValueTask CompleteAsync()
     {
         State = State.WithStatus(SessionStatus.Finished);
+        _timer.Dispose();
         if (CompletedAsync is not null)
         {
             await CompletedAsync(this);
         }
 
-        await DisposeAsync();
         _logger.LogDebug("Session {Id}: Completed", Id);
     }
 

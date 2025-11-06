@@ -16,13 +16,14 @@ internal sealed class CancelSessionCommandHandler(ISessionService sessionService
     public bool CanHandle(Command command) => command is CancelSessionCommand;
 
     /// <inheritdoc/>
-    public async ValueTask<OperationResult> HandleAsync(Command command, CancellationToken cancellationToken = default)
+    public ValueTask<OperationResult> HandleAsync(Command command, CancellationToken cancellationToken = default)
     {
         if (command is not CancelSessionCommand cancelCmd)
         {
             throw new ArgumentException($"Command must be a {nameof(CancelSessionCommand)}.", nameof(command));
         }
 
-        return await sessionService.CancelSessionAsync(cancelCmd.SessionId);
+        var result = sessionService.CancelSession(cancelCmd.SessionId);
+        return ValueTask.FromResult(result);
     }
 }

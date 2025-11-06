@@ -52,7 +52,7 @@ public class SessionServiceTests : IDisposable
         {
             try
             {
-                session.Value.DisposeAsync().AsTask().GetAwaiter().GetResult();
+                session.Value.Dispose();
             }
             catch (Exception ex)
             {
@@ -204,7 +204,7 @@ public class SessionServiceTests : IDisposable
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public async Task CancelSession_should_CancelSession_when_SessionIsRunning(
+    public void CancelSession_should_CancelSession_when_SessionIsRunning(
         bool sessionIdSpecified)
     {
         // Arrange
@@ -214,7 +214,7 @@ public class SessionServiceTests : IDisposable
         _activeSessions.Add(sessionId, session);
 
         // Act
-        OperationResult operationResult = await _sessionService.CancelSessionAsync(sessionId);
+        OperationResult operationResult = _sessionService.CancelSession(sessionId);
         
         // Assert
         Assert.True(operationResult.Success);
@@ -223,7 +223,7 @@ public class SessionServiceTests : IDisposable
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public async Task CancelSession_should_CancelSession_when_SessionIsPaused(
+    public void CancelSession_should_CancelSession_when_SessionIsPaused(
         bool sessionIdSpecified)
     {
         // Arrange
@@ -233,25 +233,25 @@ public class SessionServiceTests : IDisposable
         _activeSessions.Add(sessionId, session);
 
         // Act
-        OperationResult operationResult = await _sessionService.CancelSessionAsync(sessionId);
+        OperationResult operationResult = _sessionService.CancelSession(sessionId);
         
         // Assert
         Assert.True(operationResult.Success);
     }
     
     [Fact]
-    public async Task CancelSession_should_ReturnFailedOperation_when_ThereAreNoSessionsToCancel()
+    public void CancelSession_should_ReturnFailedOperation_when_ThereAreNoSessionsToCancel()
     {
-        OperationResult operationResult = await _sessionService.CancelSessionAsync();
+        OperationResult operationResult = _sessionService.CancelSession();
         Assert.False(operationResult.Success);
     }
     
     [Fact]
-    public async Task CancelSession_should_ReturnFailedOperation_when_IdNotFound()
+    public void CancelSession_should_ReturnFailedOperation_when_IdNotFound()
     {
         string falseSessionId = "AnotherId".ToLower();
         
-        OperationResult operationResult = await _sessionService.CancelSessionAsync(falseSessionId);
+        OperationResult operationResult = _sessionService.CancelSession(falseSessionId);
         
         Assert.False(operationResult.Success);
     }

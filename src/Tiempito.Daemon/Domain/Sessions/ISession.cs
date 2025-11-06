@@ -6,7 +6,7 @@ namespace Tiempito.Daemon.Domain.Sessions;
 /// <summary>
 /// Represents a session with asynchronous disposal capabilities.
 /// </summary>
-public interface ISession : IAsyncDisposable
+public interface ISession : IDisposable
 {
     /// <summary>
     /// Gets the unique identifier for the session.
@@ -45,10 +45,9 @@ public interface ISession : IAsyncDisposable
     public void Start(CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Cancels the session and releases resources.
+    /// Cancels the session.
     /// </summary>
-    /// <returns>A <see cref="ValueTask"/> that completes when cancellation and cleanup are finished.</returns>
-    public ValueTask CancelAsync();
+    public void Cancel();
 
     /// <summary>
     /// Pauses the session.

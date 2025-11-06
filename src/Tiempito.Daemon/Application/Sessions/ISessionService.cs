@@ -34,5 +34,5 @@ public interface ISessionService
     /// </summary>
     /// <param name="sessionId">ID of the session to cancel.</param>
     /// <returns>An <see cref="OperationResult"/> to know if the session was cancelled successfully.</returns>
-    public ValueTask<OperationResult> CancelSessionAsync(string sessionId = "");
+    public OperationResult CancelSession(string sessionId = "");
 }

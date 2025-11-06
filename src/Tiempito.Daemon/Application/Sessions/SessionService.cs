@@ -10,7 +10,7 @@ namespace Tiempito.Daemon.Application.Sessions;
 /// <summary>
 /// Service to manage sessions.
 /// </summary>
-public sealed class SessionService : ISessionService, IAsyncDisposable
+public sealed class SessionService : ISessionService, IDisposable
 {
     private readonly INotificationService _notificationService;
     private readonly IStandardOutQueueWriter _standardOutQueueWriter;
@@ -129,7 +129,7 @@ public sealed class SessionService : ISessionService, IAsyncDisposable
     }
 
     /// <inheritdoc/>
-    public async ValueTask<OperationResult> CancelSessionAsync(string sessionId = "")
+    public OperationResult CancelSession(string sessionId = "")
     {
         if (_activeSessions.Count < 1)
         {
@@ -148,12 +148,13 @@ public sealed class SessionService : ISessionService, IAsyncDisposable
             _activeSessions.Remove(session.Id);
         }
 
-        await session.CancelAsync();
+        session.Cancel();
+        session.Dispose();
         return new OperationResult(Success: true, Message: "Session cancelled.");
     }
 
     /// <inheritdoc/>
-    public async ValueTask DisposeAsync()
+    public void Dispose()
     {
         if (_disposed)
         {
@@ -163,7 +164,8 @@ public sealed class SessionService : ISessionService, IAsyncDisposable
         _disposed = true;
         foreach (var session in _activeSessions.Values)
         {
-            await session.DisposeAsync();
+            session.Cancel();
+            session.Dispose();
             session.SecondElapsedAsync -= OnSessionSecondElapsedAsync;
             session.IntervalCompletedAsync -= OnSessionIntervalCompletedAsync;
             session.CompletedAsync -= OnSessionCompletedAsync;
@@ -216,6 +218,7 @@ public sealed class SessionService : ISessionService, IAsyncDisposable
     private async ValueTask OnSessionCompletedAsync(ISession session)
     {
         _activeSessions.Remove(session.Id);
+        session.Dispose();
         var message = CreateSessionProgressMessage(session);
         await _standardOutQueueWriter.WriteAsync(message);
         await _notificationService.NotifyAsync(session.State, NotificationType.SessionCompleted);
