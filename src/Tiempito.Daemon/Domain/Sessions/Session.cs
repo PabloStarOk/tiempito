@@ -97,6 +97,11 @@ public sealed class Session : ISession
     /// <inheritdoc/>
     public void Start(CancellationToken cancellationToken = default)
     {
+        if (_disposed || State.Status is not SessionStatus.None)
+        {
+            return;
+        }
+
         State = State.WithStatus(SessionStatus.Executing);
         _timer.Period = SecondInterval;
         _runTask = RunAsync(cancellationToken);
@@ -106,6 +111,11 @@ public sealed class Session : ISession
     /// <inheritdoc/>
     public void Cancel()
     {
+        if (_disposed || State.Status is SessionStatus.Cancelled or SessionStatus.Finished)
+        {
+            return;
+        }
+
         State = State.WithStatus(SessionStatus.Cancelled);
         _timer.Dispose();
         _logger.LogDebug("Session {Id}: Canceled", Id);
@@ -114,6 +124,11 @@ public sealed class Session : ISession
     /// <inheritdoc/>
     public void Pause()
     {
+        if (_disposed || State.Status is not SessionStatus.Executing)
+        {
+            return;
+        }
+
         State = State.WithStatus(SessionStatus.Paused);
         _timer.Period = Timeout.InfiniteTimeSpan;
         _logger.LogDebug("Session {Id}: Paused", Id);
@@ -122,6 +137,11 @@ public sealed class Session : ISession
     /// <inheritdoc/>
     public void Resume()
     {
+        if (_disposed || State.Status is not SessionStatus.Paused)
+        {
+            return;
+        }
+
         State = State.WithStatus(SessionStatus.Executing);
         _timer.Period = SecondInterval;
         _logger.LogDebug("Session {Id}: Resumed", Id);
@@ -136,6 +156,11 @@ public sealed class Session : ISession
         }
 
         _disposed = true;
+
+        if (State.Status is not SessionStatus.Cancelled and not SessionStatus.Finished)
+        {
+            State = State.WithStatus(SessionStatus.Cancelled);
+        }
 
         _timer.Dispose();
         SecondElapsedAsync = null;
