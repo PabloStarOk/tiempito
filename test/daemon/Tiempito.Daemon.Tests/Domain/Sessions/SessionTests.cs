@@ -108,6 +108,101 @@ public sealed class SessionTests : IDisposable
     }
 
     /// <summary>
+    /// Tests that <see cref="Session.Start"/> does not start the session when the session status is <see cref="SessionStatus.Executing"/>.
+    /// </summary>
+    [Fact]
+    public void Start_should_NotStartSession_when_SessionStatusIsExecuting()
+    {
+        // Arrange
+        _session.Start();
+        _timerMock.Reset();
+
+        // Act
+        _session.Start();
+
+        // Assert
+        _timerMock.VerifySet(m => m.Period = Session.SecondInterval, Times.Never);
+    }
+
+    /// <summary>
+    /// Tests that <see cref="Session.Start"/> does not start the session when the session status is <see cref="SessionStatus.Paused"/>.
+    /// </summary>
+    [Fact]
+    public void Start_should_NotStartSession_when_SessionStatusIsPaused()
+    {
+        // Arrange
+        _session.Start();
+        _session.Pause();
+        _timerMock.Reset();
+
+        // Act
+        _session.Start();
+
+        // Assert
+        Assert.Equal(SessionStatus.Paused, _session.State.Status);
+        _timerMock.VerifySet(m => m.Period = Session.SecondInterval, Times.Never);
+    }
+
+    /// <summary>
+    /// Tests that calling <see cref="Session.Start"/> does not start the session when the session status is <see cref="SessionStatus.Cancelled"/>.
+    /// </summary>
+    [Fact]
+    public void Start_should_NotStartSession_when_SessionStatusIsCancelled()
+    {
+        // Arrange
+        _session.Start();
+        _session.Cancel();
+        _timerMock.Reset();
+
+        // Act
+        _session.Start();
+
+        // Assert
+        Assert.Equal(SessionStatus.Cancelled, _session.State.Status);
+        _timerMock.VerifySet(m => m.Period = Session.SecondInterval, Times.Never);
+    }
+
+    /// <summary>
+    /// Tests that calling <see cref="Session.Start"/> does not start the session when the session status is <see cref="SessionStatus.Finished"/>.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task Start_should_NotStartSession_when_SessionStatusIsFinished()
+    {
+        // Arrange
+        Session session = CreateWithFakeDeps(focusDuration: 1, breakDuration: 1);
+        using var advancer = new SessionTimeAdvancer(session, _fakeTimeProvider);
+        session.Start();
+        await advancer.AdvanceAsync(TimeSpan.FromSeconds(3));
+
+        // Act
+        session.Start();
+
+        // Assert
+        Assert.Equal(SessionStatus.Finished, session.State.Status);
+        _timerMock.VerifySet(m => m.Period = Session.SecondInterval, Times.Never);
+    }
+
+    /// <summary>
+    /// Tests that calling <see cref="Session.Start"/> does not start the session when the session is disposed.
+    /// </summary>
+    [Fact]
+    public void Start_should_NotStartSession_when_SessionStatusIsDisposed()
+    {
+        // Arrange
+        _session.Start();
+        _session.Dispose();
+        _timerMock.Reset();
+
+        // Act
+        _session.Start();
+
+        // Assert
+        Assert.Equal(SessionStatus.Cancelled, _session.State.Status);
+        _timerMock.VerifySet(m => m.Period = Session.SecondInterval, Times.Never);
+    }
+
+    /// <summary>
     /// Tests that calling <see cref="Session.Pause"/> changes the session status to <see cref="SessionStatus.Paused"/>.
     /// </summary>
     [Fact]
@@ -130,6 +225,7 @@ public sealed class SessionTests : IDisposable
     public void Pause_should_SetTimerPeriodToInfinite()
     {
         // Arrange
+        _session.Start();
         _timerMock.Reset();
 
         // Act
@@ -137,6 +233,98 @@ public sealed class SessionTests : IDisposable
 
         // Assert
         _timerMock.VerifySet(m => m.Period = Timeout.InfiniteTimeSpan, Times.Once);
+    }
+
+    /// <summary>
+    /// Tests that calling <see cref="Session.Pause"/> does not pause the session when the session status is <see cref="SessionStatus.None"/>.
+    /// </summary>
+    [Fact]
+    public void Pause_should_NotPauseSession_when_SessionStatusIsNone()
+    {
+        // Act
+        _timerMock.Reset();
+        _session.Pause();
+
+        // Assert
+        Assert.Equal(SessionStatus.None, _session.State.Status);
+        _timerMock.VerifySet(m => m.Period = Timeout.InfiniteTimeSpan, Times.Never);
+    }
+
+    /// <summary>
+    /// Tests that calling <see cref="Session.Pause"/> does not perform the pause process when the session status is <see cref="SessionStatus.Paused"/>.
+    /// </summary>
+    [Fact]
+    public void Pause_should_NotDoPauseProcess_when_SessionStatusIsPaused()
+    {
+        // Arrange
+        _session.Start();
+        _session.Pause();
+        _timerMock.Reset();
+
+        // Act
+        _session.Pause();
+
+        // Assert
+        _timerMock.VerifySet(m => m.Period = Timeout.InfiniteTimeSpan, Times.Never);
+    }
+
+    /// <summary>
+    /// Tests that calling <see cref="Session.Pause"/> does not pause the session when the session status is <see cref="SessionStatus.Cancelled"/>.
+    /// </summary>
+    [Fact]
+    public void Pause_should_NotPauseSession_when_SessionStatusIsCancelled()
+    {
+        // Arrange
+        _session.Start();
+        _session.Cancel();
+        _timerMock.Reset();
+
+        // Act
+        _session.Pause();
+
+        // Assert
+        Assert.Equal(SessionStatus.Cancelled, _session.State.Status);
+        _timerMock.VerifySet(m => m.Period = Timeout.InfiniteTimeSpan, Times.Never);
+    }
+
+    /// <summary>
+    /// Tests that calling <see cref="Session.Pause"/> does not pause the session when the session status is <see cref="SessionStatus.Finished"/>.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task Pause_should_NotPauseSession_when_SessionStatusIsFinished()
+    {
+        // Arrange
+        Session session = CreateWithFakeDeps(focusDuration: 1, breakDuration: 1);
+        using var advancer = new SessionTimeAdvancer(session, _fakeTimeProvider);
+        session.Start();
+        await advancer.AdvanceAsync(TimeSpan.FromSeconds(3));
+        _timerMock.Reset();
+
+        // Act
+        session.Pause();
+
+        // Assert
+        Assert.Equal(SessionStatus.Finished, session.State.Status);
+        _timerMock.VerifySet(m => m.Period = Timeout.InfiniteTimeSpan, Times.Never);
+    }
+
+    /// <summary>
+    /// Tests that calling <see cref="Session.Pause"/> does not pause the session when the session is disposed.
+    /// </summary>
+    [Fact]
+    public void Pause_should_NotPauseSession_when_SessionIsDisposed()
+    {
+        // Arrange
+        _session.Dispose();
+        _timerMock.Reset();
+
+        // Act
+        _session.Pause();
+
+        // Assert
+        Assert.Equal(SessionStatus.Cancelled, _session.State.Status);
+        _timerMock.VerifySet(m => m.Period = Timeout.InfiniteTimeSpan, Times.Never);
     }
 
     /// <summary>
@@ -163,6 +351,8 @@ public sealed class SessionTests : IDisposable
     public void Resume_should_SetTimerPeriodToSecondInterval()
     {
         // Arrange
+        _session.Start();
+        _session.Pause();
         _timerMock.Reset();
 
         // Act
@@ -170,6 +360,97 @@ public sealed class SessionTests : IDisposable
 
         // Assert
         _timerMock.VerifySet(m => m.Period = Session.SecondInterval);
+    }
+
+    /// <summary>
+    /// Tests that calling <see cref="Session.Resume"/> does not resume the session when the session status is <see cref="SessionStatus.None"/>.
+    /// </summary>
+    [Fact]
+    public void Resume_should_NotResumeSession_when_SessionStatusIsNone()
+    {
+        // Act
+        _session.Resume();
+
+        // Assert
+        Assert.Equal(SessionStatus.None, _session.State.Status);
+        _timerMock.VerifySet(m => m.Period = Session.SecondInterval, Times.Never);
+    }
+
+    /// <summary>
+    /// Tests that calling <see cref="Session.Resume"/> does not perform the resume process when the session status is <see cref="SessionStatus.Executing"/>.
+    /// </summary>
+    [Fact]
+    public void Resume_should_NotDoResumeProcess_when_SessionStatusIsExecuting()
+    {
+        // Arrange
+        _session.Start();
+        _session.Pause();
+        _session.Resume();
+        _timerMock.Reset();
+
+        // Act
+        _session.Resume();
+
+        // Assert
+        _timerMock.VerifySet(m => m.Period = Session.SecondInterval, Times.Never);
+    }
+
+    /// <summary>
+    /// Tests that calling <see cref="Session.Resume"/> does not resume the session when the session status is <see cref="SessionStatus.Cancelled"/>.
+    /// </summary>
+    [Fact]
+    public void Resume_should_NotResumeSession_when_SessionStatusIsCancelled()
+    {
+        // Arrange
+        _session.Start();
+        _session.Cancel();
+        _timerMock.Reset();
+
+        // Act
+        _session.Resume();
+
+        // Assert
+        Assert.Equal(SessionStatus.Cancelled, _session.State.Status);
+        _timerMock.VerifySet(m => m.Period = Session.SecondInterval, Times.Never);
+    }
+
+    /// <summary>
+    /// Tests that calling <see cref="Session.Resume"/> does not resume the session when the session status is <see cref="SessionStatus.Finished"/>.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task Resume_should_NotResumeSession_when_SessionStatusIsFinished()
+    {
+        // Arrange
+        Session session = CreateWithFakeDeps(focusDuration: 1, breakDuration: 1);
+        using var advancer = new SessionTimeAdvancer(session, _fakeTimeProvider);
+        session.Start();
+        await advancer.AdvanceAsync(TimeSpan.FromSeconds(3));
+        _timerMock.Reset();
+
+        // Act
+        session.Resume();
+
+        // Assert
+        Assert.Equal(SessionStatus.Finished, session.State.Status);
+        _timerMock.VerifySet(m => m.Period = Session.SecondInterval, Times.Never);
+    }
+
+    /// <summary>
+    /// Tests that calling <see cref="Session.Resume"/> does not resume the session when the session is disposed.
+    /// </summary>
+    [Fact]
+    public void Resume_should_NotResumeSession_when_SessionIsDisposed()
+    {
+        // Arrange
+        _session.Dispose();
+
+        // Act
+        _session.Resume();
+
+        // Assert
+        Assert.Equal(SessionStatus.Cancelled, _session.State.Status);
+        _timerMock.VerifySet(m => m.Period = Session.SecondInterval, Times.Never);
     }
 
     /// <summary>
@@ -216,6 +497,63 @@ public sealed class SessionTests : IDisposable
 
         // Assert
         _timerMock.Verify(m => m.Dispose(), Times.Once);
+    }
+
+    /// <summary>
+    /// Tests that calling <see cref="Session.Cancel"/> does not perform the cancel process when the session status is <see cref="SessionStatus.Cancelled"/>.
+    /// </summary>
+    [Fact]
+    public void Cancel_should_NotDoCancelProcess_when_SessionStatusIsCancelled()
+    {
+        // Arrange
+        _session.Start();
+        _session.Cancel();
+        _timerMock.Reset();
+
+        // Act
+        _session.Cancel();
+
+        // Assert
+        _timerMock.Verify(m => m.Dispose(), Times.Never);
+    }
+
+    /// <summary>
+    /// Tests that calling <see cref="Session.Cancel"/> does not cancel the session when the session status is <see cref="SessionStatus.Finished"/>.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task Cancel_should_NotCancelSession_when_SessionStatusIsFinished()
+    {
+        // Arrange
+        Session session = CreateWithFakeDeps(focusDuration: 1, breakDuration: 1);
+        using var advancer = new SessionTimeAdvancer(session, _fakeTimeProvider);
+        session.Start();
+        await advancer.AdvanceAsync(TimeSpan.FromSeconds(3));
+        _timerMock.Reset();
+
+        // Act
+        session.Cancel();
+
+        // Assert
+        Assert.Equal(SessionStatus.Finished, session.State.Status);
+        _timerMock.Verify(m => m.Dispose(), Times.Never);
+    }
+
+    /// <summary>
+    /// Tests that calling <see cref="Session.Cancel"/> does not cancel the session when the session is disposed.
+    /// </summary>
+    [Fact]
+    public void Cancel_should_NotCancelSession_when_SessionIsDisposed()
+    {
+        // Arrange
+        _session.Dispose();
+        _timerMock.Reset();
+
+        // Act
+        _session.Cancel();
+
+        // Assert
+        _timerMock.Verify(m => m.Dispose(), Times.Never);
     }
 
     /// <summary>
@@ -338,6 +676,35 @@ public sealed class SessionTests : IDisposable
         Assert.Null(_session.SecondElapsedAsync);
         Assert.Null(_session.IntervalCompletedAsync);
         Assert.Null(_session.CompletedAsync);
+    }
+
+    /// <summary>
+    /// Tests that calling <see cref="Session.Dispose"/> sets the correct session status depending on whether the session is finished.
+    /// </summary>
+    /// <param name="finished">Indicates if the session should be finished before disposing.</param>
+    /// <param name="expectedStatus">The expected <see cref="SessionStatus"/> after disposing.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Theory]
+    [InlineData(false, SessionStatus.Cancelled)]
+    [InlineData(true, SessionStatus.Finished)]
+    public async Task Dispose_should_SetCorrectSessionStatus(bool finished, SessionStatus expectedStatus)
+    {
+        // Arrange
+        Session session = CreateWithFakeDeps(focusDuration: 1, breakDuration: 1);
+        using var advancer = new SessionTimeAdvancer(session, _fakeTimeProvider);
+        session.Start();
+        if (finished)
+        {
+            await advancer.AdvanceAsync(TimeSpan.FromSeconds(3));
+        }
+
+        _timerMock.Reset();
+
+        // Act
+        session.Dispose();
+
+        // Assert
+        Assert.Equal(expectedStatus, session.State.Status);
     }
 
     /// <summary>
