@@ -79,6 +79,7 @@ internal static class DependencyInjection
 #if LINUX
         if (OperatingSystem.IsLinux())
         {
+            services.AddSystemd();
             services.AddLinuxNotificationsDbus();
             services.AddSingleton<ILinuxSoundPlayer, LinuxSoundPlayer>();
             services.AddSingleton<ILinuxNotifier, LinuxNotifier>();
@@ -86,6 +87,10 @@ internal static class DependencyInjection
             services.AddSingleton<LinuxNotificationService>();
             services.AddSingleton<INotificationService>(sp => sp.GetRequiredService<LinuxNotificationService>());
             services.AddHostedService(sp => sp.GetRequiredService<LinuxNotificationService>());
+            services.AddLogging(builder =>
+            {
+                builder.AddSystemdConsole();
+            });
         }
 #elif WINDOWS10_0_17763_0_OR_GREATER
         if (OperatingSystem.IsWindowsVersionAtLeast(10, 0, 10240))
