@@ -95,6 +95,7 @@ internal static class DependencyInjection
 #elif WINDOWS10_0_17763_0_OR_GREATER
         if (OperatingSystem.IsWindowsVersionAtLeast(10, 0, 10240))
         {
+            services.AddWindowsService();
             services.AddSingleton<INotificationService, WindowsNotificationService>();
         }
 #endif
