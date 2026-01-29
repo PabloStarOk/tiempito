@@ -15,6 +15,7 @@
         <ApplicationIcon>..\..\assets\icon\icon.ico</ApplicationIcon>
         <PublishAot>true</PublishAot>
         <Version>1.0.0</Version>
+        <AssemblyName>tp</AssemblyName>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug-Linux' ">
