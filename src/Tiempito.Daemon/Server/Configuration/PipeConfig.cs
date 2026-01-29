@@ -31,7 +31,7 @@ public class PipeConfig
     /// <summary>
     /// Gets the encoding used for pipe communication.
     /// </summary>
-    public string PipeEncoding { get; init; } = "utf8";
+    public string PipeEncoding { get; init; } = "utf-8";
 
     /// <summary>
     /// Gets a value indicating whether indicates whether to display the impersonation user.
@@ -44,14 +44,13 @@ public class PipeConfig
     /// <returns>An Encoding type.</returns>
     public Encoding GetEncoding()
     {
-        string formattedEncoding = PipeEncoding.ToLower().Replace("-", string.Empty);
-        return formattedEncoding switch
+        try
         {
-            "utf8" => new UTF8Encoding(),
-            "ascii" => new ASCIIEncoding(),
-            "utf32" => new UTF32Encoding(),
-            "unicode" => new UnicodeEncoding(),
-            _ => new UTF8Encoding()
-        };
+            return Encoding.GetEncoding(PipeEncoding);
+        }
+        catch (ArgumentException)
+        {
+            return Encoding.UTF8;
+        }
     }
 }
