@@ -159,8 +159,8 @@ public class SessionConfigService : ISessionConfigService, IHostedService
                 return;
         }
 
-        string configId = _userConfigService.UserConfig.DefaultSessionId;
-        if (_configs.TryGetValue(configId, out SessionConfig? sessionConfig))
+        string? configId = _userConfigService.UserConfig.DefaultSessionId;
+        if (configId is not null && _configs.TryGetValue(configId, out SessionConfig? sessionConfig))
         {
             DefaultConfig = sessionConfig;
             return;

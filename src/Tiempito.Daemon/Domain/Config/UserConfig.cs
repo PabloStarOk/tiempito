@@ -1,3 +1,5 @@
+using System.Collections.Immutable;
+
 using Tiempito.IPC.Models.Enums;
 
 namespace Tiempito.Daemon.Domain.Config;
@@ -5,12 +7,12 @@ namespace Tiempito.Daemon.Domain.Config;
 /// <summary>
 /// Represents the configuration of the user.
 /// </summary>
-public struct UserConfig
+public sealed class UserConfig
 {
     /// <summary>
     /// Gets the id of the default session to start by the daemon.
     /// </summary>
-    public string DefaultSessionId { get; private set; }
+    public string? DefaultSessionId { get; private set; }
 
     /// <summary>
     /// Gets a value indicating whether if the notifications feature is enabled.
@@ -20,20 +22,19 @@ public struct UserConfig
     /// <summary>
     /// Gets all enabled features.
     /// </summary>
-    public IReadOnlyList<UserFeature> EnabledFeatures => _enabledFeatures;
+    public ImmutableHashSet<UserFeature> EnabledFeatures => _enabledFeatures.ToImmutableHashSet();
 
-    private readonly List<UserFeature> _enabledFeatures = [];
+    private readonly HashSet<UserFeature> _enabledFeatures = [];
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="UserConfig"/> struct.
+    /// Initializes a new instance of the <see cref="UserConfig"/> class.
     /// </summary>
     public UserConfig()
     {
-        DefaultSessionId = string.Empty;
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="UserConfig"/> struct.
+    /// Initializes a new instance of the <see cref="UserConfig"/> class.
     /// </summary>
     /// <param name="defaultSessionId">ID of the default session of the user.</param>
     public UserConfig(string defaultSessionId)
@@ -51,19 +52,19 @@ public struct UserConfig
     }
 
     /// <summary>
-    /// Add the given feature to the enabled ones.
+    /// Enable the specified feature.
     /// </summary>
-    /// <param name="feature">Feature to add.</param>
-    public void AddFeature(UserFeature feature)
+    /// <param name="feature">Feature to enable.</param>
+    public void EnableFeature(UserFeature feature)
     {
         _enabledFeatures.Add(feature);
     }
 
     /// <summary>
-    /// Remove a feature from the enabled ones.
+    /// Disable the specified feature.
     /// </summary>
-    /// <param name="feature">Feature to remove.</param>
-    public void RemoveFeature(UserFeature feature)
+    /// <param name="feature">Feature to disable.</param>
+    public void DisableFeature(UserFeature feature)
     {
         _enabledFeatures.Remove(feature);
     }
