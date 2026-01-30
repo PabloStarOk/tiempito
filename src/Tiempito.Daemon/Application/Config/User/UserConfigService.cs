@@ -14,7 +14,7 @@ public class UserConfigService : IUserConfigService, IHostedService
     /// <summary>
     /// Gets the current user's configuration.
     /// </summary>
-    public UserConfig UserConfig { get; private set; }
+    public UserConfig UserConfig { get; private set; } = new ();
 
     /// <summary>
     /// Event triggered when the user's configuration changes.
@@ -74,7 +74,7 @@ public class UserConfigService : IUserConfigService, IHostedService
         }
 
         // 2. Enable feature.
-        UserConfig.AddFeature(feature);
+        UserConfig.EnableFeature(feature);
 
         OperationResult operationResult = SaveAndReturnResult(
             successMessage: "Feature enabled",
@@ -100,7 +100,7 @@ public class UserConfigService : IUserConfigService, IHostedService
         }
 
         // 2. Disable feature.
-        UserConfig.RemoveFeature(feature);
+        UserConfig.DisableFeature(feature);
 
         OperationResult operationResult = SaveAndReturnResult(
             successMessage: "Feature disabled",

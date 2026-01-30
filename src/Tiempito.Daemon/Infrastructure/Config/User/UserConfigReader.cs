@@ -32,7 +32,7 @@ public class UserConfigReader : IUserConfigReader
     /// <inheritdoc/>
     public UserConfig Read()
     {
-        var userConfig = default(UserConfig);
+        var userConfig = new UserConfig();
 
         if (_configParser[AppConfigConstants.UserSectionName] == null)
         {
@@ -64,7 +64,7 @@ public class UserConfigReader : IUserConfigReader
                             continue;
                         }
 
-                        userConfig.AddFeature(feature);
+                        userConfig.EnableFeature(feature);
                     }
 
                     break;
