@@ -149,6 +149,31 @@ public sealed class SessionServiceTests : IDisposable
     }
 
     /// <summary>
+    /// Verifies that <see cref="SessionService.StartSessionAsync"/> uses the session configuration ID as a fallback
+    /// when the session ID is not specified.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task StartSessionAsync_should_UseSessionConfigIdAsFallback_when_SessionIdIsNotSpecified()
+    {
+        // Arrange
+        const string sessionConfigId = "Test ID";
+        _sessionMock.Setup(x => x.Id).Returns(sessionConfigId);
+        _sessionFactoryMock.Setup(m => m.ExistsConfig(sessionConfigId)).Returns(true);
+        _appLifetimeMock.Setup(m => m.ApplicationStopping).Returns(It.IsAny<CancellationToken>());
+        _sessionFactoryMock.Setup(m => m.Create(sessionConfigId, sessionConfigId)).Returns(_sessionMock.Object);
+        _notificationServiceMock
+            .Setup(m => m.NotifyAsync(_sessionMock.Object.State, NotificationType.SessionStarted))
+            .Returns(ValueTask.CompletedTask);
+
+        // Act
+        _ = await _sessionService.StartSessionAsync(sessionConfigId: sessionConfigId);
+
+        // Assert
+        _sessionFactoryMock.Verify(m => m.Create(sessionConfigId, sessionConfigId));
+    }
+
+    /// <summary>
     /// Tests that <see cref="SessionService.PauseSession"/> successfully pauses a session
     /// when the session ID is specified or not.
     /// </summary>
@@ -291,16 +316,26 @@ public sealed class SessionServiceTests : IDisposable
     /// Tests that <see cref="SessionService.Dispose"/> removes all active sessions from the internal collection.
     /// </summary>
     [Fact]
-    public void Dispose_should_RemoveActiveSessions()
+    public void Dispose_should_DisposeAndRemoveActiveSessions()
     {
-        var session = SessionProvider.Create("Session1");
-        _fakeActiveSessions.Add(session.Id, session);
-        session = SessionProvider.Create("Session2");
-        _fakeActiveSessions.Add(session.Id, session);
+        // Arrange
+        var sessionMock2 = _mockRepository.Create<ISession>(MockBehavior.Loose);
+        _fakeActiveSessions.Add("1", _sessionMock.Object);
+        _fakeActiveSessions.Add("2", sessionMock2.Object);
 
+        // Act
         _sessionService.Dispose();
 
+        // Assert
         Assert.Empty(_fakeActiveSessions);
+        _sessionMock.Verify(m => m.Dispose(), Times.Once);
+        sessionMock2.Verify(m => m.Dispose(), Times.Once);
+        Assert.Null(_sessionMock.Object.SecondElapsedAsync);
+        Assert.Null(_sessionMock.Object.IntervalCompletedAsync);
+        Assert.Null(_sessionMock.Object.CompletedAsync);
+        Assert.Null(sessionMock2.Object.SecondElapsedAsync);
+        Assert.Null(sessionMock2.Object.IntervalCompletedAsync);
+        Assert.Null(sessionMock2.Object.CompletedAsync);
     }
 
     /// <summary>
