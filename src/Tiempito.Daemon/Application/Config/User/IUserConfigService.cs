@@ -23,9 +23,9 @@ public interface IUserConfigService
     /// Changes the default session configuration to use when
     /// session configuration IDs are not provided.
     /// </summary>
-    /// <param name="id">ID of the new session configuration.</param>
+    /// <param name="id">ID of the new session configuration or null if none.</param>
     /// <returns>An <see cref="OperationResult"/>.</returns>
-    public Task<OperationResult> ChangeDefaultSessionConfigAsync(string id);
+    public Task<OperationResult> ChangeDefaultSessionConfigAsync(string? id);
 
     /// <summary>
     /// Enables a feature to use for the user.

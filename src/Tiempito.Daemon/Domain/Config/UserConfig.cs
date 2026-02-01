@@ -45,9 +45,15 @@ public sealed class UserConfig
     /// <summary>
     /// Sets the default session configuration ID.
     /// </summary>
-    /// <param name="id">ID of the session configuration.</param>
-    public void SetDefaultSessionConfigId(string id)
+    /// <param name="id">ID of the session configuration or null if none.</param>
+    public void SetDefaultSessionConfigId(string? id)
     {
+        if (id is null)
+        {
+            DefaultSessionId = id;
+            return;
+        }
+
         DefaultSessionId = SessionConfig.NormalizeId(id);
     }
 

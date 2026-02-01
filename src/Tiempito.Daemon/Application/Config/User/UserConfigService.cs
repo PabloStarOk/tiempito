@@ -46,8 +46,15 @@ public class UserConfigService : IUserConfigService, IHostedService
     }
 
     /// <inheritdoc/>
-    public Task<OperationResult> ChangeDefaultSessionConfigAsync(string id)
+    public Task<OperationResult> ChangeDefaultSessionConfigAsync(string? id)
     {
+        if (UserConfig.DefaultSessionId == id)
+        {
+            var result = new OperationResult(Success: false, Message: "Provided ID is already set as default.");
+            return Task.FromResult(result);
+        }
+
+        string? previousId = UserConfig.DefaultSessionId;
         UserConfig.SetDefaultSessionConfigId(id);
 
         OperationResult operationResult = SaveAndReturnResult(
@@ -57,6 +64,11 @@ public class UserConfigService : IUserConfigService, IHostedService
         if (operationResult.Success)
         {
             _logger.LogDebug("Session configuration with ID '{Id}' has been set as default.", id);
+        }
+        else
+        {
+            UserConfig.SetDefaultSessionConfigId(previousId);
+            _logger.LogError("Session configuration with ID '{Id}' could not be set as default.", id);
         }
 
         return Task.FromResult(operationResult);
@@ -84,6 +96,10 @@ public class UserConfigService : IUserConfigService, IHostedService
         {
             _logger.LogDebug("Feature '{Feature}' has been enabled.", feature);
         }
+        else
+        {
+            UserConfig.DisableFeature(feature);
+        }
 
         return Task.FromResult(operationResult);
     }
@@ -109,6 +125,10 @@ public class UserConfigService : IUserConfigService, IHostedService
         if (operationResult.Success)
         {
             _logger.LogDebug("Feature '{Feature}' has been disabled.", feature);
+        }
+        else
+        {
+            UserConfig.EnableFeature(feature);
         }
 
         return Task.FromResult(operationResult);
