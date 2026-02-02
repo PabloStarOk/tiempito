@@ -16,11 +16,6 @@ public interface ISessionConfigService
     public SessionConfig DefaultConfig { get; }
 
     /// <summary>
-    /// Gets all session configurations of the user.
-    /// </summary>
-    public IReadOnlyDictionary<string, SessionConfig> Configs { get; }
-
-    /// <summary>
     /// Tries to get a session configuration by its ID.
     /// </summary>
     /// <param name="id">The ID of the session configuration to retrieve.</param>

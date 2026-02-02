@@ -25,9 +25,6 @@ public class SessionConfigService : ISessionConfigService, IHostedService
         FocusDuration: TimeSpan.FromMinutes(25),
         BreakDuration: TimeSpan.FromMinutes(5));
 
-    /// <inheritdoc/>
-    public IReadOnlyDictionary<string, SessionConfig> Configs => _configs.ToDictionary().AsReadOnly();
-
     /// <summary>
     /// Initializes a new instance of the <see cref="SessionConfigService"/> class.
     /// </summary>
@@ -74,6 +71,10 @@ public class SessionConfigService : ISessionConfigService, IHostedService
         {
             _logger.LogTrace("Session configuration has been added: {Config}", config);
         }
+        else
+        {
+            _configs.Remove(config.NormalizedId);
+        }
 
         return Task.FromResult(new OperationResult(wasSaved, message));
     }
@@ -87,23 +88,22 @@ public class SessionConfigService : ISessionConfigService, IHostedService
         TimeSpan? breakDuration = null)
     {
         var normalizedId = SessionConfig.NormalizeId(configId);
-        if (!TryGetConfigById(normalizedId, out SessionConfig? config))
+        if (!TryGetConfigById(normalizedId, out SessionConfig? currentConfig))
         {
             return Task.FromResult(new OperationResult(
                 Success: false,
                 Message: $"Session configuration with \"{normalizedId}\" wasn't found."));
         }
 
-        SessionConfig modifiedConfig = config with
+        SessionConfig modifiedConfig = currentConfig with
         {
-            TargetCycles = targetCycles ?? config.TargetCycles,
-            DelayBetweenTimes = delayBetweenTimes ?? config.DelayBetweenTimes,
-            FocusDuration = focusDuration ?? config.FocusDuration,
-            BreakDuration = breakDuration ?? config.BreakDuration
+            TargetCycles = targetCycles ?? currentConfig.TargetCycles,
+            DelayBetweenTimes = delayBetweenTimes ?? currentConfig.DelayBetweenTimes,
+            FocusDuration = focusDuration ?? currentConfig.FocusDuration,
+            BreakDuration = breakDuration ?? currentConfig.BreakDuration
         };
 
         _configs[normalizedId] = modifiedConfig;
-
         if (_userConfigService.UserConfig.DefaultSessionId == modifiedConfig.NormalizedId)
         {
             DefaultConfig = modifiedConfig;
@@ -116,7 +116,11 @@ public class SessionConfigService : ISessionConfigService, IHostedService
 
         if (wasSaved)
         {
-            _logger.LogTrace("Session configuration has been modified: {Config}", config);
+            _logger.LogTrace("Session configuration has been modified: {Config}", currentConfig);
+        }
+        else
+        {
+            _configs[normalizedId] = currentConfig;
         }
 
         return Task.FromResult(new OperationResult(wasSaved, message));
