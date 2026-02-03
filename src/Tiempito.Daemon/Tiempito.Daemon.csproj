@@ -62,6 +62,7 @@
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="Tmds.DBus.Protocol" Version="0.21.2" />
+        <InternalsVisibleTo Include="Tiempito.Daemon.Tests" />
     </ItemGroup>
 
     <ItemGroup>
