@@ -35,7 +35,7 @@ internal sealed class SessionFactory : ISessionFactory
     }
 
     /// <inheritdoc/>
-    public ISession Create(string id, string configId)
+    public ISession Create(string? id, string? configId)
     {
         if (!string.IsNullOrWhiteSpace(configId) && !ExistsConfig(configId))
         {
@@ -64,6 +64,7 @@ internal sealed class SessionFactory : ISessionFactory
     /// <inheritdoc/>
     public bool ExistsConfig(string configId)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(configId);
         return _sessionConfigService.TryGetConfigById(configId, out _);
     }
 }
