@@ -63,6 +63,7 @@
         </PackageReference>
         <PackageReference Include="Tmds.DBus.Protocol" Version="0.21.2" />
         <InternalsVisibleTo Include="Tiempito.Daemon.Tests" />
+        <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
     </ItemGroup>
 
     <ItemGroup>
