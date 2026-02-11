@@ -14,7 +14,8 @@ namespace Tiempito.Daemon.Tests.Application.Config.Sessions;
 /// <summary>
 /// Unit tests for the <see cref="SessionConfigService"/> class.
 /// </summary>
-[Trait("Config", "Unit")]
+[Trait("Category", "Unit")]
+[Trait("Feature", "Config")]
 public sealed class SessionConfigServiceTests : IDisposable
 {
     private readonly MockRepository _mockRepository;

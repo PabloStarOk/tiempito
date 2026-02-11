@@ -10,7 +10,8 @@ namespace Tiempito.Daemon.Tests.Application.Commands.Sessions;
 /// <summary>
 /// Unit tests for the <see cref="PauseSessionCommandHandler"/> class.
 /// </summary>
-[Trait("Commands", "Unit")]
+[Trait("Category", "Unit")]
+[Trait("Feature", "Command")]
 public sealed class PauseSessionCommandHandlerTests
 {
     private readonly Mock<ISessionService> _sessionServiceMock;

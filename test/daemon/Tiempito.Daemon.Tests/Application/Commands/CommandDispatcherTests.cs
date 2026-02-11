@@ -14,7 +14,8 @@ namespace Tiempito.Daemon.Tests.Application.Commands;
 /// <summary>
 /// Unit tests for the <see cref="CommandDispatcher"/> class.
 /// </summary>
-[Trait("Commands", "Unit")]
+[Trait("Category", "Unit")]
+[Trait("Feature", "Command")]
 public class CommandDispatcherTests : IDisposable
 {
     private readonly MockRepository _mockRepository;

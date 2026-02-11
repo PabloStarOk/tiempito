@@ -5,7 +5,8 @@ namespace Tiempito.Daemon.Tests.Domain.Config;
 /// <summary>
 /// Unit tests for the <see cref="SessionConfig"/> class.
 /// </summary>
-[Trait("Sessions", "Unit")]
+[Trait("Category", "Unit")]
+[Trait("Feature", "Config")]
 public sealed class SessionConfigTests
 {
     /// <summary>

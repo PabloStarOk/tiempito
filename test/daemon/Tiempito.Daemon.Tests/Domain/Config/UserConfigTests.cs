@@ -6,6 +6,8 @@ namespace Tiempito.Daemon.Tests.Domain.Config;
 /// <summary>
 /// Unit tests for the <see cref="UserConfig"/> class.
 /// </summary>
+[Trait("Category", "Unit")]
+[Trait("Feature", "Config")]
 public sealed class UserConfigTests
 {
     private readonly UserConfig _config;

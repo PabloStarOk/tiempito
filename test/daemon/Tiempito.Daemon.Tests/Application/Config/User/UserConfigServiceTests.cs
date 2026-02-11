@@ -14,7 +14,8 @@ namespace Tiempito.Daemon.Tests.Application.Config.User;
 /// <summary>
 /// Unit tests for the <see cref="UserConfigService"/> class.
 /// </summary>
-[Trait("Config", "Unit")]
+[Trait("Category", "Unit")]
+[Trait("Feature", "Config")]
 public sealed class UserConfigServiceTests : IDisposable
 {
     private readonly MockRepository _mockRepository;

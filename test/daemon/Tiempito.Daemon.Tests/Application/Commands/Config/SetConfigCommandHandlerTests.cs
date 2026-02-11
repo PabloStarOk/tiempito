@@ -11,7 +11,8 @@ namespace Tiempito.Daemon.Tests.Application.Commands.Config;
 /// <summary>
 /// Unit tests for the <see cref="SetConfigCommandHandler"/> class.
 /// </summary>
-[Trait("Commands", "Unit")]
+[Trait("Category", "Unit")]
+[Trait("Feature", "Command")]
 public sealed class SetConfigCommandHandlerTests
 {
     private readonly Mock<IUserConfigService> _userConfigServiceMock;

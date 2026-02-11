@@ -16,7 +16,8 @@ namespace Tiempito.Daemon.Tests.Domain.Sessions;
 /// <summary>
 /// Unit tests for the <see cref="Session"/> class.
 /// </summary>
-[Trait("Sessions", "Unit")]
+[Trait("Category", "Unit")]
+[Trait("Feature", "Session")]
 public sealed class SessionTests : IDisposable
 {
     private const string SessionId = "sessionId";

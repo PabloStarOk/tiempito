@@ -15,7 +15,8 @@ namespace Tiempito.Daemon.Tests.Infrastructure.Sessions;
 /// <summary>
 /// Unit tests for <see cref="SessionFactory"/> class.
 /// </summary>
-[Trait("Sessions", "Unit")]
+[Trait("Category", "Unit")]
+[Trait("Feature", "Session")]
 public sealed class SessionFactoryTests : IDisposable
 {
     private readonly MockRepository _mockRepository;

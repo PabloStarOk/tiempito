@@ -12,7 +12,8 @@ namespace Tiempito.Daemon.Tests.Application.Commands.Config;
 /// <summary>
 /// Unit tests for the <see cref="ModifySessionConfigCommandHandler"/> class.
 /// </summary>
-[Trait("Commands", "Unit")]
+[Trait("Category", "Unit")]
+[Trait("Feature", "Command")]
 public sealed class ModifySessionConfigCommandHandlerTests
 {
     private const string FocusDurationString = "1m";

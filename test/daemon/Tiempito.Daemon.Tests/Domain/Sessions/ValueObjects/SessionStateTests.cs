@@ -6,7 +6,8 @@ namespace Tiempito.Daemon.Tests.Domain.Sessions.ValueObjects;
 /// <summary>
 /// Unit tests for the <see cref="SessionState"/> class.
 /// </summary>
-[Trait("Sessions", "Unit")]
+[Trait("Category", "Unit")]
+[Trait("Feature", "Session")]
 public sealed class SessionStateTests
 {
     private readonly SessionState _state;

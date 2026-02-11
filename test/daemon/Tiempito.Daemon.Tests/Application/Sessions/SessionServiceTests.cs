@@ -18,7 +18,8 @@ namespace Tiempito.Daemon.Tests.Application.Sessions;
 /// <summary>
 /// Unit tests for <see cref="SessionService"/> covering session lifecycle operations.
 /// </summary>
-[Trait("Sessions", "Unit")]
+[Trait("Category", "Unit")]
+[Trait("Feature", "Session")]
 public sealed class SessionServiceTests : IDisposable
 {
     private readonly SessionService _sessionService;
