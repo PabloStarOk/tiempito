@@ -1,4 +1,7 @@
-using Salaros.Configuration;
+using System.IO.Abstractions;
+
+using IniParser;
+using IniParser.Model;
 
 using Tiempito.Daemon.Application.Config;
 using Tiempito.Daemon.Application.Config.Sessions;
@@ -12,39 +15,76 @@ namespace Tiempito.Daemon.Infrastructure.Config.Sessions;
 /// </summary>
 public class SessionConfigWriter : ISessionConfigWriter
 {
-    private readonly ConfigParser _configParser;
+    private readonly IFileSystem _fileSystem;
+    private readonly StreamIniDataParser _iniParser;
     private readonly ITimeSpanConverter _timeSpanConverter;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SessionConfigWriter"/> class.
     /// </summary>
-    /// <param name="configParser">Parser of the user's configuration file.</param>
+    /// <param name="fileSystem">An <see cref="IFileSystem"/> for file operations.</param>
+    /// <param name="iniParser">A <see cref="StreamIniDataParser"/> for parsing INI data streams.</param>
     /// <param name="timeSpanConverter">A <see cref="ITimeSpanConverter"/> to convert <see cref="TimeSpan"/> to string values.</param>
     public SessionConfigWriter(
-        ConfigParser configParser,
+        IFileSystem fileSystem,
+        StreamIniDataParser iniParser,
         ITimeSpanConverter timeSpanConverter)
     {
-        _configParser = configParser;
+        _fileSystem = fileSystem;
+        _iniParser = iniParser;
         _timeSpanConverter = timeSpanConverter;
     }
-
-    // TODO: Make method asynchronous.
 
     /// <inheritdoc/>
     public bool Write(string prefixSectionName, SessionConfig sessionConfig)
     {
-        string sectionName = prefixSectionName + sessionConfig.Id;
+        var configFilePath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            AppConfigConstants.RootConfigDirName,
+            AppConfigConstants.UserConfigFileName);
+
+        if (!_fileSystem.File.Exists(configFilePath))
+        {
+            return false;
+        }
+
+        using var configFile = _fileSystem.File.Open(configFilePath, FileMode.Open, FileAccess.ReadWrite, FileShare.Read);
+        IniData iniData;
+        try
+        {
+            using var streamReader = new StreamReader(configFile, leaveOpen: true);
+            iniData = _iniParser.ReadData(streamReader);
+        }
+        catch (IOException)
+        {
+            return false;
+        }
+
         var targetCycles = sessionConfig.TargetCycles.ToString();
         var delayBetweenTimes = _timeSpanConverter.Format(sessionConfig.DelayBetweenTimes);
         string focusDuration = _timeSpanConverter.Format(sessionConfig.FocusDuration);
         string breakDuration = _timeSpanConverter.Format(sessionConfig.BreakDuration);
 
-        bool wasWritten =
-            _configParser.SetValue(sectionName, nameof(SessionConfigKeyword.TargetCycles), targetCycles)
-            && _configParser.SetValue(sectionName, nameof(SessionConfigKeyword.DelayBetweenTimes), delayBetweenTimes)
-            && _configParser.SetValue(sectionName, nameof(SessionConfigKeyword.FocusDuration), focusDuration)
-            && _configParser.SetValue(sectionName, nameof(SessionConfigKeyword.BreakDuration), breakDuration);
+        string sectionName = $"{prefixSectionName}{AppConfigConstants.NestedSectionSeparator}{sessionConfig.Id}";
+        var section = new SectionData(sectionName);
+        section.Keys.AddKey(nameof(SessionConfigKeyword.TargetCycles), targetCycles);
+        section.Keys.AddKey(nameof(SessionConfigKeyword.DelayBetweenTimes), delayBetweenTimes);
+        section.Keys.AddKey(nameof(SessionConfigKeyword.FocusDuration), focusDuration);
+        section.Keys.AddKey(nameof(SessionConfigKeyword.BreakDuration), breakDuration);
+        iniData.Sections.SetSectionData(section.SectionName, section);
 
-        return wasWritten && _configParser.Save();
+        try
+        {
+            configFile.Position = 0;
+            configFile.SetLength(0);
+            using var streamWriter = new StreamWriter(configFile);
+            _iniParser.WriteData(streamWriter, iniData);
+        }
+        catch (IOException)
+        {
+            return false;
+        }
+
+        return true;
     }
 }

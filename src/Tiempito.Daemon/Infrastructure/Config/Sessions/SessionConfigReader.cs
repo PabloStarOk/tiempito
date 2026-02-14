@@ -1,9 +1,6 @@
-using Salaros.Configuration;
-
 using Tiempito.Daemon.Application.Config;
 using Tiempito.Daemon.Application.Config.Sessions;
 using Tiempito.Daemon.Domain.Config;
-using Tiempito.Daemon.Domain.Config.Enums;
 
 namespace Tiempito.Daemon.Infrastructure.Config.Sessions;
 
@@ -13,138 +10,88 @@ namespace Tiempito.Daemon.Infrastructure.Config.Sessions;
 public class SessionConfigReader : ISessionConfigReader
 {
     private readonly ILogger<SessionConfigReader> _logger;
-    private readonly ConfigParser _configParser;
     private readonly ITimeSpanConverter _timeSpanConverter;
+    private readonly IConfiguration _config;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SessionConfigReader"/> class.
     /// </summary>
     /// <param name="logger">Logger to register events.</param>
-    /// <param name="configParser">Parser of the user's configuration file.</param>
     /// <param name="timeSpanConverter">A <see cref="ITimeSpanConverter"/> to convert <see cref="TimeSpan"/> to string values.</param>
+    /// <param name="config">The configuration source to read session settings from.</param>
     public SessionConfigReader(
         ILogger<SessionConfigReader> logger,
-        ConfigParser configParser,
-        ITimeSpanConverter timeSpanConverter)
+        ITimeSpanConverter timeSpanConverter,
+        IConfiguration config)
     {
         _logger = logger;
-        _configParser = configParser;
         _timeSpanConverter = timeSpanConverter;
+        _config = config;
     }
-
-    // TODO: Make method asynchronous.
 
     /// <inheritdoc/>
     public IDictionary<string, SessionConfig> ReadSessions(string prefixSectionName)
     {
-        var dictionary = new Dictionary<string, SessionConfig>();
-
-        foreach (ConfigSection configSection in _configParser.Sections)
+        var sessionConfigs = new Dictionary<string, SessionConfig>();
+        foreach (var kvp in ExtractRawConfigs(prefixSectionName))
         {
-            if (!configSection.SectionName.Contains(prefixSectionName))
+            _timeSpanConverter.TryConvert(kvp.Value.DelayBetweenTimes ?? string.Empty, out TimeSpan delayDuration);
+            if (!_timeSpanConverter.TryConvert(kvp.Value.FocusDuration, out TimeSpan focusDuration)
+                || !_timeSpanConverter.TryConvert(kvp.Value.BreakDuration, out TimeSpan breakDuration))
             {
                 continue;
             }
 
-            SessionConfig? sessionConfig = ReadConfigSection(configSection, prefixSectionName);
-            if (sessionConfig is null)
-            {
-                continue;
-            }
+            var config = new SessionConfig(
+                kvp.Key,
+                kvp.Value.TargetCycles,
+                delayDuration,
+                focusDuration,
+                breakDuration);
+            sessionConfigs.TryAdd(config.NormalizedId, config);
 
-            dictionary.TryAdd(sessionConfig.NormalizedId, sessionConfig);
-            _logger.LogInformation("Found session config with ID '{Id}'", sessionConfig.Id);
-            _logger.LogTrace("Session config {Id}: {Config}", sessionConfig.Id, sessionConfig);
+            _logger.LogInformation("Found session config with ID '{Id}'", config.Id);
+            _logger.LogTrace("Session config {Id}: {Config}", config.Id, config);
         }
 
-        return dictionary;
+        return sessionConfigs;
     }
 
-    // TODO: Make method asynchronous.
-    // TODO: Refactor this method.
-
-    /// <summary>
-    /// Reads a session configuration section from a .conf file.
-    /// </summary>
-    /// <param name="configSection">Section of the session configuration.</param>
-    /// <param name="prefixSectionName">Prefix of the section's name to remove.</param>
-    /// <returns>A <see cref="SessionConfig"/> or null if one of the required fields is not found.</returns>
-    private SessionConfig? ReadConfigSection(ConfigSection configSection, string prefixSectionName)
+    private Dictionary<string, RawSessionConfig> ExtractRawConfigs(string prefixSectionName)
     {
-        string id = configSection.SectionName.Replace(prefixSectionName, string.Empty);
-        var targetCyclesStr = string.Empty;
-        var delayBetweenTimesStr = string.Empty;
-        var focusDurationStr = string.Empty;
-        var breakDurationStr = string.Empty;
-
-        // Get values from section.
-        foreach (IConfigKeyValue configKeyValue in configSection.Keys)
+        Dictionary<string, RawSessionConfig> rawSessionConfigs = [];
+        foreach (var configSection in _config.GetSection(prefixSectionName).GetChildren())
         {
-            if (!Enum.TryParse(configKeyValue.Name, out SessionConfigKeyword configKeyword))
+            RawSessionConfig? rawConfig;
+            try
             {
-                return null;
+                rawConfig = configSection.Get<RawSessionConfig>();
+            }
+            catch (InvalidOperationException)
+            {
+                _logger.LogError(
+                    "Could not read session config '{SectionName}', ensure it specifies the required properties correctly.",
+                    configSection.Key);
+                continue;
             }
 
-            switch (configKeyword)
+            if (rawConfig is null)
             {
-                case SessionConfigKeyword.TargetCycles:
-                    targetCyclesStr = configKeyValue.Content;
-                    if (string.IsNullOrWhiteSpace(targetCyclesStr))
-                    {
-                        return null;
-                    }
-
-                    continue;
-
-                case SessionConfigKeyword.DelayBetweenTimes: // Optional
-                    delayBetweenTimesStr = configKeyValue.Content;
-                    continue;
-
-                case SessionConfigKeyword.FocusDuration:
-                    focusDurationStr = configKeyValue.Content;
-                    if (string.IsNullOrWhiteSpace(focusDurationStr))
-                    {
-                        return null;
-                    }
-
-                    continue;
-
-                case SessionConfigKeyword.BreakDuration:
-                    breakDurationStr = configKeyValue.Content;
-                    if (string.IsNullOrWhiteSpace(breakDurationStr))
-                    {
-                        return null;
-                    }
-
-                    break;
-
-                default:
-                    return null;
+                _logger.LogError(
+                    "Could not read session config '{SectionName}', ensure it specifies the required properties correctly.",
+                    configSection.Key);
+                continue;
             }
+
+            rawSessionConfigs.TryAdd(configSection.Key, rawConfig);
         }
 
-        // Parse string values.
-        if (!int.TryParse(targetCyclesStr, out int targetCycles))
-        {
-            return null;
-        }
-
-        TimeSpan delayBetweenTimes = TimeSpan.Zero;
-        if (!string.IsNullOrWhiteSpace(delayBetweenTimesStr))
-        {
-            _timeSpanConverter.TryConvert(delayBetweenTimesStr, out delayBetweenTimes);
-        }
-
-        if (!_timeSpanConverter.TryConvert(focusDurationStr, out TimeSpan focusDuration))
-        {
-            return null;
-        }
-
-        if (!_timeSpanConverter.TryConvert(breakDurationStr, out TimeSpan breakDuration))
-        {
-            return null;
-        }
-
-        return new SessionConfig(id, targetCycles, delayBetweenTimes, focusDuration, breakDuration);
+        return rawSessionConfigs;
     }
+
+    internal sealed record RawSessionConfig(
+        int TargetCycles,
+        string FocusDuration,
+        string BreakDuration,
+        string? DelayBetweenTimes = null);
 }

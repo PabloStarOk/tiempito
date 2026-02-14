@@ -1,4 +1,7 @@
+using System.IO.Abstractions;
 using System.Threading.Channels;
+
+using IniParser;
 
 using Microsoft.Extensions.FileProviders;
 
@@ -43,12 +46,21 @@ internal static class DependencyInjection
 
     private static void AddConfigServices(IServiceCollection services, IConfigurationManager configuration)
     {
+        services.AddSingleton<IFileSystem>(_ => new FileSystem());
         services.AddSingleton<IAppFilesystemPathProvider, AppFilesystemPathProvider>();
         services.AddSingleton<IFileProvider>(sp =>
         {
             var appFilesystem = sp.GetRequiredService<IAppFilesystemPathProvider>();
             return new PhysicalFileProvider(appFilesystem.UserConfigDirectoryPath);
         });
+
+        var userConfigFilePath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            AppConfigConstants.RootConfigDirName,
+            AppConfigConstants.UserConfigFileName);
+        configuration.AddIniFile(userConfigFilePath, optional: false, reloadOnChange: true);
+        services.AddSingleton(_ => new StreamIniDataParser());
+
         services.AddSingleton(sp =>
         {
             var userConfigFileProvider = sp.GetRequiredService<IFileProvider>();

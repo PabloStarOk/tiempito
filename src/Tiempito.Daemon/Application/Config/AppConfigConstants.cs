@@ -23,7 +23,7 @@ public static class AppConfigConstants
     /// <summary>
     /// Name of the user configuration file.
     /// </summary>
-    public const string UserConfigFileName = "user.conf";
+    public const string UserConfigFileName = "user.ini";
 
     /// <summary>
     /// Section name for user settings in configuration files.
@@ -33,5 +33,10 @@ public static class AppConfigConstants
     /// <summary>
     /// Prefix for session section names in configuration files.
     /// </summary>
-    public const string SessionSectionPrefix = "Session.";
+    public const string SessionSectionPrefix = "Sessions";
+
+    /// <summary>
+    /// Separator character used for denoting nested sections in INI files.
+    /// </summary>
+    public const char NestedSectionSeparator = ':';
 }
