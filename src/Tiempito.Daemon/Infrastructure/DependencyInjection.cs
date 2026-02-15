@@ -1,8 +1,9 @@
+using System.IO.Abstractions;
 using System.Threading.Channels;
 
-using Microsoft.Extensions.FileProviders;
+using IniParser;
 
-using Salaros.Configuration;
+using Microsoft.Extensions.FileProviders;
 
 using Tiempito.Daemon.Application.Config;
 using Tiempito.Daemon.Application.Config.Sessions;
@@ -43,18 +44,20 @@ internal static class DependencyInjection
 
     private static void AddConfigServices(IServiceCollection services, IConfigurationManager configuration)
     {
+        services.AddSingleton<IFileSystem>(_ => new FileSystem());
         services.AddSingleton<IAppFilesystemPathProvider, AppFilesystemPathProvider>();
         services.AddSingleton<IFileProvider>(sp =>
         {
             var appFilesystem = sp.GetRequiredService<IAppFilesystemPathProvider>();
             return new PhysicalFileProvider(appFilesystem.UserConfigDirectoryPath);
         });
-        services.AddSingleton(sp =>
-        {
-            var userConfigFileProvider = sp.GetRequiredService<IFileProvider>();
-            return new ConfigParser(
-                userConfigFileProvider.GetFileInfo(AppConfigConstants.UserConfigFileName).PhysicalPath);
-        }); // BUG: If two section names are equals throws an exception.
+
+        var userConfigFilePath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            AppConfigConstants.RootConfigDirName,
+            AppConfigConstants.UserConfigFileName);
+        configuration.AddIniFile(userConfigFilePath, optional: false, reloadOnChange: true);
+        services.AddSingleton(_ => new StreamIniDataParser());
 
         using (ServiceProvider sp = services.BuildServiceProvider())
         {

@@ -104,7 +104,7 @@ public class SessionConfigService : ISessionConfigService, IHostedService
         };
 
         _configs[normalizedId] = modifiedConfig;
-        if (_userConfigService.UserConfig.DefaultSessionId == modifiedConfig.NormalizedId)
+        if (_userConfigService.UserConfig.DefaultConfigId == modifiedConfig.NormalizedId)
         {
             DefaultConfig = modifiedConfig;
         }
@@ -149,7 +149,7 @@ public class SessionConfigService : ISessionConfigService, IHostedService
     /// <param name="e">Empty arguments.</param>
     private void OnUserConfigChangedHandler(object? sender, EventArgs e)
     {
-        if (DefaultConfig.NormalizedId == _userConfigService.UserConfig.DefaultSessionId)
+        if (DefaultConfig.NormalizedId == _userConfigService.UserConfig.DefaultConfigId)
         {
             return;
         }
@@ -163,7 +163,7 @@ public class SessionConfigService : ISessionConfigService, IHostedService
                 return;
         }
 
-        string? configId = _userConfigService.UserConfig.DefaultSessionId;
+        string? configId = _userConfigService.UserConfig.DefaultConfigId;
         if (configId is not null && _configs.TryGetValue(configId, out SessionConfig? sessionConfig))
         {
             DefaultConfig = sessionConfig;

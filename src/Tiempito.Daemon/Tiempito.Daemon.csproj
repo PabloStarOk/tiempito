@@ -15,6 +15,7 @@
         <ApplicationIcon>..\..\assets\icon\icon.ico</ApplicationIcon>
         <Version>1.0.0</Version>
         <AssemblyName>tiempitod</AssemblyName>
+        <EnableConfigurationBindingGenerator>true</EnableConfigurationBindingGenerator>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug-Linux' ">
@@ -51,6 +52,8 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="ini-parser" Version="2.5.2" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.3" />
         <PackageReference Include="Microsoft.Extensions.Configuration.Ini" Version="9.0.10" />
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.10" />
         <PackageReference Include="Microsoft.Extensions.Hosting.Systemd" Version="9.0.10" />
@@ -61,6 +64,7 @@
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
+        <PackageReference Include="System.IO.Abstractions" Version="22.1.0" />
         <PackageReference Include="Tmds.DBus.Protocol" Version="0.21.2" />
         <InternalsVisibleTo Include="Tiempito.Daemon.Tests" />
         <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
@@ -74,11 +78,5 @@
       <None Include="..\..\assets\icon\icon.ico">
         <Link>icon.ico</Link>
       </None>
-    </ItemGroup>
-
-    <ItemGroup>
-      <Reference Include="ConfigParser">
-        <HintPath>..\lib\ConfigParser.dll</HintPath>
-      </Reference>
     </ItemGroup>
 </Project>

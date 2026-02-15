@@ -48,13 +48,13 @@ public class UserConfigService : IUserConfigService, IHostedService
     /// <inheritdoc/>
     public Task<OperationResult> ChangeDefaultSessionConfigAsync(string? id)
     {
-        if (UserConfig.DefaultSessionId == id)
+        if (UserConfig.DefaultConfigId == id)
         {
             var result = new OperationResult(Success: false, Message: "Provided ID is already set as default.");
             return Task.FromResult(result);
         }
 
-        string? previousId = UserConfig.DefaultSessionId;
+        string? previousId = UserConfig.DefaultConfigId;
         UserConfig.SetDefaultSessionConfigId(id);
 
         OperationResult operationResult = SaveAndReturnResult(
