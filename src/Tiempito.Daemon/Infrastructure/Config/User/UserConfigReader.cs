@@ -1,9 +1,6 @@
-using Salaros.Configuration;
-
 using Tiempito.Daemon.Application.Config;
 using Tiempito.Daemon.Application.Config.User;
 using Tiempito.Daemon.Domain.Config;
-using Tiempito.Daemon.Domain.Config.Enums;
 using Tiempito.IPC.Models.Enums;
 
 namespace Tiempito.Daemon.Infrastructure.Config.User;
@@ -14,71 +11,58 @@ namespace Tiempito.Daemon.Infrastructure.Config.User;
 public class UserConfigReader : IUserConfigReader
 {
     private readonly ILogger<UserConfigReader> _logger;
-    private readonly ConfigParser _configParser;
+    private readonly IConfiguration _config;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="UserConfigReader"/> class.
     /// </summary>
     /// <param name="logger">Logger to register events.</param>
-    /// <param name="configParser">Parser of the user's configuration file.</param>
-    public UserConfigReader(ILogger<UserConfigReader> logger, ConfigParser configParser)
+    /// <param name="config">Configuration provider.</param>
+    public UserConfigReader(ILogger<UserConfigReader> logger, IConfiguration config)
     {
         _logger = logger;
-        _configParser = configParser;
+        _config = config;
     }
-
-    // TODO: Make method asynchronous.
 
     /// <inheritdoc/>
     public UserConfig Read()
     {
         var userConfig = new UserConfig();
-
-        if (_configParser[AppConfigConstants.UserSectionName] == null)
+        var rawUserConfig = _config.GetSection(AppConfigConstants.UserSectionName).Get<RawUserConfig>();
+        if (rawUserConfig is null)
         {
             return userConfig;
         }
 
-        ConfigSection configSection = _configParser[AppConfigConstants.UserSectionName];
-
-        foreach (IConfigKeyValue keyValue in configSection.Keys)
+        var featureStrings = rawUserConfig.EnabledFeatures.Split(
+            AppConfigConstants.IniArraySeparator,
+            StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        List<UserFeature> enabledFeatures = [];
+        foreach (string featString in featureStrings)
         {
-            string keywordString = keyValue.Name;
-            if (!Enum.TryParse(keywordString, ignoreCase: true, out UserConfigKeyword keyword))
+            if (!Enum.TryParse(featString, out UserFeature feature))
             {
                 continue;
             }
 
-            switch (keyword)
-            {
-                case UserConfigKeyword.DefaultSession:
-                    userConfig = new UserConfig(keyValue.Content);
-                    break;
+            enabledFeatures.Add(feature);
+        }
 
-                case UserConfigKeyword.EnabledFeatures:
-                    foreach (string enabledFeatString in keyValue.Content.Split(','))
-                    {
-                        if (string.IsNullOrWhiteSpace(enabledFeatString) ||
-                            !Enum.TryParse(enabledFeatString.Trim(), ignoreCase: true, out UserFeature feature))
-                        {
-                            continue;
-                        }
-
-                        userConfig.EnableFeature(feature);
-                    }
-
-                    break;
-
-                default:
-                    continue;
-            }
+        userConfig.SetDefaultSessionConfigId(rawUserConfig.DefaultConfigId);
+        foreach (UserFeature feature in enabledFeatures)
+        {
+            userConfig.EnableFeature(feature);
         }
 
         _logger.LogInformation("User's configuration read");
         _logger.LogTrace(
             "User's configuration read: Default config ID: {DefaultId}, Enabled features: {EnabledFeatures}",
-            userConfig.DefaultSessionId,
+            userConfig.DefaultConfigId,
             userConfig.EnabledFeatures);
         return userConfig;
     }
+
+    internal sealed record RawUserConfig(
+        string? DefaultConfigId,
+        string EnabledFeatures);
 }

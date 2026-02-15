@@ -76,7 +76,7 @@ public sealed class UserConfigServiceTests : IDisposable
 
     /// <summary>
     /// Tests that <see cref="UserConfigService.ChangeDefaultSessionConfigAsync"/> returns a successful <see cref="OperationResult"/>
-    /// and updates the <see cref="UserConfig.DefaultSessionId"/> when the ID is valid and save succeeds.
+    /// and updates the <see cref="UserConfig.DefaultConfigId"/> when the ID is valid and save succeeds.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
@@ -84,7 +84,7 @@ public sealed class UserConfigServiceTests : IDisposable
     {
         // Arrange
         const string expectedId = "1";
-        var userConfig = new UserConfig(defaultSessionId: string.Empty);
+        var userConfig = new UserConfig(defaultSessionConfigId: string.Empty);
         await SetupMocksAsync(userConfig, configFileExists: true, successfulSave: true);
 
         // Act
@@ -92,7 +92,7 @@ public sealed class UserConfigServiceTests : IDisposable
 
         // Assert
         Assert.True(actual.Success);
-        Assert.Equal(expectedId, userConfig.DefaultSessionId);
+        Assert.Equal(expectedId, userConfig.DefaultConfigId);
         _userConfigWriterMock.Verify(m => m.Write(userConfig), Times.Once);
     }
 
@@ -106,7 +106,7 @@ public sealed class UserConfigServiceTests : IDisposable
     {
         // Arrange
         const string? expectedId = null;
-        var userConfig = new UserConfig(defaultSessionId: string.Empty);
+        var userConfig = new UserConfig(defaultSessionConfigId: string.Empty);
         await SetupMocksAsync(userConfig, configFileExists: true, successfulSave: true);
 
         // Act
@@ -114,7 +114,7 @@ public sealed class UserConfigServiceTests : IDisposable
 
         // Assert
         Assert.True(actual.Success);
-        Assert.Equal(expectedId, userConfig.DefaultSessionId);
+        Assert.Equal(expectedId, userConfig.DefaultConfigId);
     }
 
     /// <summary>
@@ -137,7 +137,7 @@ public sealed class UserConfigServiceTests : IDisposable
 
         // Assert
         Assert.False(actual.Success);
-        Assert.Equal(defaultInitialId, userConfig.DefaultSessionId);
+        Assert.Equal(defaultInitialId, userConfig.DefaultConfigId);
         Assert.False(raised);
     }
 
@@ -160,7 +160,7 @@ public sealed class UserConfigServiceTests : IDisposable
 
         // Assert
         Assert.False(actual.Success);
-        Assert.Equal(defaultInitialId, userConfig.DefaultSessionId);
+        Assert.Equal(defaultInitialId, userConfig.DefaultConfigId);
         _userConfigWriterMock.Verify(m => m.Write(userConfig), Times.Never);
         Assert.False(raised);
     }

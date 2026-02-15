@@ -5,8 +5,6 @@ using IniParser;
 
 using Microsoft.Extensions.FileProviders;
 
-using Salaros.Configuration;
-
 using Tiempito.Daemon.Application.Config;
 using Tiempito.Daemon.Application.Config.Sessions;
 using Tiempito.Daemon.Application.Config.User;
@@ -60,13 +58,6 @@ internal static class DependencyInjection
             AppConfigConstants.UserConfigFileName);
         configuration.AddIniFile(userConfigFilePath, optional: false, reloadOnChange: true);
         services.AddSingleton(_ => new StreamIniDataParser());
-
-        services.AddSingleton(sp =>
-        {
-            var userConfigFileProvider = sp.GetRequiredService<IFileProvider>();
-            return new ConfigParser(
-                userConfigFileProvider.GetFileInfo(AppConfigConstants.UserConfigFileName).PhysicalPath);
-        }); // BUG: If two section names are equals throws an exception.
 
         using (ServiceProvider sp = services.BuildServiceProvider())
         {

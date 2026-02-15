@@ -10,9 +10,9 @@ namespace Tiempito.Daemon.Domain.Config;
 public sealed class UserConfig
 {
     /// <summary>
-    /// Gets the id of the default session to start by the daemon.
+    /// Gets the id of the default session config to start by the daemon.
     /// </summary>
-    public string? DefaultSessionId { get; private set; }
+    public string? DefaultConfigId { get; private set; }
 
     /// <summary>
     /// Gets a value indicating whether if the notifications feature is enabled.
@@ -36,10 +36,10 @@ public sealed class UserConfig
     /// <summary>
     /// Initializes a new instance of the <see cref="UserConfig"/> class.
     /// </summary>
-    /// <param name="defaultSessionId">ID of the default session of the user.</param>
-    public UserConfig(string defaultSessionId)
+    /// <param name="defaultSessionConfigId">ID of the default session config of the user.</param>
+    public UserConfig(string defaultSessionConfigId)
     {
-        DefaultSessionId = SessionConfig.NormalizeId(defaultSessionId);
+        DefaultConfigId = SessionConfig.NormalizeId(defaultSessionConfigId);
     }
 
     /// <summary>
@@ -50,11 +50,11 @@ public sealed class UserConfig
     {
         if (id is null)
         {
-            DefaultSessionId = id;
+            DefaultConfigId = id;
             return;
         }
 
-        DefaultSessionId = SessionConfig.NormalizeId(id);
+        DefaultConfigId = SessionConfig.NormalizeId(id);
     }
 
     /// <summary>

@@ -39,4 +39,9 @@ public static class AppConfigConstants
     /// Separator character used for denoting nested sections in INI files.
     /// </summary>
     public const char NestedSectionSeparator = ':';
+
+    /// <summary>
+    /// Separator character used for array values in INI files.
+    /// </summary>
+    public const char IniArraySeparator = ',';
 }

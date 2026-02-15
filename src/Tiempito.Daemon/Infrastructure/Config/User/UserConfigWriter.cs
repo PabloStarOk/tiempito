@@ -1,11 +1,11 @@
-using System.Text;
+using System.IO.Abstractions;
 
-using Salaros.Configuration;
+using IniParser;
+using IniParser.Model;
 
 using Tiempito.Daemon.Application.Config;
 using Tiempito.Daemon.Application.Config.User;
 using Tiempito.Daemon.Domain.Config;
-using Tiempito.Daemon.Domain.Config.Enums;
 
 namespace Tiempito.Daemon.Infrastructure.Config.User;
 
@@ -14,37 +14,62 @@ namespace Tiempito.Daemon.Infrastructure.Config.User;
 /// </summary>
 public class UserConfigWriter : IUserConfigWriter
 {
-    private readonly ConfigParser _configParser;
+    private readonly IFileSystem _fileSystem;
+    private readonly StreamIniDataParser _iniParser;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="UserConfigWriter"/> class.
     /// </summary>
-    /// <param name="configParser">Parser of the user's configuration file.</param>
-    public UserConfigWriter(
-        ConfigParser configParser)
+    /// <param name="fileSystem">The file system abstraction to use.</param>
+    /// <param name="iniParser">The INI data parser to use.</param>
+    public UserConfigWriter(IFileSystem fileSystem, StreamIniDataParser iniParser)
     {
-        _configParser = configParser;
+        _fileSystem = fileSystem;
+        _iniParser = iniParser;
     }
-
-    // TODO: Make method asynchronous.
 
     /// <inheritdoc/>
     public bool Write(UserConfig userConfig)
     {
-        bool wasSessionIdSet = _configParser.SetValue(
-            AppConfigConstants.UserSectionName,
-            nameof(UserConfigKeyword.DefaultSession),
-            userConfig.DefaultSessionId);
+        var configFilePath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            AppConfigConstants.RootConfigDirName,
+            AppConfigConstants.UserConfigFileName);
+        if (!_fileSystem.File.Exists(configFilePath))
+        {
+            return false;
+        }
 
-        var enabledFeatures = new StringBuilder()
-            .AppendJoin(',', userConfig.EnabledFeatures)
-            .ToString();
+        using var configFile = _fileSystem.File.Open(configFilePath, FileMode.Open, FileAccess.ReadWrite, FileShare.Read);
+        IniData iniData;
+        try
+        {
+            using var streamReader = new StreamReader(configFile, leaveOpen: true);
+            iniData = _iniParser.ReadData(streamReader);
+        }
+        catch (IOException)
+        {
+            return false;
+        }
 
-        bool wasEnabledFeaturesSet = _configParser.SetValue(
-            AppConfigConstants.UserSectionName,
-            nameof(UserConfigKeyword.EnabledFeatures),
-            enabledFeatures);
+        string enabledFeatures = string.Join(AppConfigConstants.IniArraySeparator, userConfig.EnabledFeatures);
+        var sectionData = new SectionData(AppConfigConstants.UserSectionName);
+        sectionData.Keys.AddKey(nameof(UserConfig.DefaultConfigId), userConfig.DefaultConfigId);
+        sectionData.Keys.AddKey(nameof(UserConfig.EnabledFeatures), enabledFeatures);
+        iniData.Sections.SetSectionData(sectionData.SectionName, sectionData);
 
-        return wasSessionIdSet && wasEnabledFeaturesSet && _configParser.Save();
+        try
+        {
+            configFile.Position = 0;
+            configFile.SetLength(0);
+            using var streamWriter = new StreamWriter(configFile);
+            _iniParser.WriteData(streamWriter, iniData);
+        }
+        catch (IOException)
+        {
+            return false;
+        }
+
+        return true;
     }
 }

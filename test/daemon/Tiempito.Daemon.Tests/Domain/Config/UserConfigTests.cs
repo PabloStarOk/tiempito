@@ -34,7 +34,7 @@ public sealed class UserConfigTests
         var config = new UserConfig(defaultId);
 
         // Assert
-        Assert.Equal(expectedId, config.DefaultSessionId);
+        Assert.Equal(expectedId, config.DefaultConfigId);
     }
 
     /// <summary>
@@ -51,7 +51,7 @@ public sealed class UserConfigTests
         _config.SetDefaultSessionConfigId(defaultId);
 
         // Assert
-        Assert.Equal(expectedId, _config.DefaultSessionId);
+        Assert.Equal(expectedId, _config.DefaultConfigId);
     }
 
     /// <summary>

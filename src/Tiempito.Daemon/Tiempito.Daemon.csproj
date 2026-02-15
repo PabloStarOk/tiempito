@@ -79,10 +79,4 @@
         <Link>icon.ico</Link>
       </None>
     </ItemGroup>
-
-    <ItemGroup>
-      <Reference Include="ConfigParser">
-        <HintPath>..\lib\ConfigParser.dll</HintPath>
-      </Reference>
-    </ItemGroup>
 </Project>
