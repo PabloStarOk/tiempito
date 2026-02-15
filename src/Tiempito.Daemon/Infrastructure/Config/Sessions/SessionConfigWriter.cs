@@ -6,7 +6,6 @@ using IniParser.Model;
 using Tiempito.Daemon.Application.Config;
 using Tiempito.Daemon.Application.Config.Sessions;
 using Tiempito.Daemon.Domain.Config;
-using Tiempito.Daemon.Domain.Config.Enums;
 
 namespace Tiempito.Daemon.Infrastructure.Config.Sessions;
 
@@ -67,10 +66,10 @@ public class SessionConfigWriter : ISessionConfigWriter
 
         string sectionName = $"{prefixSectionName}{AppConfigConstants.NestedSectionSeparator}{sessionConfig.Id}";
         var section = new SectionData(sectionName);
-        section.Keys.AddKey(nameof(SessionConfigKeyword.TargetCycles), targetCycles);
-        section.Keys.AddKey(nameof(SessionConfigKeyword.DelayBetweenTimes), delayBetweenTimes);
-        section.Keys.AddKey(nameof(SessionConfigKeyword.FocusDuration), focusDuration);
-        section.Keys.AddKey(nameof(SessionConfigKeyword.BreakDuration), breakDuration);
+        section.Keys.AddKey(nameof(SessionConfig.TargetCycles), targetCycles);
+        section.Keys.AddKey(nameof(SessionConfig.DelayBetweenTimes), delayBetweenTimes);
+        section.Keys.AddKey(nameof(SessionConfig.FocusDuration), focusDuration);
+        section.Keys.AddKey(nameof(SessionConfig.BreakDuration), breakDuration);
         iniData.Sections.SetSectionData(section.SectionName, section);
 
         try
