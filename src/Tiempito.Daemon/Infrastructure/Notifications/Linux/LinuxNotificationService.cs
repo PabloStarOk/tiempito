@@ -4,8 +4,8 @@ using System.Runtime.Versioning;
 using Microsoft.Extensions.Options;
 
 using Tiempito.Daemon.Application.Config;
-using Tiempito.Daemon.Application.Config.User;
 using Tiempito.Daemon.Application.Notifications;
+using Tiempito.Daemon.Domain.Config;
 using Tiempito.Daemon.Domain.Notifications.Enums;
 using Tiempito.Daemon.Domain.Sessions.Enums;
 using Tiempito.Daemon.Domain.Sessions.ValueObjects;
@@ -23,7 +23,7 @@ internal sealed class LinuxNotificationService : INotificationService, IHostedSe
     private readonly ILogger<LinuxNotificationService> _logger;
     private readonly IOptionsMonitor<NotificationConfig> _notificationOptions;
     private readonly IAppFilesystemPathProvider _appFilesystemPathProvider;
-    private readonly IUserConfigService _userConfigService;
+    private readonly IOptionsMonitor<UserConfig> _userConfigMonitor;
     private readonly ILinuxNotifier _notifier;
     private readonly ILinuxSoundPlayer _soundPlayer;
     private readonly ILinuxNotificationIconLoader _iconLoader;
@@ -35,7 +35,7 @@ internal sealed class LinuxNotificationService : INotificationService, IHostedSe
     /// <param name="logger">Logger for notification service events.</param>
     /// <param name="notificationOptions">Provides notification configuration options.</param>
     /// <param name="appFilesystemPathProvider">Provides application filesystem paths.</param>
-    /// <param name="userConfigService">Service for accessing user configuration.</param>
+    /// <param name="userConfigMonitor">Monitors user configuration options.</param>
     /// <param name="notifier">Handles displaying notifications on Linux.</param>
     /// <param name="soundPlayer">Plays notification sounds on Linux.</param>
     /// <param name="iconLoader">Loads notification icons for Linux notifications.</param>
@@ -43,7 +43,7 @@ internal sealed class LinuxNotificationService : INotificationService, IHostedSe
         ILogger<LinuxNotificationService> logger,
         IOptionsMonitor<NotificationConfig> notificationOptions,
         IAppFilesystemPathProvider appFilesystemPathProvider,
-        IUserConfigService userConfigService,
+        IOptionsMonitor<UserConfig> userConfigMonitor,
         ILinuxNotifier notifier,
         ILinuxSoundPlayer soundPlayer,
         ILinuxNotificationIconLoader iconLoader)
@@ -51,7 +51,7 @@ internal sealed class LinuxNotificationService : INotificationService, IHostedSe
         _logger = logger;
         _notificationOptions = notificationOptions;
         _appFilesystemPathProvider = appFilesystemPathProvider;
-        _userConfigService = userConfigService;
+        _userConfigMonitor = userConfigMonitor;
         _notifier = notifier;
         _soundPlayer = soundPlayer;
         _iconLoader = iconLoader;
@@ -84,7 +84,7 @@ internal sealed class LinuxNotificationService : INotificationService, IHostedSe
     /// <inheritdoc />
     public async ValueTask NotifyAsync(SessionState sessionState, NotificationType type)
     {
-        if (!_userConfigService.UserConfig.NotificationsEnabled)
+        if (!_userConfigMonitor.CurrentValue.NotificationsEnabled)
         {
             return;
         }
