@@ -1,10 +1,8 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Primitives;
 
 using Moq;
 
-using Tiempito.Daemon.Application.Config;
 using Tiempito.Daemon.Domain.Config;
 using Tiempito.Daemon.Infrastructure.Config.User;
 using Tiempito.IPC.Models.Enums;
@@ -18,18 +16,15 @@ namespace Tiempito.Daemon.Tests.Infrastructure.Config.User;
 [Trait("Feature", "Config")]
 public sealed class UserConfigMonitorTests : IDisposable
 {
+    private const string DefaultConfigIdKey = "User:DefaultConfigId";
+    private const string EnabledFeaturesKey = "User:EnabledFeatures";
     private const string DefaultConfigId = "1";
     private const string EnabledFeatures = "notification";
 
     private readonly MockRepository _mockRepository;
     private readonly Mock<ILogger<UserConfigMonitor>> _loggerMock;
-    private readonly Mock<IConfiguration> _configurationMock;
-    private readonly Mock<IConfigurationSection> _defaultConfigIdSectionMock;
-    private readonly Mock<IConfigurationSection> _enabledFeaturesSectionMock;
-    private readonly Mock<IDisposable> _changeTokenDisposableMock;
+    private readonly IConfigurationRoot _configurationRoot;
     private readonly UserConfigMonitor _monitor;
-    private object? _changeCallbackState;
-    private Action<object?> _triggerConfigReload = _ => { };
 
     /// <summary>
     /// Initializes a new instance of the <see cref="UserConfigMonitorTests"/> class.
@@ -38,32 +33,18 @@ public sealed class UserConfigMonitorTests : IDisposable
     {
         _mockRepository = new MockRepository(MockBehavior.Loose);
         _loggerMock = _mockRepository.Create<ILogger<UserConfigMonitor>>();
-        var changeTokenMock = _mockRepository.Create<IChangeToken>();
-        _configurationMock = _mockRepository.Create<IConfiguration>();
-        var configSectionMock = _mockRepository.Create<IConfigurationSection>();
-        _defaultConfigIdSectionMock = _mockRepository.Create<IConfigurationSection>();
-        _enabledFeaturesSectionMock = _mockRepository.Create<IConfigurationSection>();
-        _changeTokenDisposableMock = _mockRepository.Create<IDisposable>();
 
-        _configurationMock.Setup(x => x.GetSection(AppConfigConstants.UserSectionName))
-            .Returns(configSectionMock.Object);
-        configSectionMock.Setup(m => m.GetChildren())
-            .Returns([_defaultConfigIdSectionMock.Object, _enabledFeaturesSectionMock.Object]);
-        configSectionMock.Setup(m => m.GetSection(nameof(UserConfig.DefaultConfigId)))
-            .Returns(_defaultConfigIdSectionMock.Object);
-        configSectionMock.Setup(m => m.GetSection(nameof(UserConfig.EnabledFeatures)))
-            .Returns(_enabledFeaturesSectionMock.Object);
-        _configurationMock.Setup(x => x.GetReloadToken()).Returns(changeTokenMock.Object);
-        changeTokenMock
-            .Setup(m => m.RegisterChangeCallback(It.IsAny<Action<object?>>(), It.IsAny<object?>()))
-            .Callback<Action<object?>, object?>((action, state) =>
-            {
-                _triggerConfigReload = action;
-                _changeCallbackState = state;
-            }).Returns(_changeTokenDisposableMock.Object);
-        _defaultConfigIdSectionMock.Setup(m => m.Value).Returns(DefaultConfigId);
-        _enabledFeaturesSectionMock.Setup(m => m.Value).Returns(EnabledFeatures);
-        _monitor = new UserConfigMonitor(_loggerMock.Object, _configurationMock.Object);
+        var initialConfig = new Dictionary<string, string?>
+        {
+            { DefaultConfigIdKey, DefaultConfigId },
+            { EnabledFeaturesKey, EnabledFeatures },
+        };
+
+        _configurationRoot = new ConfigurationBuilder()
+            .AddInMemoryCollection(initialConfig)
+            .Build();
+
+        _monitor = new UserConfigMonitor(_loggerMock.Object, _configurationRoot);
     }
 
     /// <inheritdoc/>
@@ -71,6 +52,7 @@ public sealed class UserConfigMonitorTests : IDisposable
     {
         _mockRepository.VerifyAll();
         _monitor.Dispose();
+        (_configurationRoot as IDisposable)?.Dispose();
     }
 
     /// <summary>
@@ -84,10 +66,9 @@ public sealed class UserConfigMonitorTests : IDisposable
     public void CurrentValue_should_ReturnCurrentUserConfig(string enabledFeatures)
     {
         // Arrange
-        const string defaultConfigId = "1";
-        _defaultConfigIdSectionMock.Setup(m => m.Value).Returns(defaultConfigId);
-        _enabledFeaturesSectionMock.Setup(m => m.Value).Returns(enabledFeatures);
-        var monitor = new UserConfigMonitor(_loggerMock.Object, _configurationMock.Object);
+        _configurationRoot[DefaultConfigIdKey] = DefaultConfigId;
+        _configurationRoot[EnabledFeaturesKey] = enabledFeatures;
+        var monitor = new UserConfigMonitor(_loggerMock.Object, _configurationRoot);
 
         // Act
         var actual = monitor.CurrentValue;
@@ -118,13 +99,19 @@ public sealed class UserConfigMonitorTests : IDisposable
     /// Verifies that disposing the <see cref="UserConfigMonitor"/> disposes the configuration reload token subscription.
     /// </summary>
     [Fact]
-    public void Dispose_should_DisposeConfigReloadTokenSubscription()
+    public void Dispose_should_StopListeningToConfigChanges()
     {
+        // Arrange
+        bool invoked = false;
+        _monitor.OnChange((_, _) => invoked = true);
+        _configurationRoot[DefaultConfigIdKey] = "3";
+
         // Act
         _monitor.Dispose();
+        _configurationRoot.Reload();
 
         // Assert
-        _changeTokenDisposableMock.Verify(m => m.Dispose(), Times.Once);
+        Assert.False(invoked);
     }
 
     /// <summary>
@@ -135,11 +122,11 @@ public sealed class UserConfigMonitorTests : IDisposable
     {
         // Arrange
         const string newDefaultConfigId = "2";
-        string enabledFeatures = string.Empty;
+        string newEnabledFeatures = string.Empty;
         UserConfig? newConfig = null;
         var invoked = false;
-        _defaultConfigIdSectionMock.Setup(m => m.Value).Returns(newDefaultConfigId);
-        _enabledFeaturesSectionMock.Setup(m => m.Value).Returns(enabledFeatures);
+        _configurationRoot[DefaultConfigIdKey] = newDefaultConfigId;
+        _configurationRoot[EnabledFeaturesKey] = newEnabledFeatures;
         _monitor.OnChange((config, _) =>
         {
             invoked = true;
@@ -147,7 +134,7 @@ public sealed class UserConfigMonitorTests : IDisposable
         });
 
         // Act
-        _triggerConfigReload(_changeCallbackState);
+        _configurationRoot.Reload();
 
         // Assert
         Assert.True(invoked);
@@ -168,29 +155,29 @@ public sealed class UserConfigMonitorTests : IDisposable
         _monitor.OnChange((_, _) => invoked = true);
 
         // Act
-        _triggerConfigReload(_changeCallbackState);
+        _configurationRoot.Reload();
 
         // Assert
         Assert.False(invoked);
     }
 
     /// <summary>
-    /// Verifies that the registered <c>OnChange</c> callback is not invoked when the listener is already disposed.
+    /// Verifies that the registered <c>OnChange</c> callback is not invoked when the subscription is already disposed.
     /// </summary>
     [Fact]
-    public void It_should_NotInvokeRegisteredOnChangeCallback_when_ListenerIsAlreadyDisposed()
+    public void It_should_NotInvokeRegisteredOnChangeCallback_when_SubscriptionIsAlreadyDisposed()
     {
         // Arrange
         const string newDefaultConfigId = "2";
         string newEnabledFeatures = string.Empty;
         var invoked = false;
-        _defaultConfigIdSectionMock.Setup(m => m.Value).Returns(newDefaultConfigId);
-        _enabledFeaturesSectionMock.Setup(m => m.Value).Returns(newEnabledFeatures);
+        _configurationRoot[DefaultConfigIdKey] = newDefaultConfigId;
+        _configurationRoot[EnabledFeaturesKey] = newEnabledFeatures;
         IDisposable onChangeSubscription = _monitor.OnChange((_, _) => invoked = true);
         onChangeSubscription.Dispose();
 
         // Act
-        _triggerConfigReload(_changeCallbackState);
+        _configurationRoot.Reload();
 
         // Assert
         Assert.False(invoked);
