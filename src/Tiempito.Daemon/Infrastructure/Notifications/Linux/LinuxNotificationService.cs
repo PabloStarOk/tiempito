@@ -3,8 +3,8 @@ using System.Runtime.Versioning;
 
 using Microsoft.Extensions.Options;
 
-using Tiempito.Daemon.Application.Config;
 using Tiempito.Daemon.Application.Notifications;
+using Tiempito.Daemon.Application.Shared;
 using Tiempito.Daemon.Domain.Config;
 using Tiempito.Daemon.Domain.Notifications.Enums;
 using Tiempito.Daemon.Domain.Sessions.Enums;
@@ -22,7 +22,6 @@ internal sealed class LinuxNotificationService : INotificationService, IHostedSe
 {
     private readonly ILogger<LinuxNotificationService> _logger;
     private readonly IOptionsMonitor<NotificationConfig> _notificationOptions;
-    private readonly IAppFilesystemPathProvider _appFilesystemPathProvider;
     private readonly IOptionsMonitor<UserConfig> _userConfigMonitor;
     private readonly ILinuxNotifier _notifier;
     private readonly ILinuxSoundPlayer _soundPlayer;
@@ -34,7 +33,6 @@ internal sealed class LinuxNotificationService : INotificationService, IHostedSe
     /// </summary>
     /// <param name="logger">Logger for notification service events.</param>
     /// <param name="notificationOptions">Provides notification configuration options.</param>
-    /// <param name="appFilesystemPathProvider">Provides application filesystem paths.</param>
     /// <param name="userConfigMonitor">Monitors user configuration options.</param>
     /// <param name="notifier">Handles displaying notifications on Linux.</param>
     /// <param name="soundPlayer">Plays notification sounds on Linux.</param>
@@ -42,7 +40,6 @@ internal sealed class LinuxNotificationService : INotificationService, IHostedSe
     public LinuxNotificationService(
         ILogger<LinuxNotificationService> logger,
         IOptionsMonitor<NotificationConfig> notificationOptions,
-        IAppFilesystemPathProvider appFilesystemPathProvider,
         IOptionsMonitor<UserConfig> userConfigMonitor,
         ILinuxNotifier notifier,
         ILinuxSoundPlayer soundPlayer,
@@ -50,7 +47,6 @@ internal sealed class LinuxNotificationService : INotificationService, IHostedSe
     {
         _logger = logger;
         _notificationOptions = notificationOptions;
-        _appFilesystemPathProvider = appFilesystemPathProvider;
         _userConfigMonitor = userConfigMonitor;
         _notifier = notifier;
         _soundPlayer = soundPlayer;
@@ -64,13 +60,12 @@ internal sealed class LinuxNotificationService : INotificationService, IHostedSe
     /// <inheritdoc/>
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        var appIconFilePath = _appFilesystemPathProvider.ApplicationIconPath;
-        if (!Path.Exists(appIconFilePath))
+        if (!Path.Exists(Paths.ApplicationIconPath))
         {
             return;
         }
 
-        LinuxNotificationImageData appImgData = await _iconLoader.LoadAsync(appIconFilePath);
+        LinuxNotificationImageData appImgData = await _iconLoader.LoadAsync(Paths.ApplicationIconPath);
         _baseNotification.Hints.TryAdd("image-data", appImgData.GetVariantValue());
         _baseNotification.Hints.TryAdd("category", VariantValue.String("im"));
     }
@@ -96,7 +91,7 @@ internal sealed class LinuxNotificationService : INotificationService, IHostedSe
         {
             Summary = summary,
             Body = body,
-            AudioFilePath = Path.Combine(_appFilesystemPathProvider.AppConfigDirectoryPath, soundFileName)
+            AudioFilePath = Path.Combine(Paths.DaemonConfigDirectoryPath, soundFileName)
         };
         
         try
