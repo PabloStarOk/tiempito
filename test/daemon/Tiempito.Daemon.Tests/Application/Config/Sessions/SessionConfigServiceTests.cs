@@ -18,10 +18,14 @@ namespace Tiempito.Daemon.Tests.Application.Config.Sessions;
 [Trait("Feature", "Config")]
 public sealed class SessionConfigServiceTests : IDisposable
 {
+    private static readonly Dictionary<string, SessionConfig> EmptyDictionary = [];
+
     private readonly MockRepository _mockRepository;
     private readonly Mock<ISessionConfigWriter> _sessionConfigWriterMock;
-    private readonly Mock<ISessionConfigReader> _sessionConfigReaderMock;
+    private readonly Mock<IOptionsMonitor<IDictionary<string, SessionConfig>>> _sessionConfigsMonitor;
     private readonly Mock<IOptionsMonitor<UserConfig>> _userConfigOptionsMock;
+    private readonly Mock<IDisposable> _userConfigDisposable;
+    private readonly Mock<IDisposable> _sessionConfigsDisposable;
     private readonly SessionConfigService _service;
 
     /// <summary>
@@ -32,12 +36,14 @@ public sealed class SessionConfigServiceTests : IDisposable
         _mockRepository = new MockRepository(MockBehavior.Loose);
         var loggerMock = _mockRepository.Create<ILogger<SessionConfigService>>();
         _sessionConfigWriterMock = _mockRepository.Create<ISessionConfigWriter>();
-        _sessionConfigReaderMock = _mockRepository.Create<ISessionConfigReader>();
+        _sessionConfigsMonitor = _mockRepository.Create<IOptionsMonitor<IDictionary<string, SessionConfig>>>();
         _userConfigOptionsMock = _mockRepository.Create<IOptionsMonitor<UserConfig>>();
+        _userConfigDisposable = _mockRepository.Create<IDisposable>();
+        _sessionConfigsDisposable = _mockRepository.Create<IDisposable>();
         _service = new SessionConfigService(
             loggerMock.Object,
             _sessionConfigWriterMock.Object,
-            _sessionConfigReaderMock.Object,
+            _sessionConfigsMonitor.Object,
             _userConfigOptionsMock.Object);
     }
 
@@ -52,14 +58,14 @@ public sealed class SessionConfigServiceTests : IDisposable
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task StartAsync_should_SetupConfigurationsAndChangesListener()
+    public async Task StartAsync_should_SetupConfigurationsAndChangesSubscriptions()
     {
         // Arrange
         var config1 = SessionProvider.CreateRandomConfig(id: "1");
         var config2 = SessionProvider.CreateRandomConfig(id: "2");
         var userConfig = new UserConfig(config2.Id, []);
         _userConfigOptionsMock.Setup(m => m.CurrentValue).Returns(userConfig);
-        _sessionConfigReaderMock.Setup(m => m.ReadSessions(AppConfigConstants.SessionSectionPrefix))
+        _sessionConfigsMonitor.Setup(m => m.CurrentValue)
             .Returns(new Dictionary<string, SessionConfig> { { config1.Id, config1 }, { config2.Id, config2 } });
 
         // Act
@@ -71,6 +77,8 @@ public sealed class SessionConfigServiceTests : IDisposable
         Assert.NotNull(actualConfig);
         Assert.Equal(config1, actualConfig);
         _userConfigOptionsMock.Verify(m => m.OnChange(It.IsAny<Action<UserConfig, string?>>()), Times.Once);
+        _sessionConfigsMonitor.Verify(
+            m => m.OnChange(It.IsAny<Action<IDictionary<string, SessionConfig>, string?>>()), Times.Once);
     }
 
     /// <summary>
@@ -78,23 +86,18 @@ public sealed class SessionConfigServiceTests : IDisposable
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task StopAsync_should_DisposeUserConfigChangesSubscription()
+    public async Task StopAsync_should_DisposeConfigChangesSubscriptions()
     {
         // Arrange
-        var disposable = _mockRepository.Create<IDisposable>();
-        var userConfig = new UserConfig(null, []);
-        _userConfigOptionsMock.Setup(m => m.CurrentValue).Returns(userConfig);
-        _userConfigOptionsMock.Setup(m => m.OnChange(It.IsAny<Action<UserConfig, string?>>()))
-            .Returns(disposable.Object);
-        _sessionConfigReaderMock.Setup(m => m.ReadSessions(AppConfigConstants.SessionSectionPrefix))
-            .Returns(new Dictionary<string, SessionConfig>());
+        SetupMocksForStartAsync();
         await _service.StartAsync();
 
         // Act
         await _service.StopAsync();
 
         // Assert
-        disposable.Verify(m => m.Dispose(), Times.Once);
+        _userConfigDisposable.Verify(m => m.Dispose(), Times.Once);
+        _sessionConfigsDisposable.Verify(m => m.Dispose(), Times.Once);
     }
 
     /// <summary>
@@ -106,6 +109,7 @@ public sealed class SessionConfigServiceTests : IDisposable
     {
         // Arrange
         var expectedConfig = SessionProvider.CreateRandomConfig();
+        _sessionConfigsMonitor.Setup(m => m.CurrentValue).Returns(EmptyDictionary);
         _sessionConfigWriterMock.Setup(m => m.Write(AppConfigConstants.SessionSectionPrefix, expectedConfig))
             .Returns(true);
 
@@ -114,9 +118,6 @@ public sealed class SessionConfigServiceTests : IDisposable
 
         // Assert
         Assert.True(actual.Success);
-        Assert.True(_service.TryGetConfigById(expectedConfig.Id, out SessionConfig? actualConfig));
-        Assert.NotNull(actualConfig);
-        Assert.Equal(expectedConfig, actualConfig);
     }
 
     /// <summary>
@@ -129,19 +130,14 @@ public sealed class SessionConfigServiceTests : IDisposable
         // Arrange
         var initialConfig = SessionProvider.CreateRandomConfig();
         var invalidConfig = SessionProvider.CreateRandomConfig() with { Id = initialConfig.Id };
-        _sessionConfigWriterMock.Setup(m => m.Write(AppConfigConstants.SessionSectionPrefix, It.IsAny<SessionConfig>()))
-            .Returns(true);
-        await _service.AddConfigAsync(initialConfig);
+        _sessionConfigsMonitor.Setup(m => m.CurrentValue)
+            .Returns(new Dictionary<string, SessionConfig> { { initialConfig.NormalizedId, initialConfig } });
 
         // Act
         OperationResult actual = await _service.AddConfigAsync(invalidConfig);
 
         // Assert
         Assert.False(actual.Success);
-        Assert.True(_service.TryGetConfigById(initialConfig.Id, out SessionConfig? actualConfig));
-        Assert.NotNull(actualConfig);
-        Assert.Equal(initialConfig, actualConfig);
-        Assert.NotEqual(invalidConfig, actualConfig);
     }
 
     /// <summary>
@@ -153,8 +149,8 @@ public sealed class SessionConfigServiceTests : IDisposable
     {
         // Arrange
         var config = SessionProvider.CreateRandomConfig();
-        _sessionConfigWriterMock.Setup(m => m.Write(AppConfigConstants.SessionSectionPrefix, config))
-            .Returns(false);
+        _sessionConfigsMonitor.Setup(m => m.CurrentValue).Returns(EmptyDictionary);
+        _sessionConfigWriterMock.Setup(m => m.Write(AppConfigConstants.SessionSectionPrefix, config)).Returns(false);
 
         // Act
         OperationResult actual = await _service.AddConfigAsync(config);
@@ -173,16 +169,10 @@ public sealed class SessionConfigServiceTests : IDisposable
     public async Task ModifyConfigAsync_should_ReturnSuccess_when_ConfigIsValid()
     {
         // Arrange
-        var userConfig = new UserConfig(null, []);
         var initialConfig = SessionProvider.CreateRandomConfig();
-        var modifiedConfig = initialConfig with
-        {
-            TargetCycles = 12, BreakDuration = TimeSpan.FromMinutes(5),
-        };
-        _userConfigOptionsMock.Setup(m => m.CurrentValue).Returns(userConfig);
-        _sessionConfigWriterMock.Setup(m => m.Write(AppConfigConstants.SessionSectionPrefix, initialConfig))
-            .Returns(true);
-        await _service.AddConfigAsync(initialConfig);
+        var modifiedConfig = initialConfig with { TargetCycles = 12, BreakDuration = TimeSpan.FromMinutes(5), };
+        _sessionConfigsMonitor.Setup(m => m.CurrentValue)
+            .Returns(new Dictionary<string, SessionConfig> { { initialConfig.NormalizedId, initialConfig } });
         _sessionConfigWriterMock.Setup(m => m.Write(AppConfigConstants.SessionSectionPrefix, modifiedConfig))
             .Returns(true);
 
@@ -194,40 +184,6 @@ public sealed class SessionConfigServiceTests : IDisposable
 
         // Assert
         Assert.True(actual.Success);
-        Assert.True(_service.TryGetConfigById(initialConfig.Id, out SessionConfig? actualConfig));
-        Assert.Equal(modifiedConfig, actualConfig);
-    }
-
-    /// <summary>
-    /// Tests that <see cref="SessionConfigService.ModifyConfigAsync"/> updates the default config when the modified config is the default.
-    /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Fact]
-    public async Task ModifyConfigAsync_should_UpdateDefaultConfig_when_ModifiedConfigIsDefault()
-    {
-        // Arrange
-        var initialConfig = SessionProvider.CreateRandomConfig();
-        var userConfig = new UserConfig(initialConfig.Id, []);
-        var modifiedConfig = initialConfig with
-        {
-            FocusDuration = TimeSpan.FromMinutes(5), DelayBetweenTimes = TimeSpan.FromSeconds(2),
-        };
-        _userConfigOptionsMock.Setup(m => m.CurrentValue).Returns(userConfig);
-        _sessionConfigReaderMock.Setup(m => m.ReadSessions(AppConfigConstants.SessionSectionPrefix))
-            .Returns(new Dictionary<string, SessionConfig> { { initialConfig.Id, initialConfig } });
-        _sessionConfigWriterMock.Setup(m => m.Write(AppConfigConstants.SessionSectionPrefix, modifiedConfig))
-            .Returns(true);
-        await _service.StartAsync();
-
-        // Act
-        OperationResult actual = await _service.ModifyConfigAsync(
-            initialConfig.Id,
-            focusDuration: modifiedConfig.FocusDuration,
-            delayBetweenTimes: modifiedConfig.DelayBetweenTimes);
-
-        // Assert
-        Assert.True(actual.Success);
-        Assert.Equal(modifiedConfig, _service.DefaultConfig);
     }
 
     /// <summary>
@@ -239,6 +195,7 @@ public sealed class SessionConfigServiceTests : IDisposable
     {
         // Arrange
         var config = SessionProvider.CreateRandomConfig();
+        _sessionConfigsMonitor.Setup(m => m.CurrentValue).Returns(EmptyDictionary);
 
         // Act
         OperationResult actual = await _service.ModifyConfigAsync(config.Id, focusDuration: TimeSpan.FromMinutes(5));
@@ -255,16 +212,13 @@ public sealed class SessionConfigServiceTests : IDisposable
     public async Task ModifyConfigAsync_should_ReturnError_when_SaveOperationFails()
     {
         // Arrange
-        var userConfig = new UserConfig(null, []);
         var initialConfig = SessionProvider.CreateRandomConfig();
         var modifiedConfig = initialConfig with
         {
             TargetCycles = 12, BreakDuration = TimeSpan.FromMinutes(5),
         };
-        _userConfigOptionsMock.Setup(m => m.CurrentValue).Returns(userConfig);
-        _sessionConfigWriterMock.Setup(m => m.Write(AppConfigConstants.SessionSectionPrefix, initialConfig))
-            .Returns(true);
-        await _service.AddConfigAsync(initialConfig);
+        _sessionConfigsMonitor.Setup(m => m.CurrentValue)
+            .Returns(new Dictionary<string, SessionConfig> { { initialConfig.Id, initialConfig } });
         _sessionConfigWriterMock.Setup(m => m.Write(AppConfigConstants.SessionSectionPrefix, modifiedConfig))
             .Returns(false);
 
@@ -276,23 +230,18 @@ public sealed class SessionConfigServiceTests : IDisposable
 
         // Assert
         Assert.False(actual.Success);
-        Assert.True(_service.TryGetConfigById(initialConfig.Id, out SessionConfig? actualConfig));
-        Assert.Equal(initialConfig, actualConfig);
-        Assert.NotEqual(modifiedConfig, actualConfig);
     }
 
     /// <summary>
     /// Tests that <see cref="SessionConfigService.TryGetConfigById"/> returns the config when the specified ID exists.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task TryGetConfigById_should_ReturnConfig_when_IdExists()
+    public void TryGetConfigById_should_ReturnConfig_when_IdExists()
     {
         // Arrange
         var expectedConfig = SessionProvider.CreateRandomConfig();
-        _sessionConfigWriterMock.Setup(m => m.Write(AppConfigConstants.SessionSectionPrefix, expectedConfig))
-            .Returns(true);
-        await _service.AddConfigAsync(expectedConfig);
+        _sessionConfigsMonitor.Setup(m => m.CurrentValue)
+            .Returns(new Dictionary<string, SessionConfig> { { expectedConfig.Id, expectedConfig } });
 
         // Act
         bool found = _service.TryGetConfigById(expectedConfig.Id, out SessionConfig? actualConfig);
@@ -308,12 +257,34 @@ public sealed class SessionConfigServiceTests : IDisposable
     [Fact]
     public void TryGetConfigById_should_ReturnFalse_when_IdDoesNotExist()
     {
+        // Arrange
+        _sessionConfigsMonitor.Setup(m => m.CurrentValue).Returns(EmptyDictionary);
+
         // Act
         bool found = _service.TryGetConfigById("1", out SessionConfig? actualConfig);
 
         // Assert
         Assert.False(found);
         Assert.Null(actualConfig);
+    }
+
+    /// <summary>
+    /// Tests that <see cref="SessionConfigService.Dispose"/> disposes the config changes subscriptions.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task Dispose_should_DisposeConfigChangesSubscriptions()
+    {
+        // Arrange
+        SetupMocksForStartAsync();
+        await _service.StartAsync();
+
+        // Act
+        _service.Dispose();
+
+        // Assert
+        _userConfigDisposable.Verify(m => m.Dispose(), Times.Once);
+        _sessionConfigsDisposable.Verify(m => m.Dispose(), Times.Once);
     }
 
     /// <summary>
@@ -336,8 +307,7 @@ public sealed class SessionConfigServiceTests : IDisposable
         _userConfigOptionsMock.Setup(m => m.CurrentValue).Returns(new UserConfig(null, []));
         _userConfigOptionsMock.Setup(m => m.OnChange(It.IsAny<Action<UserConfig, string?>>()))
             .Callback<Action<UserConfig, string?>>(cb => onChangeCallback = cb);
-        _sessionConfigReaderMock.Setup(m => m.ReadSessions(AppConfigConstants.SessionSectionPrefix))
-            .Returns(initialConfigs);
+        _sessionConfigsMonitor.Setup(m => m.CurrentValue).Returns(initialConfigs);
         await _service.StartAsync();
 
         // Act
@@ -379,8 +349,7 @@ public sealed class SessionConfigServiceTests : IDisposable
             { expectedConfig.Id, expectedConfig },
         };
         _userConfigOptionsMock.Setup(m => m.CurrentValue).Returns(userConfig);
-        _sessionConfigReaderMock.Setup(m => m.ReadSessions(AppConfigConstants.SessionSectionPrefix))
-            .Returns(initialConfigs);
+        _sessionConfigsMonitor.Setup(m => m.CurrentValue).Returns(initialConfigs);
         await _service.StartAsync();
 
         // Assert
@@ -408,11 +377,56 @@ public sealed class SessionConfigServiceTests : IDisposable
             SessionProvider.CreateRandomConfig(id: "2"),
         }.ToDictionary(c => c.Id);
         _userConfigOptionsMock.Setup(m => m.CurrentValue).Returns(userConfig);
-        _sessionConfigReaderMock.Setup(m => m.ReadSessions(AppConfigConstants.SessionSectionPrefix))
-            .Returns(initialConfigs);
+        _sessionConfigsMonitor.Setup(m => m.CurrentValue).Returns(initialConfigs);
         await _service.StartAsync();
 
         // Assert
         Assert.Equal(expectedConfig, _service.DefaultConfig);
+    }
+
+    /// <summary>
+    /// Tests that the <see cref="SessionConfigService.DefaultConfig"/> is updated when the session configs monitor
+    /// callback is invoked and the default config has been modified.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task It_should_UpdateDefaultConfig_when_SessionConfigsMonitorInvokesChangesCallback()
+    {
+        // Arrange
+        var defaultConfig = SessionProvider.CreateRandomConfig();
+        var modifiedDefaultConfig = defaultConfig with
+        {
+            FocusDuration = TimeSpan.FromSeconds(5), BreakDuration = TimeSpan.FromSeconds(2),
+        };
+        var userConfig = new UserConfig(defaultConfig.Id, []);
+        var configs = new List<SessionConfig>
+        {
+            SessionProvider.CreateRandomConfig(id: "1"),
+            SessionProvider.CreateRandomConfig(id: "2"),
+            defaultConfig,
+        }.ToDictionary(c => c.Id);
+        Action<IDictionary<string, SessionConfig>, string?>? onChangeCallback = null;
+        _userConfigOptionsMock.Setup(m => m.CurrentValue).Returns(userConfig);
+        _sessionConfigsMonitor.Setup(m => m.CurrentValue).Returns(configs);
+        _sessionConfigsMonitor.Setup(m => m.OnChange(It.IsAny<Action<IDictionary<string, SessionConfig>, string?>>()))
+            .Callback<Action<IDictionary<string, SessionConfig>, string?>>(cb => onChangeCallback = cb);
+        await _service.StartAsync();
+        configs[defaultConfig.NormalizedId] = modifiedDefaultConfig;
+
+        // Act
+        onChangeCallback?.Invoke(configs, null);
+
+        // Assert
+        Assert.Equal(modifiedDefaultConfig, _service.DefaultConfig);
+    }
+
+    private void SetupMocksForStartAsync()
+    {
+        _userConfigOptionsMock.Setup(m => m.CurrentValue).Returns(new UserConfig(null, []));
+        _userConfigOptionsMock.Setup(m => m.OnChange(It.IsAny<Action<UserConfig, string?>>()))
+            .Returns(_userConfigDisposable.Object);
+        _sessionConfigsMonitor.Setup(m => m.CurrentValue).Returns(EmptyDictionary);
+        _sessionConfigsMonitor.Setup(m => m.OnChange(It.IsAny<Action<IDictionary<string, SessionConfig>, string?>>()))
+            .Returns(_sessionConfigsDisposable.Object);
     }
 }

@@ -70,8 +70,8 @@ internal static class DependencyInjection
         services.AddSingleton<ITimeSpanConverter, TimeSpanConverter>();
         services.AddSingleton<IUserConfigWriter, UserConfigWriter>();
         services.AddSingleton<IOptionsMonitor<UserConfig>, UserConfigMonitor>();
-        services.AddSingleton<ISessionConfigReader, SessionConfigReader>();
         services.AddSingleton<ISessionConfigWriter, SessionConfigWriter>();
+        services.AddSingleton<IOptionsMonitor<IDictionary<string, SessionConfig>>, SessionConfigsMonitor>();
     }
 
     private static void AddSessionServices(IServiceCollection services)
