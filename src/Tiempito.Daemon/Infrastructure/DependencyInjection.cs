@@ -4,12 +4,14 @@ using System.Threading.Channels;
 using IniParser;
 
 using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.Options;
 
 using Tiempito.Daemon.Application.Config;
 using Tiempito.Daemon.Application.Config.Sessions;
 using Tiempito.Daemon.Application.Config.User;
 using Tiempito.Daemon.Application.Notifications;
 using Tiempito.Daemon.Application.Sessions;
+using Tiempito.Daemon.Domain.Config;
 using Tiempito.Daemon.Infrastructure.Config;
 using Tiempito.Daemon.Infrastructure.Config.Sessions;
 using Tiempito.Daemon.Infrastructure.Config.User;
@@ -66,10 +68,10 @@ internal static class DependencyInjection
         }
 
         services.AddSingleton<ITimeSpanConverter, TimeSpanConverter>();
-        services.AddSingleton<IUserConfigReader, UserConfigReader>();
         services.AddSingleton<IUserConfigWriter, UserConfigWriter>();
-        services.AddSingleton<ISessionConfigReader, SessionConfigReader>();
+        services.AddSingleton<IOptionsMonitor<UserConfig>, UserConfigMonitor>();
         services.AddSingleton<ISessionConfigWriter, SessionConfigWriter>();
+        services.AddSingleton<IOptionsMonitor<IDictionary<string, SessionConfig>>, SessionConfigsMonitor>();
     }
 
     private static void AddSessionServices(IServiceCollection services)

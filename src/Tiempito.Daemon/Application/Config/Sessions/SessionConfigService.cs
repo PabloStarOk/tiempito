@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 
-using Tiempito.Daemon.Application.Config.User;
+using Microsoft.Extensions.Options;
+
 using Tiempito.Daemon.Domain.Config;
 using Tiempito.Daemon.Domain.Shared;
 
@@ -9,13 +10,14 @@ namespace Tiempito.Daemon.Application.Config.Sessions;
 /// <summary>
 /// Service to manage user's session configurations.
 /// </summary>
-public class SessionConfigService : ISessionConfigService, IHostedService
+public sealed class SessionConfigService : ISessionConfigService, IHostedService, IDisposable
 {
     private readonly ILogger<SessionConfigService> _logger;
-    private readonly IUserConfigService _userConfigService;
     private readonly ISessionConfigWriter _configWriter;
-    private readonly ISessionConfigReader _configReader;
-    private Dictionary<string, SessionConfig> _configs;
+    private readonly IOptionsMonitor<IDictionary<string, SessionConfig>> _sessionConfigsMonitor;
+    private readonly IOptionsMonitor<UserConfig> _userConfigMonitor;
+    private IDisposable? _userConfigChangesListener;
+    private IDisposable? _configsChangesListener;
 
     /// <inheritdoc/>
     public SessionConfig DefaultConfig { get; private set; } = new (
@@ -29,33 +31,32 @@ public class SessionConfigService : ISessionConfigService, IHostedService
     /// Initializes a new instance of the <see cref="SessionConfigService"/> class.
     /// </summary>
     /// <param name="logger">Logger to register events.</param>
-    /// <param name="userConfigService">Service of user's configuration.</param>
     /// <param name="configWriter">Writer of the user's configuration file.</param>
-    /// <param name="configReader">Reader of the user's configuration file.</param>
+    /// <param name="sessionConfigsMonitor">Monitors changes to the session configurations.</param>
+    /// <param name="userConfigMonitor">Monitors changes to the user's configuration.</param>
     public SessionConfigService(
         ILogger<SessionConfigService> logger,
-        IUserConfigService userConfigService,
         ISessionConfigWriter configWriter,
-        ISessionConfigReader configReader)
+        IOptionsMonitor<IDictionary<string, SessionConfig>> sessionConfigsMonitor,
+        IOptionsMonitor<UserConfig> userConfigMonitor)
     {
         _logger = logger;
-        _userConfigService = userConfigService;
         _configWriter = configWriter;
-        _configReader = configReader;
-        _configs = [];
+        _sessionConfigsMonitor = sessionConfigsMonitor;
+        _userConfigMonitor = userConfigMonitor;
     }
 
     /// <inheritdoc/>
     public bool TryGetConfigById(string id, [NotNullWhen(true)] out SessionConfig? config)
     {
         var normalizedId = SessionConfig.NormalizeId(id);
-        return _configs.TryGetValue(normalizedId, out config);
+        return _sessionConfigsMonitor.CurrentValue.TryGetValue(normalizedId, out config);
     }
 
     /// <inheritdoc/>
     public Task<OperationResult> AddConfigAsync(SessionConfig config)
     {
-        if (!_configs.TryAdd(config.NormalizedId, config))
+        if (_sessionConfigsMonitor.CurrentValue.ContainsKey(config.NormalizedId))
         {
             return Task.FromResult(new OperationResult(
                 Success: false,
@@ -71,10 +72,6 @@ public class SessionConfigService : ISessionConfigService, IHostedService
         {
             _logger.LogTrace("Session configuration has been added: {Config}", config);
         }
-        else
-        {
-            _configs.Remove(config.NormalizedId);
-        }
 
         return Task.FromResult(new OperationResult(wasSaved, message));
     }
@@ -87,12 +84,11 @@ public class SessionConfigService : ISessionConfigService, IHostedService
         TimeSpan? focusDuration = null,
         TimeSpan? breakDuration = null)
     {
-        var normalizedId = SessionConfig.NormalizeId(configId);
-        if (!TryGetConfigById(normalizedId, out SessionConfig? currentConfig))
+        if (!TryGetConfigById(configId, out SessionConfig? currentConfig))
         {
             return Task.FromResult(new OperationResult(
                 Success: false,
-                Message: $"Session configuration with \"{normalizedId}\" wasn't found."));
+                Message: $"Session configuration with \"{configId}\" wasn't found."));
         }
 
         SessionConfig modifiedConfig = currentConfig with
@@ -103,12 +99,6 @@ public class SessionConfigService : ISessionConfigService, IHostedService
             BreakDuration = breakDuration ?? currentConfig.BreakDuration
         };
 
-        _configs[normalizedId] = modifiedConfig;
-        if (_userConfigService.UserConfig.DefaultConfigId == modifiedConfig.NormalizedId)
-        {
-            DefaultConfig = modifiedConfig;
-        }
-
         bool wasSaved = _configWriter.Write(AppConfigConstants.SessionSectionPrefix, modifiedConfig);
         string message = wasSaved
             ? "Session configuration modified."
@@ -118,10 +108,6 @@ public class SessionConfigService : ISessionConfigService, IHostedService
         {
             _logger.LogTrace("Session configuration has been modified: {Config}", currentConfig);
         }
-        else
-        {
-            _configs[normalizedId] = currentConfig;
-        }
 
         return Task.FromResult(new OperationResult(wasSaved, message));
     }
@@ -129,47 +115,73 @@ public class SessionConfigService : ISessionConfigService, IHostedService
     /// <inheritdoc/>
     public Task StartAsync(CancellationToken cancellationToken = default)
     {
-        _configs = _configReader.ReadSessions(AppConfigConstants.SessionSectionPrefix).ToDictionary();
-        OnUserConfigChangedHandler(this, EventArgs.Empty); // Set default config.
-        _userConfigService.OnConfigChanged += OnUserConfigChangedHandler;
+        UpdateDefaultSessionConfig(_userConfigMonitor.CurrentValue, null);
+        _userConfigChangesListener = _userConfigMonitor.OnChange(UpdateDefaultSessionConfig);
+        _configsChangesListener = _sessionConfigsMonitor.OnChange(ApplyDefaultConfigModifications);
         return Task.CompletedTask;
     }
 
     /// <inheritdoc/>
     public Task StopAsync(CancellationToken cancellationToken = default)
     {
-        _userConfigService.OnConfigChanged -= OnUserConfigChangedHandler;
+        _userConfigChangesListener?.Dispose();
+        _configsChangesListener?.Dispose();
         return Task.CompletedTask;
     }
 
-    /// <summary>
-    /// Executed when the <see cref="ISessionConfigService"/> change the user's configuration to set the default.
-    /// </summary>
-    /// <param name="sender">Sender of the event.</param>
-    /// <param name="e">Empty arguments.</param>
-    private void OnUserConfigChangedHandler(object? sender, EventArgs e)
+    /// <inheritdoc/>
+    public void Dispose()
     {
-        if (DefaultConfig.NormalizedId == _userConfigService.UserConfig.DefaultConfigId)
+        _userConfigChangesListener?.Dispose();
+        _configsChangesListener?.Dispose();
+    }
+
+    private void UpdateDefaultSessionConfig(UserConfig userConfig, string? _)
+    {
+        var configs = _sessionConfigsMonitor.CurrentValue;
+        if (DefaultConfig.NormalizedId.Equals(userConfig.DefaultConfigId, StringComparison.OrdinalIgnoreCase))
         {
             return;
         }
 
-        switch (_configs.Count)
+        switch (configs.Count)
         {
             case < 1:
                 return;
             case < 2:
-                DefaultConfig = _configs.Values.First();
+                DefaultConfig = configs.Values.First();
                 return;
         }
 
-        string? configId = _userConfigService.UserConfig.DefaultConfigId;
-        if (configId is not null && _configs.TryGetValue(configId, out SessionConfig? sessionConfig))
+        var newConfigId = userConfig.DefaultConfigId;
+        if (newConfigId is not null && configs.TryGetValue(newConfigId, out SessionConfig? sessionConfig))
         {
             DefaultConfig = sessionConfig;
             return;
         }
 
-        DefaultConfig = _configs.Values.First();
+        DefaultConfig = configs.Values.First();
+    }
+
+    private void ApplyDefaultConfigModifications(IDictionary<string, SessionConfig> configs, string? _)
+    {
+        var defaultConfigId = _userConfigMonitor.CurrentValue.DefaultConfigId;
+        if (string.IsNullOrWhiteSpace(defaultConfigId))
+        {
+            return;
+        }
+
+        if (!configs.TryGetValue(defaultConfigId, out SessionConfig? defaultConfig))
+        {
+            return;
+        }
+
+        if (defaultConfig == DefaultConfig)
+        {
+            return;
+        }
+
+        DefaultConfig = defaultConfig;
+        _logger.LogDebug("Default session configuration modifications have been detected.");
     }
 }

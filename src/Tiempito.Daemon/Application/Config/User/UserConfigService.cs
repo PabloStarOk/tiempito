@@ -1,4 +1,5 @@
 using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.Options;
 
 using Tiempito.Daemon.Domain.Config;
 using Tiempito.Daemon.Domain.Shared;
@@ -11,18 +12,8 @@ namespace Tiempito.Daemon.Application.Config.User;
 /// </summary>
 public class UserConfigService : IUserConfigService, IHostedService
 {
-    /// <summary>
-    /// Gets the current user's configuration.
-    /// </summary>
-    public UserConfig UserConfig { get; private set; } = new ();
-
-    /// <summary>
-    /// Event triggered when the user's configuration changes.
-    /// </summary>
-    public event EventHandler? OnConfigChanged;
-
     private readonly ILogger<UserConfigService> _logger;
-    private readonly IUserConfigReader _userConfigReader;
+    private readonly IOptionsMonitor<UserConfig> _userConfigMonitor;
     private readonly IUserConfigWriter _userConfigWriter;
     private readonly IFileProvider _userDirectoryFileProvider;
 
@@ -30,34 +21,33 @@ public class UserConfigService : IUserConfigService, IHostedService
     /// Initializes a new instance of the <see cref="UserConfigService"/> class.
     /// </summary>
     /// <param name="logger">Logger to register events.</param>
-    /// <param name="userConfigReader">Reader for user's configuration.</param>
+    /// <param name="userConfigMonitor">Monitor for user's configuration.</param>
     /// <param name="userConfigWriter">Writer for user's configuration.</param>
     /// <param name="userDirectoryFileProvider">Provider of files for the user's configuration directory.</param>
     public UserConfigService(
         ILogger<UserConfigService> logger,
-        IUserConfigReader userConfigReader,
+        IOptionsMonitor<UserConfig> userConfigMonitor,
         IUserConfigWriter userConfigWriter,
         IFileProvider userDirectoryFileProvider)
     {
         _logger = logger;
+        _userConfigMonitor = userConfigMonitor;
         _userDirectoryFileProvider = userDirectoryFileProvider;
-        _userConfigReader = userConfigReader;
         _userConfigWriter = userConfigWriter;
     }
 
     /// <inheritdoc/>
     public Task<OperationResult> ChangeDefaultSessionConfigAsync(string? id)
     {
-        if (UserConfig.DefaultConfigId == id)
+        var currentDefaultId = _userConfigMonitor.CurrentValue.DefaultConfigId;
+        if (currentDefaultId?.Equals(id, StringComparison.OrdinalIgnoreCase) == true)
         {
             var result = new OperationResult(Success: false, Message: "Provided ID is already set as default.");
             return Task.FromResult(result);
         }
 
-        string? previousId = UserConfig.DefaultConfigId;
-        UserConfig.SetDefaultSessionConfigId(id);
-
         OperationResult operationResult = SaveAndReturnResult(
+            _userConfigMonitor.CurrentValue with { DefaultConfigId = id },
             successMessage: "Default session config ID was changed.",
             errorMessage: "Default session config ID couldn't be changed in the configuration file.");
 
@@ -67,7 +57,6 @@ public class UserConfigService : IUserConfigService, IHostedService
         }
         else
         {
-            UserConfig.SetDefaultSessionConfigId(previousId);
             _logger.LogError("Session configuration with ID '{Id}' could not be set as default.", id);
         }
 
@@ -78,7 +67,7 @@ public class UserConfigService : IUserConfigService, IHostedService
     public Task<OperationResult> EnableFeatureAsync(UserFeature feature)
     {
         // 1. Verify if the is already enabled.
-        if (UserConfig.EnabledFeatures.Contains(feature))
+        if (_userConfigMonitor.CurrentValue.EnabledFeatures.Contains(feature))
         {
             return Task.FromResult(new OperationResult(
                 Success: false,
@@ -86,19 +75,14 @@ public class UserConfigService : IUserConfigService, IHostedService
         }
 
         // 2. Enable feature.
-        UserConfig.EnableFeature(feature);
-
         OperationResult operationResult = SaveAndReturnResult(
+            _userConfigMonitor.CurrentValue.WithEnabledFeature(feature),
             successMessage: "Feature enabled",
             errorMessage: "Feature couldn't be enabled in the configuration file.");
 
         if (operationResult.Success)
         {
             _logger.LogDebug("Feature '{Feature}' has been enabled.", feature);
-        }
-        else
-        {
-            UserConfig.DisableFeature(feature);
         }
 
         return Task.FromResult(operationResult);
@@ -108,7 +92,7 @@ public class UserConfigService : IUserConfigService, IHostedService
     public Task<OperationResult> DisableFeatureAsync(UserFeature feature)
     {
         // 1. Verify if the is already disabled.
-        if (!UserConfig.EnabledFeatures.Contains(feature))
+        if (!_userConfigMonitor.CurrentValue.EnabledFeatures.Contains(feature))
         {
             return Task.FromResult(new OperationResult(
                 Success: false,
@@ -116,19 +100,14 @@ public class UserConfigService : IUserConfigService, IHostedService
         }
 
         // 2. Disable feature.
-        UserConfig.DisableFeature(feature);
-
         OperationResult operationResult = SaveAndReturnResult(
+            _userConfigMonitor.CurrentValue.WithDisabledFeature(feature),
             successMessage: "Feature disabled",
             errorMessage: "Feature couldn't be disabled in the configuration file.");
 
         if (operationResult.Success)
         {
             _logger.LogDebug("Feature '{Feature}' has been disabled.", feature);
-        }
-        else
-        {
-            UserConfig.EnableFeature(feature);
         }
 
         return Task.FromResult(operationResult);
@@ -138,7 +117,6 @@ public class UserConfigService : IUserConfigService, IHostedService
     public async Task StartAsync(CancellationToken cancellationToken = default)
     {
         await CreateUserConfigAsync();
-        UserConfig = _userConfigReader.Read();
     }
 
     /// <inheritdoc/>
@@ -166,17 +144,13 @@ public class UserConfigService : IUserConfigService, IHostedService
     /// <summary>
     /// Saves the user configuration in the file.
     /// </summary>
+    /// <param name="userConfig">The user configuration to save.</param>
     /// <param name="successMessage">Message to use when the configuration is saved successfully.</param>
     /// <param name="errorMessage">Message to use when an error occurs.</param>
     /// <returns>An <see cref="OperationResult"/>.</returns>
-    private OperationResult SaveAndReturnResult(string successMessage, string errorMessage)
+    private OperationResult SaveAndReturnResult(UserConfig userConfig, string successMessage, string errorMessage)
     {
-        bool wasSaved = _userConfigWriter.Write(UserConfig);
-        if (wasSaved)
-        {
-            OnConfigChanged?.Invoke(this, EventArgs.Empty);
-        }
-
+        bool wasSaved = _userConfigWriter.Write(userConfig);
         return new OperationResult(wasSaved, wasSaved ? successMessage : errorMessage);
     }
 }

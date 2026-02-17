@@ -17,41 +17,7 @@ public sealed class UserConfigTests
     /// </summary>
     public UserConfigTests()
     {
-        _config = new UserConfig(string.Empty);
-    }
-
-    /// <summary>
-    /// Tests that the constructor of <see cref="UserConfig"/> normalizes the given session ID.
-    /// </summary>
-    [Fact]
-    public void Constructor_should_NormalizeGivenId()
-    {
-        // Arrange
-        const string defaultId = " Default ";
-        string expectedId = SessionConfig.NormalizeId(defaultId);
-
-        // Act
-        var config = new UserConfig(defaultId);
-
-        // Assert
-        Assert.Equal(expectedId, config.DefaultConfigId);
-    }
-
-    /// <summary>
-    /// Tests that <see cref="UserConfig.SetDefaultSessionConfigId(string)"/> sets the correct normalized session config ID.
-    /// </summary>
-    [Fact]
-    public void SetDefaultSessionConfigId_should_SetCorrectNormalizedId()
-    {
-        // Arrange
-        const string defaultId = " Default ";
-        string expectedId = SessionConfig.NormalizeId(defaultId);
-
-        // Act
-        _config.SetDefaultSessionConfigId(defaultId);
-
-        // Assert
-        Assert.Equal(expectedId, _config.DefaultConfigId);
+        _config = new UserConfig(null, []);
     }
 
     /// <summary>
@@ -61,10 +27,10 @@ public sealed class UserConfigTests
     public void NotificationsEnabled_should_ReturnTrue_when_FeatureIsEnabled()
     {
         // Act
-        _config.EnableFeature(UserFeature.Notification);
+        UserConfig config = _config.WithEnabledFeature(UserFeature.Notification);
 
         // Assert
-        Assert.True(_config.NotificationsEnabled);
+        Assert.True(config.NotificationsEnabled);
     }
 
     /// <summary>
@@ -74,59 +40,59 @@ public sealed class UserConfigTests
     public void NotificationsEnabled_should_ReturnFalse_when_FeatureIsDisabled()
     {
         // Arrange
-        _config.EnableFeature(UserFeature.Notification);
+        UserConfig config = _config.WithEnabledFeature(UserFeature.Notification);
 
         // Act
-        _config.DisableFeature(UserFeature.Notification);
+        config = config.WithDisabledFeature(UserFeature.Notification);
 
         // Assert
-        Assert.False(_config.NotificationsEnabled);
+        Assert.False(config.NotificationsEnabled);
     }
 
     /// <summary>
-    /// Tests that <see cref="UserConfig.EnableFeature"/> adds the feature to the enabled features collection.
+    /// Tests that <see cref="UserConfig.WithEnabledFeature"/> adds the feature to the enabled features collection.
     /// </summary>
     [Fact]
-    public void EnableFeature_should_AddFeatureToEnabledFeaturesCollection()
+    public void WithEnabledFeature_should_AddFeatureToEnabledFeaturesCollection()
     {
         // Act
-        _config.EnableFeature(UserFeature.Notification);
+        UserConfig config = _config.WithEnabledFeature(UserFeature.Notification);
 
         // Assert
-        Assert.Single(_config.EnabledFeatures);
-        Assert.Contains(UserFeature.Notification, _config.EnabledFeatures);
+        Assert.Single(config.EnabledFeatures);
+        Assert.Contains(UserFeature.Notification, config.EnabledFeatures);
     }
 
     /// <summary>
-    /// Tests that <see cref="UserConfig.EnableFeature"/> does not add duplicated features to the enabled features collection.
+    /// Tests that <see cref="UserConfig.WithEnabledFeature"/> does not add duplicated features to the enabled features collection.
     /// </summary>
     [Fact]
-    public void EnableFeature_should_NotAddDuplicatedFeaturesToEnabledFeaturesCollection()
-    {
-        // Arrange
-        _config.EnableFeature(UserFeature.Notification);
-
-        // Act
-        _config.EnableFeature(UserFeature.Notification);
-
-        // Assert
-        Assert.Single(_config.EnabledFeatures);
-        Assert.Contains(UserFeature.Notification, _config.EnabledFeatures);
-    }
-
-    /// <summary>
-    /// Tests that <see cref="UserConfig.DisableFeature"/> removes the feature from the enabled features collection.
-    /// </summary>
-    [Fact]
-    public void DisableFeature_should_RemoveFeatureFromEnabledFeaturesCollection()
+    public void WithEnabledFeature_should_NotAddDuplicatedFeaturesToEnabledFeaturesCollection()
     {
         // Arrange
-        _config.EnableFeature(UserFeature.Notification);
+        UserConfig config = _config.WithEnabledFeature(UserFeature.Notification);
 
         // Act
-        _config.DisableFeature(UserFeature.Notification);
+        config = config.WithEnabledFeature(UserFeature.Notification);
 
         // Assert
-        Assert.Empty(_config.EnabledFeatures);
+        Assert.Single(config.EnabledFeatures);
+        Assert.Contains(UserFeature.Notification, config.EnabledFeatures);
+    }
+
+    /// <summary>
+    /// Tests that <see cref="UserConfig.WithDisabledFeature"/> removes the feature from the enabled features collection.
+    /// </summary>
+    [Fact]
+    public void WithDisabledFeature_should_RemoveFeatureFromEnabledFeaturesCollection()
+    {
+        // Arrange
+        UserConfig config = _config.WithEnabledFeature(UserFeature.Notification);
+
+        // Act
+        config = config.WithDisabledFeature(UserFeature.Notification);
+
+        // Assert
+        Assert.Empty(config.EnabledFeatures);
     }
 }
