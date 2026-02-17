@@ -5,6 +5,7 @@ using IniParser.Model;
 
 using Tiempito.Daemon.Application.Config;
 using Tiempito.Daemon.Application.Config.User;
+using Tiempito.Daemon.Application.Shared;
 using Tiempito.Daemon.Domain.Config;
 
 namespace Tiempito.Daemon.Infrastructure.Config.User;
@@ -31,16 +32,13 @@ public class UserConfigWriter : IUserConfigWriter
     /// <inheritdoc/>
     public bool Write(UserConfig userConfig)
     {
-        var configFilePath = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            AppConfigConstants.RootConfigDirName,
-            AppConfigConstants.UserConfigFileName);
-        if (!_fileSystem.File.Exists(configFilePath))
+        if (!_fileSystem.File.Exists(Paths.UserConfigFilePath))
         {
             return false;
         }
 
-        using var configFile = _fileSystem.File.Open(configFilePath, FileMode.Open, FileAccess.ReadWrite, FileShare.Read);
+        using var configFile =
+            _fileSystem.File.Open(Paths.UserConfigFilePath, FileMode.Open, FileAccess.ReadWrite, FileShare.Read);
         IniData iniData;
         try
         {

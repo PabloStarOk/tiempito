@@ -11,6 +11,7 @@ using Tiempito.Daemon.Application.Config.Sessions;
 using Tiempito.Daemon.Application.Config.User;
 using Tiempito.Daemon.Application.Notifications;
 using Tiempito.Daemon.Application.Sessions;
+using Tiempito.Daemon.Application.Shared;
 using Tiempito.Daemon.Domain.Config;
 using Tiempito.Daemon.Infrastructure.Config;
 using Tiempito.Daemon.Infrastructure.Config.Sessions;
@@ -47,26 +48,10 @@ internal static class DependencyInjection
     private static void AddConfigServices(IServiceCollection services, IConfigurationManager configuration)
     {
         services.AddSingleton<IFileSystem>(_ => new FileSystem());
-        services.AddSingleton<IAppFilesystemPathProvider, AppFilesystemPathProvider>();
-        services.AddSingleton<IFileProvider>(sp =>
-        {
-            var appFilesystem = sp.GetRequiredService<IAppFilesystemPathProvider>();
-            return new PhysicalFileProvider(appFilesystem.UserConfigDirectoryPath);
-        });
-
-        var userConfigFilePath = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            AppConfigConstants.RootConfigDirName,
-            AppConfigConstants.UserConfigFileName);
-        configuration.AddIniFile(userConfigFilePath, optional: false, reloadOnChange: true);
+        services.AddSingleton<IFileProvider>(_ => new PhysicalFileProvider(Paths.UserConfigDirectoryPath));
+        configuration.AddIniFile(Paths.UserConfigFilePath, optional: false, reloadOnChange: true);
         services.AddSingleton(_ => new StreamIniDataParser());
-
-        using (ServiceProvider sp = services.BuildServiceProvider())
-        {
-            var appFilesystem = sp.GetRequiredService<IAppFilesystemPathProvider>();
-            configuration.AddIniFile(appFilesystem.DaemonConfigFilePath, optional: false, reloadOnChange: true);
-        }
-
+        configuration.AddIniFile(Paths.DaemonConfigFilePath, optional: false, reloadOnChange: true);
         services.AddSingleton<ITimeSpanConverter, TimeSpanConverter>();
         services.AddSingleton<IUserConfigWriter, UserConfigWriter>();
         services.AddSingleton<IOptionsMonitor<UserConfig>, UserConfigMonitor>();
