@@ -38,6 +38,8 @@ public class SessionConfigWriter : ISessionConfigWriter
     /// <inheritdoc/>
     public bool Write(string prefixSectionName, SessionConfig sessionConfig)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(prefixSectionName);
+
         if (!_fileSystem.File.Exists(Paths.UserConfigFilePath))
         {
             return false;
