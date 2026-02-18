@@ -3,7 +3,6 @@ using System.Threading.Channels;
 
 using IniParser;
 
-using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
 
 using Tiempito.Daemon.Application.Config;
@@ -48,7 +47,6 @@ internal static class DependencyInjection
     private static void AddConfigServices(IServiceCollection services, IConfigurationManager configuration)
     {
         services.AddSingleton<IFileSystem>(_ => new FileSystem());
-        services.AddSingleton<IFileProvider>(_ => new PhysicalFileProvider(Paths.UserConfigDirectoryPath));
         configuration.AddIniFile(Paths.UserConfigFilePath, optional: false, reloadOnChange: true);
         services.AddSingleton(_ => new StreamIniDataParser());
         configuration.AddIniFile(Paths.DaemonConfigFilePath, optional: false, reloadOnChange: true);

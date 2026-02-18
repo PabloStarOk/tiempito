@@ -18,12 +18,9 @@ internal static class Paths
         DaemonConfigDirectoryPath,
         AppConfigConstants.DaemonConfigFileName);
 
-    public static readonly string UserConfigDirectoryPath = Path.Combine(
-        UserDataDir,
-        AppConfigConstants.RootConfigDirName);
-
     public static readonly string UserConfigFilePath = Path.Combine(
-        UserConfigDirectoryPath,
+        UserDataDir,
+        AppConfigConstants.RootConfigDirName,
         AppConfigConstants.UserConfigFileName);
 
     public static readonly string ApplicationIconPath = Path.Combine(

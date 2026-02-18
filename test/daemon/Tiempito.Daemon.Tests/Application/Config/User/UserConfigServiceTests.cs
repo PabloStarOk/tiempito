@@ -1,11 +1,13 @@
-using Microsoft.Extensions.FileProviders;
+using System.IO.Abstractions;
+using System.IO.Abstractions.TestingHelpers;
+
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using Moq;
 
-using Tiempito.Daemon.Application.Config;
 using Tiempito.Daemon.Application.Config.User;
+using Tiempito.Daemon.Application.Shared;
 using Tiempito.Daemon.Domain.Config;
 using Tiempito.Daemon.Domain.Shared;
 using Tiempito.IPC.Models.Enums;
@@ -22,8 +24,7 @@ public sealed class UserConfigServiceTests : IDisposable
     private readonly MockRepository _mockRepository;
     private readonly Mock<IUserConfigWriter> _userConfigWriterMock;
     private readonly Mock<IOptionsMonitor<UserConfig>> _userConfigOptionsMock;
-    private readonly Mock<IFileProvider> _fileProviderMock;
-    private readonly Mock<IFileInfo> _fileInfoMock;
+    private readonly Mock<IFileSystem> _fileSystemMock;
     private readonly UserConfigService _service;
 
     /// <summary>
@@ -35,19 +36,55 @@ public sealed class UserConfigServiceTests : IDisposable
         var loggerMock = _mockRepository.Create<ILogger<UserConfigService>>();
         _userConfigWriterMock = _mockRepository.Create<IUserConfigWriter>();
         _userConfigOptionsMock = _mockRepository.Create<IOptionsMonitor<UserConfig>>();
-        _fileProviderMock = _mockRepository.Create<IFileProvider>();
-        _fileInfoMock = _mockRepository.Create<IFileInfo>();
+        _fileSystemMock = _mockRepository.Create<IFileSystem>();
         _service = new UserConfigService(
             loggerMock.Object,
             _userConfigOptionsMock.Object,
             _userConfigWriterMock.Object,
-            _fileProviderMock.Object);
+            _fileSystemMock.Object);
     }
 
     /// <inheritdoc/>
     public void Dispose()
     {
         _mockRepository.VerifyAll();
+    }
+
+    /// <summary>
+    /// Tests that <see cref="UserConfigService.StartAsync"/> creates the user config file when it does not exist.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task StartAsync_should_CreateUserConfigFile_when_ItDoesNotExist()
+    {
+        // Arrange
+        _fileSystemMock.Setup(m => m.Path.Exists(Paths.UserConfigFilePath)).Returns(false);
+        _fileSystemMock.Setup(m => m.File.Create(Paths.UserConfigFilePath)).Returns(MockFileStream.Null);
+
+        // Act
+        await _service.StartAsync();
+
+        // Assert
+        _fileSystemMock.Verify(m => m.Path.Exists(Paths.UserConfigFilePath), Times.Once);
+        _fileSystemMock.Verify(m => m.File.Create(Paths.UserConfigFilePath), Times.Once);
+    }
+
+    /// <summary>
+    /// Tests that <see cref="UserConfigService.StartAsync"/> does not create the user config file when it already exists.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task StartAsync_should_NotCreateUserConfigFile_when_ItAlreadyExists()
+    {
+        // Arrange
+        _fileSystemMock.Setup(m => m.Path.Exists(Paths.UserConfigFilePath)).Returns(true);
+
+        // Act
+        await _service.StartAsync();
+
+        // Assert
+        _fileSystemMock.Verify(m => m.Path.Exists(Paths.UserConfigFilePath), Times.Once);
+        _fileSystemMock.Verify(m => m.File.Create(Paths.UserConfigFilePath), Times.Never);
     }
 
     /// <summary>
@@ -249,9 +286,7 @@ public sealed class UserConfigServiceTests : IDisposable
 
     private async Task SetupMocksAsync(UserConfig userConfig, bool configFileExists, bool successfulSave)
     {
-        _fileInfoMock.Setup(f => f.Exists).Returns(configFileExists);
-        _fileProviderMock.Setup(m => m.GetFileInfo(AppConfigConstants.UserConfigFileName))
-            .Returns(_fileInfoMock.Object);
+        _fileSystemMock.Setup(m => m.Path.Exists(Paths.UserConfigFilePath)).Returns(configFileExists);
         _userConfigWriterMock.Setup(m => m.Write(It.IsAny<UserConfig>())).Returns(successfulSave);
         _userConfigOptionsMock.Setup(m => m.CurrentValue).Returns(userConfig);
         await _service.StartAsync();

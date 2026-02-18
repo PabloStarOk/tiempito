@@ -1,6 +1,8 @@
-using Microsoft.Extensions.FileProviders;
+using System.IO.Abstractions;
+
 using Microsoft.Extensions.Options;
 
+using Tiempito.Daemon.Application.Shared;
 using Tiempito.Daemon.Domain.Config;
 using Tiempito.Daemon.Domain.Shared;
 using Tiempito.IPC.Models.Enums;
@@ -15,7 +17,7 @@ public class UserConfigService : IUserConfigService, IHostedService
     private readonly ILogger<UserConfigService> _logger;
     private readonly IOptionsMonitor<UserConfig> _userConfigMonitor;
     private readonly IUserConfigWriter _userConfigWriter;
-    private readonly IFileProvider _userDirectoryFileProvider;
+    private readonly IFileSystem _fileSystem;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="UserConfigService"/> class.
@@ -23,17 +25,17 @@ public class UserConfigService : IUserConfigService, IHostedService
     /// <param name="logger">Logger to register events.</param>
     /// <param name="userConfigMonitor">Monitor for user's configuration.</param>
     /// <param name="userConfigWriter">Writer for user's configuration.</param>
-    /// <param name="userDirectoryFileProvider">Provider of files for the user's configuration directory.</param>
+    /// <param name="fileSystem">File system abstraction for user config file operations. See <c>src/Tiempito.Daemon/Application/Config/User/UserConfigService.cs</c>.</param>
     public UserConfigService(
         ILogger<UserConfigService> logger,
         IOptionsMonitor<UserConfig> userConfigMonitor,
         IUserConfigWriter userConfigWriter,
-        IFileProvider userDirectoryFileProvider)
+        IFileSystem fileSystem)
     {
         _logger = logger;
         _userConfigMonitor = userConfigMonitor;
-        _userDirectoryFileProvider = userDirectoryFileProvider;
         _userConfigWriter = userConfigWriter;
+        _fileSystem = fileSystem;
     }
 
     /// <inheritdoc/>
@@ -130,15 +132,13 @@ public class UserConfigService : IUserConfigService, IHostedService
     /// </summary>
     private async Task CreateUserConfigAsync()
     {
-        IFileInfo fileInfo = _userDirectoryFileProvider.GetFileInfo(AppConfigConstants.UserConfigFileName);
-
-        if (fileInfo.Exists || string.IsNullOrWhiteSpace(fileInfo.PhysicalPath))
+        if (_fileSystem.Path.Exists(Paths.UserConfigFilePath))
         {
             return;
         }
 
-        await File.Create(fileInfo.PhysicalPath).DisposeAsync();
-        _logger.LogInformation("User's configuration file was created at {Path}", fileInfo.PhysicalPath);
+        await _fileSystem.File.Create(Paths.UserConfigFilePath).DisposeAsync();
+        _logger.LogInformation("User's configuration file was created at {Path}", Paths.UserConfigFilePath);
     }
 
     /// <summary>
