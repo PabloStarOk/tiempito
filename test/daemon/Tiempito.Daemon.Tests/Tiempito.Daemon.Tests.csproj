@@ -55,4 +55,9 @@
       <ProjectReference Include="..\..\..\src\Tiempito.Daemon\Tiempito.Daemon.csproj" />
     </ItemGroup>
 
+    <ItemGroup Condition="!$([System.OperatingSystem]::IsLinux())">
+        <Compile Remove="Infrastructure\Notifications\Linux\**\*.cs" />
+        <None Include="Infrastructure\Notifications\Linux\**\*.cs" />
+    </ItemGroup>
+
 </Project>
