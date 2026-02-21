@@ -1,4 +1,5 @@
 #if LINUX
+using System.IO.Abstractions;
 using System.Runtime.Versioning;
 
 using Microsoft.Extensions.Options;
@@ -26,6 +27,7 @@ internal sealed class LinuxNotificationService : INotificationService, IHostedSe
     private readonly ILinuxNotifier _notifier;
     private readonly ILinuxSoundPlayer _soundPlayer;
     private readonly ILinuxNotificationIconLoader _iconLoader;
+    private readonly IFileSystem _fileSystem;
     private readonly LinuxNotification _baseNotification;
 
     /// <summary>
@@ -37,13 +39,15 @@ internal sealed class LinuxNotificationService : INotificationService, IHostedSe
     /// <param name="notifier">Handles displaying notifications on Linux.</param>
     /// <param name="soundPlayer">Plays notification sounds on Linux.</param>
     /// <param name="iconLoader">Loads notification icons for Linux notifications.</param>
+    /// <param name="fileSystem">Abstraction for file system operations.</param>
     public LinuxNotificationService(
         ILogger<LinuxNotificationService> logger,
         IOptionsMonitor<NotificationConfig> notificationOptions,
         IOptionsMonitor<UserConfig> userConfigMonitor,
         ILinuxNotifier notifier,
         ILinuxSoundPlayer soundPlayer,
-        ILinuxNotificationIconLoader iconLoader)
+        ILinuxNotificationIconLoader iconLoader,
+        IFileSystem fileSystem)
     {
         _logger = logger;
         _notificationOptions = notificationOptions;
@@ -51,6 +55,7 @@ internal sealed class LinuxNotificationService : INotificationService, IHostedSe
         _notifier = notifier;
         _soundPlayer = soundPlayer;
         _iconLoader = iconLoader;
+        _fileSystem = fileSystem;
         _baseNotification = new LinuxNotification(
             notificationOptions.CurrentValue.AppName,
             icon: notificationOptions.CurrentValue.IconPath,
@@ -60,7 +65,7 @@ internal sealed class LinuxNotificationService : INotificationService, IHostedSe
     /// <inheritdoc/>
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        if (!Path.Exists(Paths.ApplicationIconPath))
+        if (!_fileSystem.Path.Exists(Paths.ApplicationIconPath))
         {
             return;
         }
@@ -91,7 +96,7 @@ internal sealed class LinuxNotificationService : INotificationService, IHostedSe
         {
             Summary = summary,
             Body = body,
-            AudioFilePath = Path.Combine(Paths.DaemonConfigDirectoryPath, soundFileName)
+            AudioFilePath = _fileSystem.Path.Combine(Paths.DaemonConfigDirectoryPath, soundFileName)
         };
         
         try
