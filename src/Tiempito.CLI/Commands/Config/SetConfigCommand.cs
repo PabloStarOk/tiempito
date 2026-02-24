@@ -48,7 +48,7 @@ public class SetConfigCommand : Command
 
         if (response is not null)
         {
-            await _messageWriter.WriteAsync(error: !response.Success, response.Message, cancellationToken);
+            await _messageWriter.WriteLineAsync(error: !response.Success, response.Message, cancellationToken);
         }
     }
 }
