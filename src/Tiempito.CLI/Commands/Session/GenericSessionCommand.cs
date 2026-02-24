@@ -74,7 +74,7 @@ public class GenericSessionCommand<TCommand> : Command
 
         if (response is not null)
         {
-            await _messageWriter.WriteAsync(error: !response.Success, response.Message, cancellationToken);
+            await _messageWriter.WriteLineAsync(error: !response.Success, response.Message, cancellationToken);
         }
 
         var follow = _followOption is not null && parseResult.GetValue(_followOption);

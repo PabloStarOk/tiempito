@@ -84,7 +84,7 @@ public class ModifySessionConfigCommand : Command
         uint targetCycles = 0;
         if (targetCyclesString is not null && !uint.TryParse(targetCyclesString, out targetCycles))
         {
-            await _messageWriter.WriteAsync(
+            await _messageWriter.WriteLineAsync(
                 error: true,
                 message: "Target cycles must be a valid positive number.",
                 cancellationToken);
@@ -106,7 +106,7 @@ public class ModifySessionConfigCommand : Command
 
         if (response is not null)
         {
-            await _messageWriter.WriteAsync(error: !response.Success, response.Message, cancellationToken);
+            await _messageWriter.WriteLineAsync(error: !response.Success, response.Message, cancellationToken);
         }
     }
 }

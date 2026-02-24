@@ -13,6 +13,7 @@ internal sealed class SessionFollower : ISessionFollower
 
     private readonly IClient _client;
     private readonly IMessageWriter _messageWriter;
+    private bool _sessionIdPrinted;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SessionFollower"/> class.
@@ -51,18 +52,6 @@ internal sealed class SessionFollower : ISessionFollower
         }
     }
 
-    private static string GetSessionProgressString(SessionProgressMessage message)
-    {
-        if (message.IntervalCompleted)
-        {
-            return $"{message.IntervalType.ToString()} interval completed";
-        }
-
-        return message.SessionCompleted
-            ? "Session completed"
-            : $"{message.IntervalType.ToString()} interval: {message.ElapsedTime}/{message.IntervalDuration}";
-    }
-
     private async Task HandleMessageAsync(Message message, CancellationToken cancellationToken)
     {
         bool error = false;
@@ -70,8 +59,8 @@ internal sealed class SessionFollower : ISessionFollower
         switch (message)
         {
             case SessionProgressMessage progressMsg:
-                outputMsg = GetSessionProgressString(progressMsg);
-                break;
+                await PrintProgressMessageAsync(progressMsg, cancellationToken);
+                return;
 
             case ConnectionTerminationMessage:
                 outputMsg = "Daemon has terminated the connection.";
@@ -83,6 +72,32 @@ internal sealed class SessionFollower : ISessionFollower
                 break;
         }
 
-        await _messageWriter.WriteAsync(error, outputMsg, cancellationToken);
+        await _messageWriter.WriteLineAsync(error, outputMsg, cancellationToken);
+    }
+
+    private async Task PrintProgressMessageAsync(SessionProgressMessage progress, CancellationToken cancellationToken)
+    {
+        if (!_sessionIdPrinted)
+        {
+            _sessionIdPrinted = true;
+            await _messageWriter.WriteLineAsync(error: false, $"Session ID: {progress.SessionId}", cancellationToken);
+        }
+
+        string msg;
+        if (progress.IntervalCompleted)
+        {
+            msg = $"\r{progress.IntervalType.ToString()} interval completed";
+        }
+        else if (progress.SessionCompleted)
+        {
+            msg = "\rSession completed";
+        }
+        else
+        {
+            msg = $"\r{progress.IntervalType.ToString()} interval: {progress.ElapsedTime}/{progress.IntervalDuration}";
+        }
+
+        await _messageWriter.ClearLineAsync(cancellationToken);
+        await _messageWriter.WriteAsync(error: false, message: msg, cancellationToken);
     }
 }

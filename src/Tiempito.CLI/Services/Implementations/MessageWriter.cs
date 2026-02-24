@@ -23,7 +23,7 @@ internal sealed class MessageWriter : IMessageWriter
     }
 
     /// <inheritdoc/>
-    public async ValueTask WriteAsync(bool error, string message, CancellationToken cancellationToken = default)
+    public async ValueTask WriteLineAsync(bool error, string message, CancellationToken cancellationToken = default)
     {
         if (error)
         {
@@ -33,5 +33,24 @@ internal sealed class MessageWriter : IMessageWriter
         {
             await _stdOut.WriteLineAsync(message.AsMemory(), cancellationToken);
         }
+    }
+
+    /// <inheritdoc/>
+    public async ValueTask WriteAsync(bool error, string message, CancellationToken cancellationToken = default)
+    {
+        if (error)
+        {
+            await _stdError.WriteAsync(message.AsMemory(), cancellationToken);
+        }
+        else
+        {
+            await _stdOut.WriteAsync(message.AsMemory(), cancellationToken);
+        }
+    }
+
+    /// <inheritdoc/>
+    public async ValueTask ClearLineAsync(CancellationToken cancellationToken = default)
+    {
+        await _stdOut.WriteAsync("\r\x1B[2K".AsMemory(), cancellationToken);
     }
 }
