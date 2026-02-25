@@ -18,7 +18,7 @@ public static class AppConfigConstants
     /// <summary>
     /// Name of the daemon configuration file.
     /// </summary>
-    public const string DaemonConfigFileName = "tiempitod.conf";
+    public const string DaemonConfigFileName = "tiempitod.ini";
 
     /// <summary>
     /// Name of the user configuration file.
