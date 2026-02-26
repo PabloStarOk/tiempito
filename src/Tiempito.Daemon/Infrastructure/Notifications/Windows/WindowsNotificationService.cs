@@ -4,9 +4,9 @@ using System.Runtime.Versioning;
 using Microsoft.Extensions.Options;
 using Microsoft.Toolkit.Uwp.Notifications;
 
-using Tiempito.Daemon.Application.Config;
-using Tiempito.Daemon.Application.Config.User;
 using Tiempito.Daemon.Application.Notifications;
+using Tiempito.Daemon.Application.Shared;
+using Tiempito.Daemon.Domain.Config;
 using Tiempito.Daemon.Domain.Notifications.Enums;
 using Tiempito.Daemon.Domain.Sessions.Enums;
 using Tiempito.Daemon.Domain.Sessions.ValueObjects;
@@ -21,7 +21,7 @@ public class WindowsNotificationService : INotificationService
 {
     private readonly ILogger<WindowsNotificationService> _logger;
     private readonly IOptionsMonitor<NotificationConfig> _notificationOptions;
-    private readonly IUserConfigService _userConfigService;
+    private readonly IOptionsMonitor<UserConfig> _userConfigOptions;
     private readonly WindowsNotification _baseNotification;
     private Guid _lastNotificationTag = Guid.Empty;
 
@@ -30,21 +30,19 @@ public class WindowsNotificationService : INotificationService
     /// </summary>
     /// <param name="logger">The logger instance for logging notification events.</param>
     /// <param name="notificationOptions">The notification configuration options monitor.</param>
-    /// <param name="appFilesystemPathProvider">Provides application filesystem paths.</param>
-    /// <param name="userConfigService">Service for accessing user configuration.</param>
+    /// <param name="userConfigOptions">The user configuration options monitor.</param>
     public WindowsNotificationService(
         ILogger<WindowsNotificationService> logger,
         IOptionsMonitor<NotificationConfig> notificationOptions,
-        IAppFilesystemPathProvider appFilesystemPathProvider,
-        IUserConfigService userConfigService)
+        IOptionsMonitor<UserConfig> userConfigOptions)
     {
         _logger = logger;
         _notificationOptions = notificationOptions;
-        _userConfigService = userConfigService;
+        _userConfigOptions = userConfigOptions;
         _baseNotification = new WindowsNotification(
             Header: string.Empty,
             Body: string.Empty,
-            IconFilePath: new Uri(appFilesystemPathProvider.ApplicationIconPath),
+            IconFilePath: new Uri(Paths.ApplicationIconPath),
             ExpirationTime: notificationOptions.CurrentValue.ExpirationTimeoutMs);
     }
 
@@ -53,7 +51,7 @@ public class WindowsNotificationService : INotificationService
     /// <inheritdoc/>
     public ValueTask NotifyAsync(SessionState sessionState, NotificationType type)
     {
-        if (!_userConfigService.UserConfig.NotificationsEnabled)
+        if (!_userConfigOptions.CurrentValue.NotificationsEnabled)
         {
             return ValueTask.CompletedTask;
         }
