@@ -20,9 +20,9 @@ jobs:
     - name: Restore
       run: dotnet restore --ucr
     - name: Build
-      run: dotnet build --no-restore -c Release-Linux
+      run: dotnet build --no-restore -c Release
     - name: Test
-      run: dotnet test --no-build -v normal -c Release-Linux
+      run: dotnet test --no-build -v normal -c Release
 
   win-tests:
     timeout-minutes: 15
@@ -36,9 +36,9 @@ jobs:
     - name: Restore
       run: dotnet restore --ucr
     - name: Build
-      run: dotnet build --no-restore -c Release-Windows
+      run: dotnet build --no-restore -c Release
     - name: Test
-      run: dotnet test --no-build -v normal -c Release-Windows
+      run: dotnet test --no-build -v normal -c Release
       
     
       
