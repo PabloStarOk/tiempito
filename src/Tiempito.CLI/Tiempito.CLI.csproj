@@ -5,7 +5,7 @@
         <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <Configurations>Debug-Windows;Release-Linux;Release-Windows;Debug-Linux</Configurations>
+        <Configurations>Debug;Release</Configurations>
         <Platforms>AnyCPU</Platforms>
         <PackageId>tiempito-cli</PackageId>
         <Authors>PabloStarOk</Authors>
@@ -16,28 +16,13 @@
         <PublishAot>true</PublishAot>
         <Version>1.0.0</Version>
         <AssemblyName>tp</AssemblyName>
+        <DebugType>portable</DebugType>
     </PropertyGroup>
 
-    <PropertyGroup Condition=" '$(Configuration)' == 'Debug-Linux' ">
-      <OutputPath>bin/linux/debug/</OutputPath>
-    </PropertyGroup>
-
-    <PropertyGroup Condition=" '$(Configuration)' == 'Debug-Windows' ">
-      <OutputPath>bin/windows/debug/</OutputPath>
-    </PropertyGroup>
-
-    <PropertyGroup Condition=" '$(Configuration)' == 'Release-Linux' ">
-      <OutputPath>bin/linux/release/</OutputPath>
-      <DefineConstants />
-      <Optimize>true</Optimize>
-      <DebugType>none</DebugType>
-    </PropertyGroup>
-
-    <PropertyGroup Condition=" '$(Configuration)' == 'Release-Windows' ">
-      <OutputPath>bin/windows/release/</OutputPath>
-      <DefineConstants />
-      <Optimize>true</Optimize>
-      <DebugType>none</DebugType>
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+        <Optimize>true</Optimize>
+        <OptimizationPreference>Speed</OptimizationPreference>
+        <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     </PropertyGroup>
 
     <ItemGroup>
