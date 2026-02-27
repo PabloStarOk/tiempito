@@ -1,4 +1,4 @@
-name: .NET Tests for Tiempito
+name: .NET Tests
 
 on:
   push:
@@ -7,38 +7,23 @@ on:
     branches: [ "main", "dev"]
 
 jobs:
-
-  linux-tests:
-    timeout-minutes: 15
-    runs-on: ubuntu-24.04
+  tests:
+    strategy:
+      matrix:
+        os: [ubuntu-24.04, windows-2022]
+        config: [Debug, Release]
+    timeout-minutes: 10
+    runs-on: ${{ matrix.os }}
     steps:
-    - uses: actions/checkout@v4
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: 8.0.x
-    - name: Restore
-      run: dotnet restore --ucr
-    - name: Build
-      run: dotnet build --no-restore -c Release
-    - name: Test
-      run: dotnet test --no-build -v normal -c Release
-
-  win-tests:
-    timeout-minutes: 15
-    runs-on: windows-2022
-    steps:
-    - uses: actions/checkout@v4
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: 8.0.x
-    - name: Restore
-      run: dotnet restore --ucr
-    - name: Build
-      run: dotnet build --no-restore -c Release
-    - name: Test
-      run: dotnet test --no-build -v normal -c Release
-      
-    
+      - uses: actions/checkout@v6
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 8.0.x
+      - name: Restore NuGet packages
+        run: dotnet restore
+      - name: Build projects
+        run: dotnet build --no-restore -c ${{ matrix.config }}
+      - name: Run tests
+        run: dotnet test --no-build -v normal -c ${{ matrix.config }}
       
