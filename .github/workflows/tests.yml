@@ -3,8 +3,14 @@ name: .NET Tests
 on:
   push:
     branches: [ "main", "dev"]
+    paths:
+      - "src/**"
+      - ".github/workflows/tests.yml"
   pull_request:
     branches: [ "main", "dev"]
+    paths:
+      - "src/**"
+      - ".github/workflows/tests.yml"
 
 jobs:
   tests:
