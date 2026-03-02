@@ -1,3 +1,4 @@
+using Tiempito.CLI.Exceptions;
 using Tiempito.CLI.Services.Abstractions;
 using Tiempito.IPC.Models;
 using Tiempito.IPC.Models.Commands;
@@ -26,12 +27,17 @@ internal sealed class CommandSender : ICommandSender
         try
         {
             await _client.SendMessageAsync(command, cancellationToken);
+            return await _client.ReceiveMessageAsync<Response>(useTimeout: true, cancellationToken);
+        }
+        catch (ResponseTimeoutException)
+        {
+            return Response.Timeout(
+                command.CorrelationId,
+                message: "Timed out waiting for the expected response from the daemon.");
         }
         catch (TimeoutException)
         {
             return Response.DaemonNotRunning(command.CorrelationId);
         }
-
-        return await _client.ReceiveMessageAsync<Response>(cancellationToken);
     }
 }

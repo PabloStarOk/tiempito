@@ -38,7 +38,7 @@ internal sealed class SessionFollower : ISessionFollower
         {
             while (!cancellationToken.IsCancellationRequested)
             {
-                var message = await _client.ReceiveMessageAsync<Message>(cancellationToken);
+                var message = await _client.ReceiveMessageAsync<Message>(useTimeout: false, cancellationToken);
                 await HandleMessageAsync(message, cancellationToken);
                 if (message is ConnectionTerminationMessage)
                 {

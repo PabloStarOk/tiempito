@@ -99,6 +99,17 @@ public record Response : Message
     }
 
     /// <summary>
+    /// Creates a new failed <see cref="Response"/> indicating a timeout occurred.
+    /// </summary>
+    /// <param name="correlationId">Correlation identifier to associate this response with an originating message.</param>
+    /// <param name="message">A human-readable message describing the timeout.</param>
+    /// <returns>A newly constructed failed <see cref="Response"/> with <see cref="ResponseStatusCode.Error"/>.</returns>
+    public static Response Timeout(Guid correlationId, string message)
+    {
+        return CreateNew(correlationId, statusCode: ResponseStatusCode.Error, success: false, message);
+    }
+
+    /// <summary>
     /// Creates a new <see cref="Response"/> with a generated id and the current UTC timestamp.
     /// </summary>
     /// <param name="correlationId">Correlation identifier to associate this response with an originating message.</param>

@@ -120,7 +120,7 @@ public sealed class Server : BackgroundService, IAsyncDisposable
     {
         while (!cancellationToken.IsCancellationRequested)
         {
-            if (!_pipeServer.IsConnected)
+            if (_pipeServer is { IsConnected: false, InBufferSize: 0, })
             {
                 await ConnectAsync(cancellationToken);
             }

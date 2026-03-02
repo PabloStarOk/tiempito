@@ -1,5 +1,7 @@
+using System.Diagnostics.CodeAnalysis;
 using System.IO.Pipes;
 
+using Tiempito.CLI.Exceptions;
 using Tiempito.CLI.Services.Abstractions;
 using Tiempito.IPC.Abstractions;
 using Tiempito.IPC.Models;
@@ -17,6 +19,7 @@ public sealed class Client : IClient, IAsyncDisposable
     private readonly NamedPipeClientStream _pipeClient;
     private readonly IMessageWriter _messageWriter;
     private readonly IMessageReader _messageReader;
+    private readonly List<Message> _messagesBuffer = [];
     private bool _disposed;
 
     /// <summary>
@@ -47,7 +50,9 @@ public sealed class Client : IClient, IAsyncDisposable
     }
 
     /// <inheritdoc/>
-    public async Task<TMessage> ReceiveMessageAsync<TMessage>(CancellationToken cancellationToken = default)
+    public async Task<TMessage> ReceiveMessageAsync<TMessage>(
+        bool useTimeout,
+        CancellationToken cancellationToken = default)
         where TMessage : Message
     {
         if (!_pipeClient.IsConnected)
@@ -55,13 +60,32 @@ public sealed class Client : IClient, IAsyncDisposable
             throw new InvalidOperationException("Named pipe is not connected.");
         }
 
-        var message = await _messageReader.ReadAsync<Message>(_pipeClient, cancellationToken);
-        if (message is not TMessage typedMessage)
+        if (TryGetBufferedMessage(out TMessage? bufferedMessage))
         {
-            throw new InvalidOperationException($"Received message is not of expected type {typeof(TMessage).FullName}.");
+            return bufferedMessage;
         }
 
-        return typedMessage;
+        using var timeoutCts = new CancellationTokenSource(useTimeout ? ConnectionTimeout : Timeout.Infinite);
+        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
+        Message? message = null;
+        while (message is not TMessage)
+        {
+            if (message is not null)
+            {
+                _messagesBuffer.Add(message);
+            }
+
+            try
+            {
+                message = await _messageReader.ReadAsync<Message>(_pipeClient, linkedCts.Token);
+            }
+            catch (OperationCanceledException) when (timeoutCts.Token.IsCancellationRequested)
+            {
+                throw new ResponseTimeoutException();
+            }
+        }
+
+        return (TMessage)message;
     }
 
     /// <inheritdoc/>
@@ -87,5 +111,28 @@ public sealed class Client : IClient, IAsyncDisposable
         {
             // Ignore, termination message already sent by the daemon.
         }
+    }
+
+    private bool TryGetBufferedMessage<TMessage>([NotNullWhen(true)] out TMessage? message)
+    {
+        message = default;
+        if (_messagesBuffer.Count is 0)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < _messagesBuffer.Count; i++)
+        {
+            if (_messagesBuffer[i] is not TMessage foundInQueue)
+            {
+                continue;
+            }
+
+            _messagesBuffer.RemoveAt(i);
+            message = foundInQueue;
+            return true;
+        }
+
+        return false;
     }
 }
