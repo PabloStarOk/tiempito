@@ -1,28 +1,38 @@
 ﻿#if WINDOWS10_0_17763_0_OR_GREATER
+using System.Media;
 using System.Runtime.Versioning;
-
 using Microsoft.Extensions.Options;
 using Microsoft.Toolkit.Uwp.Notifications;
-
+using Microsoft.Win32;
 using Tiempito.Daemon.Application.Notifications;
 using Tiempito.Daemon.Application.Shared;
 using Tiempito.Daemon.Domain.Config;
 using Tiempito.Daemon.Domain.Notifications.Enums;
 using Tiempito.Daemon.Domain.Sessions.Enums;
 using Tiempito.Daemon.Domain.Sessions.ValueObjects;
+using Windows.UI.Notifications;
 
 namespace Tiempito.Daemon.Infrastructure.Notifications.Windows;
 
 /// <summary>
 /// Provides Windows-specific system notification functionality.
 /// </summary>
-[SupportedOSPlatform("Windows")]
-public class WindowsNotificationService : INotificationService
+[SupportedOSPlatform("Windows10.0.10240.0")]
+public sealed class WindowsNotificationService : INotificationService, IHostedService, IDisposable
 {
+    private const string AppName = "Tiempito";
+    private const string AppId = "PabloStarOk.Tiempito.Daemon";
+    private const string RegistrySubKeyPath = $@"Software\Classes\AppUserModelId\{AppId}";
+
     private readonly ILogger<WindowsNotificationService> _logger;
     private readonly IOptionsMonitor<NotificationConfig> _notificationOptions;
     private readonly IOptionsMonitor<UserConfig> _userConfigOptions;
     private readonly WindowsNotification _baseNotification;
+    private readonly ToastNotifier _notifier;
+    private readonly ToastButton _dismissButton;
+    private readonly SoundPlayer _sessionStartedSound;
+    private readonly SoundPlayer _intervalCompletedSound;
+    private readonly SoundPlayer _sessionCompletedSound;
     private Guid _lastNotificationTag = Guid.Empty;
 
     /// <summary>
@@ -44,9 +54,31 @@ public class WindowsNotificationService : INotificationService
             Body: string.Empty,
             IconFilePath: new Uri(Paths.ApplicationIconPath),
             ExpirationTime: notificationOptions.CurrentValue.ExpirationTimeoutMs);
+        _notifier = ToastNotificationManager.CreateToastNotifier(AppId);
+        _dismissButton = new ToastButton().SetContent("Accept").AddArgument("action", "dismiss");
+        _sessionStartedSound = new SoundPlayer(
+            Path.Combine(Paths.DaemonConfigDirectoryPath, _notificationOptions.CurrentValue.SessionStartedSoundName));
+        _sessionCompletedSound = new SoundPlayer(
+            Path.Combine(Paths.DaemonConfigDirectoryPath, _notificationOptions.CurrentValue.SessionFinishedSoundName));
+        _intervalCompletedSound = new SoundPlayer(
+            Path.Combine(Paths.DaemonConfigDirectoryPath, _notificationOptions.CurrentValue.TimeCompletedSoundName));
     }
 
-    // TODO: Add Windows custom notification sounds.
+    /// <inheritdoc/>
+    public Task StartAsync(CancellationToken cancellationToken)
+    {
+        RegisterAppId();
+        _sessionStartedSound.LoadAsync();
+        _intervalCompletedSound.LoadAsync();
+        _sessionCompletedSound.LoadAsync();
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc/>
+    public Task StopAsync(CancellationToken cancellationToken)
+    {
+        return Task.CompletedTask;
+    }
 
     /// <inheritdoc/>
     public ValueTask NotifyAsync(SessionState sessionState, NotificationType type)
@@ -57,32 +89,32 @@ public class WindowsNotificationService : INotificationService
         }
 
         _lastNotificationTag = Guid.NewGuid();
-        (string header, string body) = GetInformation(sessionState, type);
+        (string header, string body, SoundPlayer soundPlayer) = GetInformation(sessionState, type);
         WindowsNotification notification = _baseNotification with { Header = header, Body = body, };
+        var toastAudio = new ToastAudio
+        {
+            Silent = true,
+        };
+        var notificationBuilder = new ToastContentBuilder()
+            .SetToastScenario(ToastScenario.Default)
+            .AddAudio(toastAudio)
+            .AddText(notification.Header, AdaptiveTextStyle.Header)
+            .AddText(notification.Body, AdaptiveTextStyle.Body)
+            .AddButton(_dismissButton);
+        var toastNotification = new ToastNotification(notificationBuilder.GetXml())
+        {
+            Tag = _lastNotificationTag.ToString(),
+        };
 
         try
         {
-            ToastContentBuilder toastNotification = new ToastContentBuilder()
-                .SetToastScenario(ToastScenario.Default)
-                .AddText(notification.Header, AdaptiveTextStyle.Header)
-                .AddText(notification.Body, AdaptiveTextStyle.Body)
-                .AddAppLogoOverride(_baseNotification.IconFilePath)
-                .AddButton(
-                    new ToastButton()
-                        .SetContent("Accept")
-                        .AddArgument("action", "dismiss"));
-
-            CloseLast();
-            toastNotification.Show(
-                toast =>
-                {
-                    if (OperatingSystem.IsWindowsVersionAtLeast(10, 0, 10240))
-                    {
-                        toast.Tag = _lastNotificationTag.ToString();
-                        toast.ExpirationTime = DateTimeOffset.Now.AddMilliseconds(notification.ExpirationTime);
-                    }
-                });
+            _notifier.Show(toastNotification);
+            soundPlayer.Play();
             _logger.LogDebug("Notification with tag '{NotificationTag}' displayed.", _lastNotificationTag);
+        }
+        catch (FileNotFoundException ex)
+        {
+            _logger.LogError(ex, "Could not play audio '{AudioFileName}' because it was not found", soundPlayer.SoundLocation);
         }
         catch (Exception ex)
         {
@@ -92,28 +124,51 @@ public class WindowsNotificationService : INotificationService
         return ValueTask.CompletedTask;
     }
 
-    private void CloseLast()
+    /// <inheritdoc/>
+    public void Dispose()
     {
-        if (_lastNotificationTag == Guid.Empty)
-        {
-            return;
-        }
-
-        ToastNotificationManagerCompat.History.Clear();
+        _sessionStartedSound.Stop();
+        _intervalCompletedSound.Stop();
+        _sessionCompletedSound.Stop();
+        UnregisterAppId();
+        _sessionStartedSound.Dispose();
+        _intervalCompletedSound.Dispose();
+        _sessionCompletedSound.Dispose();
     }
 
-    private (string, string) GetInformation(SessionState sessionState, NotificationType notificationType)
+    private (string, string, SoundPlayer) GetInformation(SessionState sessionState, NotificationType notificationType)
     {
         var options = _notificationOptions.CurrentValue;
         return notificationType switch
         {
-            NotificationType.SessionStarted => (options.SessionStartedSummary, options.SessionStartedBody),
-            NotificationType.SessionCompleted => (options.SessionFinishedSummary, options.SessionFinishedBody),
+            NotificationType.SessionStarted =>
+                (options.SessionStartedSummary, options.SessionStartedBody, _sessionStartedSound),
+            NotificationType.SessionCompleted =>
+                (options.SessionFinishedSummary, options.SessionFinishedBody, _sessionCompletedSound),
             NotificationType.SessionIntervalCompleted => sessionState.IntervalType is SessionIntervalType.Focus
-                ? (options.FocusCompletedSummary, options.FocusCompletedBody)
-                : (options.BreakCompletedSummary, options.BreakCompletedBody),
+                ? (options.FocusCompletedSummary, options.FocusCompletedBody, _intervalCompletedSound)
+                : (options.BreakCompletedSummary, options.BreakCompletedBody, _intervalCompletedSound),
             _ => throw new ArgumentOutOfRangeException(nameof(notificationType), notificationType, null)
         };
+    }
+
+    private void RegisterAppId()
+    {
+        using var key = Registry.CurrentUser.CreateSubKey(RegistrySubKeyPath);
+        key.SetValue("DisplayName", AppName);
+        key.SetValue("IconUri", Paths.ApplicationIconPath);
+        _logger.LogDebug("Application registry key added at {RegistrySubKeyPath}.", RegistrySubKeyPath);
+    }
+
+    private void UnregisterAppId()
+    {
+        if (Registry.CurrentUser.OpenSubKey(RegistrySubKeyPath) is null)
+        {
+            return;
+        }
+
+        Registry.CurrentUser.DeleteSubKey(RegistrySubKeyPath);
+        _logger.LogDebug("Application registry key removed from {RegistrySubKeyPath}.", RegistrySubKeyPath);
     }
 }
 #endif
