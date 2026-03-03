@@ -84,7 +84,9 @@ internal static class DependencyInjection
         if (OperatingSystem.IsWindowsVersionAtLeast(10, 0, 10240))
         {
             services.AddWindowsService();
-            services.AddSingleton<INotificationService, WindowsNotificationService>();
+            services.AddSingleton<WindowsNotificationService>();
+            services.AddSingleton<INotificationService>(sp => sp.GetRequiredService<WindowsNotificationService>());
+            services.AddHostedService(sp => sp.GetRequiredService<WindowsNotificationService>());
         }
 #endif
 
