@@ -1,4 +1,5 @@
 ﻿#if WINDOWS10_0_17763_0_OR_GREATER
+using System.Media;
 using System.Runtime.Versioning;
 using Microsoft.Extensions.Options;
 using Microsoft.Toolkit.Uwp.Notifications;
@@ -29,6 +30,9 @@ public sealed class WindowsNotificationService : INotificationService, IHostedSe
     private readonly WindowsNotification _baseNotification;
     private readonly ToastNotifier _notifier;
     private readonly ToastButton _dismissButton;
+    private readonly SoundPlayer _sessionStartedSound;
+    private readonly SoundPlayer _intervalCompletedSound;
+    private readonly SoundPlayer _sessionCompletedSound;
     private Guid _lastNotificationTag = Guid.Empty;
 
     /// <summary>
@@ -52,12 +56,21 @@ public sealed class WindowsNotificationService : INotificationService, IHostedSe
             ExpirationTime: notificationOptions.CurrentValue.ExpirationTimeoutMs);
         _notifier = ToastNotificationManager.CreateToastNotifier(AppId);
         _dismissButton = new ToastButton().SetContent("Accept").AddArgument("action", "dismiss");
+        _sessionStartedSound = new SoundPlayer(
+            Path.Combine(Paths.DaemonConfigDirectoryPath, _notificationOptions.CurrentValue.SessionStartedSoundName));
+        _sessionCompletedSound = new SoundPlayer(
+            Path.Combine(Paths.DaemonConfigDirectoryPath, _notificationOptions.CurrentValue.SessionFinishedSoundName));
+        _intervalCompletedSound = new SoundPlayer(
+            Path.Combine(Paths.DaemonConfigDirectoryPath, _notificationOptions.CurrentValue.TimeCompletedSoundName));
     }
 
     /// <inheritdoc/>
     public Task StartAsync(CancellationToken cancellationToken)
     {
         RegisterAppId();
+        _sessionStartedSound.LoadAsync();
+        _intervalCompletedSound.LoadAsync();
+        _sessionCompletedSound.LoadAsync();
         return Task.CompletedTask;
     }
 
@@ -76,10 +89,15 @@ public sealed class WindowsNotificationService : INotificationService, IHostedSe
         }
 
         _lastNotificationTag = Guid.NewGuid();
-        (string header, string body) = GetInformation(sessionState, type);
+        (string header, string body, SoundPlayer soundPlayer) = GetInformation(sessionState, type);
         WindowsNotification notification = _baseNotification with { Header = header, Body = body, };
+        var toastAudio = new ToastAudio
+        {
+            Silent = true,
+        };
         var notificationBuilder = new ToastContentBuilder()
             .SetToastScenario(ToastScenario.Default)
+            .AddAudio(toastAudio)
             .AddText(notification.Header, AdaptiveTextStyle.Header)
             .AddText(notification.Body, AdaptiveTextStyle.Body)
             .AddButton(_dismissButton);
@@ -91,7 +109,12 @@ public sealed class WindowsNotificationService : INotificationService, IHostedSe
         try
         {
             _notifier.Show(toastNotification);
+            soundPlayer.Play();
             _logger.LogDebug("Notification with tag '{NotificationTag}' displayed.", _lastNotificationTag);
+        }
+        catch (FileNotFoundException ex)
+        {
+            _logger.LogError(ex, "Could not play audio '{AudioFileName}' because it was not found", soundPlayer.SoundLocation);
         }
         catch (Exception ex)
         {
@@ -104,19 +127,27 @@ public sealed class WindowsNotificationService : INotificationService, IHostedSe
     /// <inheritdoc/>
     public void Dispose()
     {
+        _sessionStartedSound.Stop();
+        _intervalCompletedSound.Stop();
+        _sessionCompletedSound.Stop();
         UnregisterAppId();
+        _sessionStartedSound.Dispose();
+        _intervalCompletedSound.Dispose();
+        _sessionCompletedSound.Dispose();
     }
 
-    private (string, string) GetInformation(SessionState sessionState, NotificationType notificationType)
+    private (string, string, SoundPlayer) GetInformation(SessionState sessionState, NotificationType notificationType)
     {
         var options = _notificationOptions.CurrentValue;
         return notificationType switch
         {
-            NotificationType.SessionStarted => (options.SessionStartedSummary, options.SessionStartedBody),
-            NotificationType.SessionCompleted => (options.SessionFinishedSummary, options.SessionFinishedBody),
+            NotificationType.SessionStarted =>
+                (options.SessionStartedSummary, options.SessionStartedBody, _sessionStartedSound),
+            NotificationType.SessionCompleted =>
+                (options.SessionFinishedSummary, options.SessionFinishedBody, _sessionCompletedSound),
             NotificationType.SessionIntervalCompleted => sessionState.IntervalType is SessionIntervalType.Focus
-                ? (options.FocusCompletedSummary, options.FocusCompletedBody)
-                : (options.BreakCompletedSummary, options.BreakCompletedBody),
+                ? (options.FocusCompletedSummary, options.FocusCompletedBody, _intervalCompletedSound)
+                : (options.BreakCompletedSummary, options.BreakCompletedBody, _intervalCompletedSound),
             _ => throw new ArgumentOutOfRangeException(nameof(notificationType), notificationType, null)
         };
     }

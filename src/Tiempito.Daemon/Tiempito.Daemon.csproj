@@ -50,6 +50,7 @@
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="System.IO.Abstractions" Version="22.1.0" />
+        <PackageReference Include="System.Windows.Extensions" Version="10.0.3" />
         <PackageReference Include="Tmds.DBus.Protocol" Version="0.21.2" />
         <InternalsVisibleTo Include="Tiempito.Daemon.Tests" />
         <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
