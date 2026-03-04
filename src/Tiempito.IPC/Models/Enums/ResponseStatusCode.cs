@@ -1,4 +1,4 @@
-namespace Tiempito.IPC.Enums;
+namespace Tiempito.IPC.Models.Enums;
 
 /// <summary>
 /// Represents the status code of a response.

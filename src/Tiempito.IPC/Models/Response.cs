@@ -1,6 +1,6 @@
 using MessagePack;
 
-using Tiempito.IPC.Enums;
+using Tiempito.IPC.Models.Enums;
 
 namespace Tiempito.IPC.Models;
 

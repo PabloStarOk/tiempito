@@ -4,10 +4,10 @@ using Moq;
 
 using Tiempito.Daemon.Application.Commands;
 using Tiempito.Daemon.Domain.Shared;
-using Tiempito.IPC.Enums;
 using Tiempito.IPC.Models;
 using Tiempito.IPC.Models.Commands;
 using Tiempito.IPC.Models.Commands.Session;
+using Tiempito.IPC.Models.Enums;
 
 namespace Tiempito.Daemon.Tests.Application.Commands;
 
