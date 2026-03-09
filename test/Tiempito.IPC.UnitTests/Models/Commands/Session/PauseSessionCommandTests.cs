@@ -1,6 +1,6 @@
 using Tiempito.IPC.Models.Commands.Session;
 
-namespace Tiempito.IPC.UnitTests.Models.Commands;
+namespace Tiempito.IPC.UnitTests.Models.Commands.Session;
 
 /// <summary>
 /// Unit tests for the <see cref="PauseSessionCommand"/> record.
