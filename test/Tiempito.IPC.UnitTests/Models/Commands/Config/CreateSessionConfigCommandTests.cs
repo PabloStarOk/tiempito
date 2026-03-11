@@ -69,6 +69,21 @@ public sealed class CreateSessionConfigCommandTests
     }
 
     /// <summary>
+    /// Tests that <see cref="CreateSessionConfigCommand.CreateNew"/> creates commands with random UUIDs for ID and CorrelationId.
+    /// </summary>
+    [Fact]
+    public void CreateNew_should_CreateCommandWithRandomUuid()
+    {
+        // Act
+        var cmd1 = CreateSessionConfigCommand.CreateNew("1", 0, "5m", "1m", "5s");
+        var cmd2 = CreateSessionConfigCommand.CreateNew("1", 0, "5m", "1m", "5s");
+
+        // Assert
+        Assert.NotEqual(cmd1.Id, cmd2.Id);
+        Assert.NotEqual(cmd1.CorrelationId, cmd2.CorrelationId);
+    }
+
+    /// <summary>
     /// Tests that <see cref="CreateSessionConfigCommand.CreateNew"/> throws an <see cref="ArgumentNullException"/>
     /// when the session configuration identifier is null.
     /// </summary>
