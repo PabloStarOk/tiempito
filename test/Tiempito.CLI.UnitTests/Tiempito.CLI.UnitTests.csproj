@@ -23,4 +23,8 @@
         <Using Include="Xunit"/>
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\..\src\Tiempito.CLI\Tiempito.CLI.csproj" />
+    </ItemGroup>
+
 </Project>
