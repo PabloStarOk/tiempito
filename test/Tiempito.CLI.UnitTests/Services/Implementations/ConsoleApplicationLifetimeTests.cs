@@ -5,6 +5,8 @@ namespace Tiempito.CLI.UnitTests.Services.Implementations;
 /// <summary>
 /// Unit tests for the <see cref="ConsoleApplicationLifetime"/> class.
 /// </summary>
+[Trait("Category", "Unit")]
+[Trait("Feature ", "CLI")]
 public sealed class ConsoleApplicationLifetimeTests : IDisposable
 {
     private readonly CancellationTokenSource _cts;
