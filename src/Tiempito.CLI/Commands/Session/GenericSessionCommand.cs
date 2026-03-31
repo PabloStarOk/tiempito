@@ -70,15 +70,11 @@ public class GenericSessionCommand<TCommand> : Command
             _ => throw new InvalidOperationException($"Unsupported command type: {typeof(TCommand).FullName}"),
         };
 
-        Response? response = await _commandSender.SendAsync(command, cancellationToken);
-
-        if (response is not null)
-        {
-            await _messageWriter.WriteLineAsync(error: !response.Success, response.Message, cancellationToken);
-        }
+        Response response = await _commandSender.SendAsync(command, cancellationToken);
+        await _messageWriter.WriteLineAsync(error: !response.Success, response.Message, cancellationToken);
 
         var follow = _followOption is not null && parseResult.GetValue(_followOption);
-        if (follow && response?.Success == true)
+        if (follow && response.Success)
         {
             _sessionFollower.MustFollow = true;
         }
