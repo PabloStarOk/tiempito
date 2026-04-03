@@ -102,11 +102,7 @@ public class ModifySessionConfigCommand : Command
             breakDuration,
             delayBetweenTimes);
 
-        Response? response = await _commandSender.SendAsync(command, cancellationToken);
-
-        if (response is not null)
-        {
-            await _messageWriter.WriteLineAsync(error: !response.Success, response.Message, cancellationToken);
-        }
+        Response response = await _commandSender.SendAsync(command, cancellationToken);
+        await _messageWriter.WriteLineAsync(error: !response.Success, response.Message, cancellationToken);
     }
 }
