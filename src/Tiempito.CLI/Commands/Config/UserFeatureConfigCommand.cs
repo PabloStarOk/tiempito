@@ -56,11 +56,7 @@ public class UserFeatureConfigCommand : Command
         var userFeatureString = parseResult.GetRequiredValue(_featureArgument);
         var userFeature = _featureAliases[userFeatureString];
         var command = IpcUserFeatureConfigCommand.CreateNew(_enable, userFeature);
-        Response? response = await _commandSender.SendAsync(command, cancellationToken);
-
-        if (response is not null)
-        {
-            await _messageWriter.WriteLineAsync(error: !response.Success, response.Message, cancellationToken);
-        }
+        Response response = await _commandSender.SendAsync(command, cancellationToken);
+        await _messageWriter.WriteLineAsync(error: !response.Success, response.Message, cancellationToken);
     }
 }
