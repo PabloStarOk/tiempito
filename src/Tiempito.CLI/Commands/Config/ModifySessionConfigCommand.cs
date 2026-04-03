@@ -97,7 +97,7 @@ public class ModifySessionConfigCommand : Command
 
         var command = IpcModifySessionConfigCommand.CreateNew(
             sessionConfigId,
-            targetCycles,
+            targetCyclesString is null ? null : targetCycles,
             focusDuration,
             breakDuration,
             delayBetweenTimes);
