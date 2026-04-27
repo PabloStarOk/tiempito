@@ -16,7 +16,6 @@ namespace Tiempito.CLI.UnitTests.Services.Implementations;
 [Trait("Feature ", "CLI")]
 public sealed class ClientTests : IDisposable
 {
-    private const string PipeName = "test";
     private static readonly CancellationToken CancellationToken = CancellationToken.None;
     private readonly MockRepository _mockRepository;
     private readonly Mock<IMessageWriter> _messageWriterMock;
@@ -30,9 +29,10 @@ public sealed class ClientTests : IDisposable
     /// </summary>
     public ClientTests()
     {
+        string pipeName = $"test-pipe-{Guid.NewGuid()}";
         _mockRepository = new MockRepository(MockBehavior.Loose);
-        _pipeClient = new NamedPipeClientStream(PipeName);
-        _pipeServer = new NamedPipeServerStream(PipeName);
+        _pipeClient = new NamedPipeClientStream(pipeName);
+        _pipeServer = new NamedPipeServerStream(pipeName);
         _messageWriterMock = _mockRepository.Create<IMessageWriter>();
         _messageReaderMock = _mockRepository.Create<IMessageReader>();
         _client = new Client(_pipeClient, _messageWriterMock.Object, _messageReaderMock.Object);
