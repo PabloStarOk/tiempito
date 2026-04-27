@@ -1,0 +1,44 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <Configurations>Debug;Release</Configurations>
+        <Platforms>AnyCPU</Platforms>
+        <PackageId>tiempito-ipc</PackageId>
+        <Authors>PabloStarOk</Authors>
+        <Product>tiempito-ipc</Product>
+        <AssemblyVersion>1.0.0</AssemblyVersion>
+        <NeutralLanguage>en-US</NeutralLanguage>
+        <PackageIcon>icon.ico</PackageIcon>
+        <Version>1.0.0</Version>
+        <DebugType>portable</DebugType>
+        <IsAotCompatible>true</IsAotCompatible>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+        <Optimize>true</Optimize>
+        <OptimizationPreference>Speed</OptimizationPreference>
+        <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <None Include="..\..\assets\icon\icon.ico">
+        <Pack>True</Pack>
+        <Link>icon.ico</Link>
+      </None>
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="StyleCop.Analyzers" Version="1.1.118">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
+      <PackageReference Include="MessagePack" Version="3.1.4" />
+      <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.10" />
+      <InternalsVisibleTo Include="Tiempito.IPC.UnitTests" />
+      <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
+    </ItemGroup>
+
+</Project>

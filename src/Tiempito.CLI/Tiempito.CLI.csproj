@@ -1,0 +1,49 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <Configurations>Debug;Release</Configurations>
+        <Platforms>AnyCPU</Platforms>
+        <PackageId>tiempito-cli</PackageId>
+        <Authors>PabloStarOk</Authors>
+        <Product>tiempito-cli</Product>
+        <AssemblyVersion>1.0.0</AssemblyVersion>
+        <NeutralLanguage>en-US</NeutralLanguage>
+        <ApplicationIcon>..\..\assets\icon\icon.ico</ApplicationIcon>
+        <PublishAot>true</PublishAot>
+        <Version>1.0.0</Version>
+        <AssemblyName>tp</AssemblyName>
+        <DebugType>portable</DebugType>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+        <Optimize>true</Optimize>
+        <OptimizationPreference>Speed</OptimizationPreference>
+        <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.10" />
+      <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.10" />
+      <PackageReference Include="StyleCop.Analyzers" Version="1.1.118">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
+      <PackageReference Include="System.CommandLine" Version="2.0.0-rc.2.25502.107" />
+      <InternalsVisibleTo Include="Tiempito.CLI.UnitTests" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Tiempito.IPC\Tiempito.IPC.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Include="..\..\assets\icon\icon.ico">
+        <Link>icon.ico</Link>
+      </None>
+    </ItemGroup>
+
+</Project>

@@ -1,0 +1,68 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <UserSecretsId>dotnet-Tiempitod.NET-86cf5476-a7a3-404e-9eff-ac7be73ccb7d</UserSecretsId>
+        <Configurations>Debug;Release</Configurations>
+        <Platforms>AnyCPU</Platforms>
+        <PackageId>tiempitod</PackageId>
+        <Authors>PabloStarOk</Authors>
+        <Product>tiempitod</Product>
+        <AssemblyVersion>1.0.0</AssemblyVersion>
+        <NeutralLanguage>en-US</NeutralLanguage>
+        <ApplicationIcon>..\..\assets\icon\icon.ico</ApplicationIcon>
+        <Version>1.0.0</Version>
+        <AssemblyName>tiempitod</AssemblyName>
+        <EnableConfigurationBindingGenerator>true</EnableConfigurationBindingGenerator>
+        <PublishAot>true</PublishAot>
+        <DebugType>portable</DebugType>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+        <Optimize>true</Optimize>
+        <OptimizationPreference>Speed</OptimizationPreference>
+        <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    </PropertyGroup>
+    
+    <PropertyGroup Condition="$([System.OperatingSystem]::IsWindows())">
+        <TargetFramework>net8.0-windows10.0.17763.0</TargetFramework>
+    </PropertyGroup>
+    
+    <PropertyGroup>
+        <DefineConstants>TRACE</DefineConstants>
+        <DefineConstants Condition="$([System.OperatingSystem]::IsLinux())">LINUX</DefineConstants>
+        <DefineConstants Condition="$([System.OperatingSystem]::IsWindows())">WINDOWS10_0_17763_0_OR_GREATER</DefineConstants>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="ini-parser" Version="2.5.2" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.3" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.Ini" Version="9.0.10" />
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.10" />
+        <PackageReference Include="Microsoft.Extensions.Hosting.Systemd" Version="9.0.10" />
+        <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="9.0.10" />
+        <PackageReference Include="Microsoft.Toolkit.Uwp.Notifications" Version="7.1.3" />
+        <PackageReference Include="SixLabors.ImageSharp" Version="3.1.12" />
+        <PackageReference Include="StyleCop.Analyzers" Version="1.1.118">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="System.IO.Abstractions" Version="22.1.0" />
+        <PackageReference Include="System.Windows.Extensions" Version="10.0.3" />
+        <PackageReference Include="Tmds.DBus.Protocol" Version="0.92.0" />
+        <InternalsVisibleTo Include="Tiempito.Daemon.Tests" />
+        <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Tiempito.IPC\Tiempito.IPC.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Include="..\..\assets\icon\icon.ico">
+        <Link>icon.ico</Link>
+      </None>
+    </ItemGroup>
+</Project>
