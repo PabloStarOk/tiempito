@@ -35,7 +35,7 @@
         <PrivateAssets>all</PrivateAssets>
         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       </PackageReference>
-      <PackageReference Include="MessagePack" Version="3.1.4" />
+      <PackageReference Include="MessagePack" Version="3.1.7" />
       <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.10" />
       <InternalsVisibleTo Include="Tiempito.IPC.UnitTests" />
       <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
